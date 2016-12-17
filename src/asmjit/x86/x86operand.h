@@ -56,8 +56,10 @@ class X86DReg;
 template<uint32_t RegType>
 struct X86RegTraits {
   enum {
-    kTypeId    = TypeId::kVoid, // Everything is void by default.
-    kSignature = 0              // No signature by default.
+    kTypeId    = TypeId::kVoid,          // Everything is void by default.
+    kKind      = 0,                      // Zero kind by default.
+    kSize      = 0,                      // No size by default.
+    kSignature = 0                       // No signature by default.
   };
 };
 

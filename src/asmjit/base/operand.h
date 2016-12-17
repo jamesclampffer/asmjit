@@ -552,7 +552,9 @@ public:
   //! Architecture neutral register kinds.
   ASMJIT_ENUM(Kind) {
     kKindGp       = 0,                   //!< General purpose register (X86|ARM).
-    kKindVec      = 1                    //!< Vector register (X86|ARM).
+    kKindVec      = 1,                   //!< Vector register (X86|ARM).
+
+    kKindMax      = 31                   //!< Maximum possible register kind of all architectures.
   };
 
   // --------------------------------------------------------------------------

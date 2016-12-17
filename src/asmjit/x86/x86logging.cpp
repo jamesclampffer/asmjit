@@ -58,25 +58,25 @@ struct X86RegNameInfo {
 }
 
 static const X86RegNameInfo x86RegisterNames[] = {
-  { ""     , false, 0 }, // #00 None.
-  { ""     , false, 0 }, // #01 Reserved.
-  { "rip%u", true , 1 }, // #02 RIP.
-  { "seg%u", true , 7 }, // #03 SEG.
-  { "r%ub" , true , 8 }, // #04 GPB-LO.
-  { "r%uh" , true , 4 }, // #05 GPB-HI.
-  { "r%uw" , true , 8 }, // #06 GPW.
-  { "r%ud" , true , 8 }, // #07 GPD.
-  { "r%u"  , true , 8 }, // #08 GPQ.
-  { "fp%u" , true , 0 }, // #09 FP.
-  { "mm%u" , true , 0 }, // #10 MM.
-  { "k%u"  , true , 0 }, // #11 K.
-  { "xmm%u", true , 0 }, // #12 XMM.
-  { "ymm%u", true , 0 }, // #13 YMM.
-  { "zmm%u", true , 0 }, // #14 ZMM.
-  { ""     , false, 0 }, // #15 FUTURE.
-  { "bnd%u", true , 0 }, // #16 BND.
-  { "cr%u" , true , 0 }, // #17 CR.
-  { "dr%u" , true , 0 }  // #18 DR.
+  { false, 0 , ""      }, // #00 None.
+  { false, 0 , ""      }, // #01 Reserved.
+  { true , 1 , "rip%u" }, // #02 RIP.
+  { true , 7 , "seg%u" }, // #03 SEG.
+  { true , 8 , "r%ub"  }, // #04 GPB-LO.
+  { true , 4 , "r%uh"  }, // #05 GPB-HI.
+  { true , 8 , "r%uw"  }, // #06 GPW.
+  { true , 8 , "r%ud"  }, // #07 GPD.
+  { true , 8 , "r%u"   }, // #08 GPQ.
+  { true , 0 , "fp%u"  }, // #09 FP.
+  { true , 0 , "mm%u"  }, // #10 MM.
+  { true , 0 , "k%u"   }, // #11 K.
+  { true , 0 , "xmm%u" }, // #12 XMM.
+  { true , 0 , "ymm%u" }, // #13 YMM.
+  { true , 0 , "zmm%u" }, // #14 ZMM.
+  { false, 0 , ""      }, // #15 FUTURE.
+  { true , 0 , "bnd%u" }, // #16 BND.
+  { true , 0 , "cr%u"  }, // #17 CR.
+  { true , 0 , "dr%u"  }  // #18 DR.
 };
 
 static const char x86SegmentNames[] =
