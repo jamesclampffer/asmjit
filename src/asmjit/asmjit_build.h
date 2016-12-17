@@ -48,7 +48,6 @@
 //
 // #define ASMJIT_DEBUG              // Define to enable debug-mode.
 // #define ASMJIT_RELEASE            // Define to enable release-mode.
-// #define ASMJIT_TRACE              // Define to enable tracing.
 
 // AsmJit Build Backends
 // ---------------------
@@ -69,7 +68,7 @@
 //
 // AsmJit features are enabled by default.
 // #define ASMJIT_DISABLE_COMPILER   // Disable CodeCompiler (completely).
-// #define ASMJIT_DISABLE_LOGGING    // Disable Logger and Formatter (completely).
+// #define ASMJIT_DISABLE_LOGGING    // Disable logging and formatting (completely).
 // #define ASMJIT_DISABLE_TEXT       // Disable everything that contains text
 //                                   // representation (instructions, errors, ...).
 // #define ASMJIT_DISABLE_VALIDATION // Disable Validation (completely).
@@ -972,29 +971,6 @@ public:
 #  define ASMJIT_FAVOR_SIZE
 # endif
 #endif // ASMJIT_EXPORTS
-
-// ============================================================================
-// [asmjit::Build - Relative Path]
-// ============================================================================
-
-namespace asmjit {
-namespace DebugUtils {
-
-// ASMJIT_TRACE is only used by sources and private headers. It's safe to make
-// it unavailable outside of AsmJit.
-#if defined(ASMJIT_EXPORTS)
-static inline int disabledTrace(...) { return 0; }
-# if defined(ASMJIT_TRACE)
-#  define ASMJIT_TSEC(section) section
-#  define ASMJIT_TLOG ::printf
-# else
-#  define ASMJIT_TSEC(section) ASMJIT_NOP
-#  define ASMJIT_TLOG 0 && ::asmjit::DebugUtils::disabledTrace
-# endif // ASMJIT_TRACE
-#endif // ASMJIT_EXPORTS
-
-} // DebugUtils namespace
-} // asmjit namespace
 
 // ============================================================================
 // [asmjit::Build - Test]

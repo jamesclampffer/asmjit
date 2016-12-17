@@ -148,7 +148,7 @@ public:
   // [Op]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API Error _opString(uint32_t op, const char* str, size_t len = kInvalidIndex) noexcept;
+  ASMJIT_API Error _opString(uint32_t op, const char* str, size_t len = Globals::kInvalidIndex) noexcept;
   ASMJIT_API Error _opVFormat(uint32_t op, const char* fmt, va_list ap) noexcept;
   ASMJIT_API Error _opChar(uint32_t op, char c) noexcept;
   ASMJIT_API Error _opChars(uint32_t op, char c, size_t n) noexcept;
@@ -160,7 +160,7 @@ public:
   // --------------------------------------------------------------------------
 
   //! Replace the current string with `str` having `len` characters (or `kInvalidIndex` if it's null terminated).
-  ASMJIT_INLINE Error setString(const char* str, size_t len = kInvalidIndex) noexcept { return _opString(kStringOpSet, str, len); }
+  ASMJIT_INLINE Error setString(const char* str, size_t len = Globals::kInvalidIndex) noexcept { return _opString(kStringOpSet, str, len); }
   //! Replace the current content by a formatted string `fmt`.
   ASMJIT_API Error setFormat(const char* fmt, ...) noexcept;
   //! Replace the current content by a formatted string `fmt` (va_list version).
@@ -191,7 +191,7 @@ public:
   // --------------------------------------------------------------------------
 
   //! Append string `str` having `len` characters (or `kInvalidIndex` if it's null terminated).
-  ASMJIT_INLINE Error appendString(const char* str, size_t len = kInvalidIndex) noexcept { return _opString(kStringOpAppend, str, len); }
+  ASMJIT_INLINE Error appendString(const char* str, size_t len = Globals::kInvalidIndex) noexcept { return _opString(kStringOpAppend, str, len); }
   //! Append a formatted string `fmt`.
   ASMJIT_API Error appendFormat(const char* fmt, ...) noexcept;
   //! Append a formatted string `fmt` (va_list version).
@@ -222,7 +222,7 @@ public:
   // --------------------------------------------------------------------------
 
   //! Check for equality with other `str` of length `len`.
-  ASMJIT_API bool eq(const char* str, size_t len = kInvalidIndex) const noexcept;
+  ASMJIT_API bool eq(const char* str, size_t len = Globals::kInvalidIndex) const noexcept;
   //! Check for equality with `other`.
   ASMJIT_INLINE bool eq(const StringBuilder& other) const noexcept { return eq(other._data); }
 

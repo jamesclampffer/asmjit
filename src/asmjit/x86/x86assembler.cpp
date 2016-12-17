@@ -13,10 +13,12 @@
 
 // [Dependencies]
 #include "../base/cpuinfo.h"
+#include "../base/logging.h"
 #include "../base/runtime.h"
 #include "../base/utils.h"
 #include "../base/vmem.h"
 #include "../x86/x86assembler.h"
+#include "../x86/x86logging_p.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
@@ -311,19 +313,6 @@ static ASMJIT_INLINE int64_t x86SignExtend32To64(int64_t imm) noexcept {
   return static_cast<int64_t>(static_cast<int32_t>(imm & 0xFFFFFFFF));
 }
 
-static ASMJIT_INLINE uint32_t x86OpCodeLByVMem(const Operand_& op) noexcept {
-  return x86LLByRegType[static_cast<const X86Mem&>(op).getIndexType()];
-}
-
-static ASMJIT_INLINE uint32_t x86OpCodeLBySize(uint32_t size) noexcept {
-  return x86LLBySizeDiv16[size / 16];
-}
-
-//! Combine `regId` and `vvvvvId` into a single value (used by AVX and AVX-512).
-static ASMJIT_INLINE uint32_t x86PackRegAndVvvvv(uint32_t regId, uint32_t vvvvvId) noexcept {
-  return regId + (vvvvvId << kVexVVVVVShift);
-}
-
 //! Get `O` field of `opCode`.
 static ASMJIT_INLINE uint32_t x86ExtractO(uint32_t opCode) noexcept {
   return (opCode >> X86Inst::kOpCode_O_Shift) & 0x07;
@@ -334,6 +323,19 @@ static ASMJIT_INLINE uint32_t x86ExtractREX(uint32_t opCode, uint32_t options) n
   // set except REX.[B|X|R|W]. The returned value forms a real REX prefix byte.
   // This case is tested by `X86Inst.cpp`.
   return (opCode | options) >> X86Inst::kOpCode_REX_Shift;
+}
+
+//! Combine `regId` and `vvvvvId` into a single value (used by AVX and AVX-512).
+static ASMJIT_INLINE uint32_t x86PackRegAndVvvvv(uint32_t regId, uint32_t vvvvvId) noexcept {
+  return regId + (vvvvvId << kVexVVVVVShift);
+}
+
+static ASMJIT_INLINE uint32_t x86OpCodeLByVMem(const Operand_& op) noexcept {
+  return x86LLByRegType[static_cast<const X86Mem&>(op).getIndexType()];
+}
+
+static ASMJIT_INLINE uint32_t x86OpCodeLBySize(uint32_t size) noexcept {
+  return x86LLBySizeDiv16[size / 16];
 }
 
 static ASMJIT_INLINE uint32_t x86ExtractLLMM(uint32_t opCode, uint32_t options) noexcept {
@@ -363,30 +365,6 @@ static ASMJIT_INLINE uint32_t x86EncodeSib(uint32_t s, uint32_t i, uint32_t b) n
   ASMJIT_ASSERT(b <= 7);
   return (s << 6) + (i << 3) + b;
 }
-
-// ============================================================================
-// [asmjit::X86Assembler - Macros]
-// ============================================================================
-
-#define EMIT_BYTE(VAL)                               \
-  do {                                               \
-    cursor[0] = static_cast<uint8_t>((VAL) & 0xFFU); \
-    cursor += 1;                                     \
-  } while (0)
-
-#define EMIT_WORD(VAL)                               \
-  do {                                               \
-    Utils::writeU16uLE(cursor,                       \
-      static_cast<uint32_t>((VAL) & 0xFFFFU));       \
-    cursor += 2;                                     \
-  } while (0)
-
-#define EMIT_DWORD(VAL)                              \
-  do {                                               \
-    Utils::writeU32uLE(cursor,                       \
-      static_cast<uint32_t>((VAL) & 0xFFFFFFFFU));   \
-    cursor += 4;                                     \
-  } while (0)
 
 // ============================================================================
 // [asmjit::X86Assembler - Construction / Destruction]
@@ -430,84 +408,7 @@ Error X86Assembler::onDetach(CodeHolder* code) noexcept {
 }
 
 // ============================================================================
-// [asmjit::X86Assembler - Align]
-// ============================================================================
-
-Error X86Assembler::align(uint32_t mode, uint32_t alignment) {
-#if !defined(ASMJIT_DISABLE_LOGGING)
-  if (_globalOptions & kOptionLoggingEnabled)
-    _code->_logger->logf("%s.align %u\n", _code->_logger->getIndentation(), alignment);
-#endif // !ASMJIT_DISABLE_LOGGING
-
-  if (mode > kAlignZero)
-    return setLastError(DebugUtils::errored(kErrorInvalidArgument));
-
-  if (alignment <= 1)
-    return kErrorOk;
-
-  if (!Utils::isPowerOf2(alignment) || alignment > 64)
-    return setLastError(DebugUtils::errored(kErrorInvalidArgument));
-
-  uint32_t i = static_cast<uint32_t>(Utils::alignDiff<size_t>(getOffset(), alignment));
-  if (i == 0)
-    return kErrorOk;
-
-  if (getRemainingSpace() < i) {
-    Error err = _code->growBuffer(&_section->_buffer, i);
-    if (ASMJIT_UNLIKELY(err)) return setLastError(err);
-  }
-
-  uint8_t* cursor = _bufferPtr;
-  uint8_t pattern = 0x00;
-
-  switch (mode) {
-    case kAlignCode: {
-      if (_globalHints & kHintOptimizedAlign) {
-        // Intel 64 and IA-32 Architectures Software Developer's Manual - Volume 2B (NOP).
-        enum { kMaxNopSize = 9 };
-
-        static const uint8_t nopData[kMaxNopSize][kMaxNopSize] = {
-          { 0x90 },
-          { 0x66, 0x90 },
-          { 0x0F, 0x1F, 0x00 },
-          { 0x0F, 0x1F, 0x40, 0x00 },
-          { 0x0F, 0x1F, 0x44, 0x00, 0x00 },
-          { 0x66, 0x0F, 0x1F, 0x44, 0x00, 0x00 },
-          { 0x0F, 0x1F, 0x80, 0x00, 0x00, 0x00, 0x00 },
-          { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 },
-          { 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 }
-        };
-
-        do {
-          uint32_t n = Utils::iMin<uint32_t>(i, kMaxNopSize);
-          const uint8_t* src = nopData[n - 1];
-
-          i -= n;
-          do {
-            EMIT_BYTE(*src++);
-          } while (--n);
-        } while (i);
-      }
-
-      pattern = 0x90;
-      break;
-    }
-
-    case kAlignData: pattern = 0xCC; break;
-    case kAlignZero: break; // Pattern already set to zero.
-  }
-
-  while (i) {
-    EMIT_BYTE(pattern);
-    i--;
-  }
-
-  _bufferPtr = cursor;
-  return kErrorOk;
-}
-
-// ============================================================================
-// [asmjit::X86Assembler - Emit Helpers]
+// [asmjit::X86Assembler - Emit - Helpers]
 // ============================================================================
 
 #if !defined(ASMJIT_DISABLE_LOGGING)
@@ -537,19 +438,22 @@ static void X86Assembler_logInstruction(X86Assembler* self,
   if (!(options & CodeEmitter::kOptionOp4)) opArray[4].reset();
   if (!(options & CodeEmitter::kOptionOp5)) opArray[5].reset();
 
-  self->_formatter.formatInstruction(sb, logOptions, instId, options, self->_opExtra, opArray, 6);
+  X86Logging::formatInstruction(
+    sb, logOptions,
+    self, self->getArchType(),
+    instId, options, self->_opExtra, opArray, 6);
 
   if ((logOptions & Logger::kOptionBinaryForm) != 0)
-    LogUtil::formatLine(sb, self->_bufferPtr, emittedSize, relSize, imLen, self->getInlineComment());
+    Logging::formatLine(sb, self->_bufferPtr, emittedSize, relSize, imLen, self->getInlineComment());
   else
-    LogUtil::formatLine(sb, nullptr, kInvalidIndex, 0, 0, self->getInlineComment());
+    Logging::formatLine(sb, nullptr, Globals::kInvalidIndex, 0, 0, self->getInlineComment());
 
   logger->log(sb.getData(), sb.getLength());
 }
 
 static Error X86Assembler_failedInstruction(
   X86Assembler* self,
-  uint32_t err,
+  Error err,
   uint32_t instId, uint32_t options, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) {
 
   StringBuilderTmp<256> sb;
@@ -566,11 +470,12 @@ static Error X86Assembler_failedInstruction(
   if (!(options & CodeEmitter::kOptionOp4)) opArray[4].reset();
   if (!(options & CodeEmitter::kOptionOp5)) opArray[5].reset();
 
-  self->_formatter.formatInstruction(sb, 0, instId, options, self->_opExtra, opArray, 6);
-
+  X86Logging::formatInstruction(
+    sb, 0,
+    self, self->getArchType(),
+    instId, options, self->_opExtra, opArray, 6);
   self->resetOptions();
   self->resetInlineComment();
-
   return self->setLastError(err, sb.getData());
 }
 #else
@@ -587,30 +492,53 @@ static ASMJIT_INLINE Error X86Assembler_failedInstruction(
 #endif
 
 #if !defined(ASMJIT_DISABLE_VALIDATION)
-static Error X86Assembler_validateInstruction(
-  X86Assembler* self,
-  uint32_t instId, uint32_t options, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) {
-
+static Error X86Assembler_validateInstruction(X86Assembler* self, uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) noexcept {
   Operand_ opArray[6];
+
   opArray[0].copyFrom(o0);
   opArray[1].copyFrom(o1);
   opArray[2].copyFrom(o2);
   opArray[3].copyFrom(o3);
   opArray[4].copyFrom(self->_op4);
   opArray[5].copyFrom(self->_op5);
+
+  uint32_t options = self->getGlobalOptions() | self->getOptions();
   if (!(options & CodeEmitter::kOptionOp4)) opArray[4].reset();
   if (!(options & CodeEmitter::kOptionOp5)) opArray[5].reset();
 
-  Error err = X86Inst::validate(self->getArchType(), instId, options, self->getOpExtra(), opArray, 6);
-  if (err) return X86Assembler_failedInstruction(self, err, instId, options, o0, o1, o2, o3);
+  Error err = X86Inst::validate(
+    self->getArchType(), instId, options, self->_opExtra, opArray, 6);
+
+  if (ASMJIT_UNLIKELY(err != kErrorOk))
+    return X86Assembler_failedInstruction(self, err, instId, options, o0, o1, o2, o3);
 
   return kErrorOk;
 }
 #endif // !ASMJIT_DISABLE_VALIDATION
 
 // ============================================================================
-// [asmjit::X86Assembler - Emit]
+// [asmjit::X86Assembler - Emit - Macros]
 // ============================================================================
+
+#define EMIT_BYTE(VAL)                               \
+  do {                                               \
+    cursor[0] = static_cast<uint8_t>((VAL) & 0xFFU); \
+    cursor += 1;                                     \
+  } while (0)
+
+#define EMIT_WORD(VAL)                               \
+  do {                                               \
+    Utils::writeU16uLE(cursor,                       \
+      static_cast<uint32_t>((VAL) & 0xFFFFU));       \
+    cursor += 2;                                     \
+  } while (0)
+
+#define EMIT_DWORD(VAL)                              \
+  do {                                               \
+    Utils::writeU32uLE(cursor,                       \
+      static_cast<uint32_t>((VAL) & 0xFFFFFFFFU));   \
+    cursor += 4;                                     \
+  } while (0)
 
 #define ADD_66H_P(EXP)                                                   \
   do {                                                                   \
@@ -696,6 +624,10 @@ static Error X86Assembler_validateInstruction(
 #define ENC_OPS4(OP0, OP1, OP2, OP3)      ((Operand::kOp##OP0) + ((Operand::kOp##OP1) << 3) + ((Operand::kOp##OP2) << 6) + ((Operand::kOp##OP3) << 9))
 #define ENC_OPS5(OP0, OP1, OP2, OP3, OP4) ((Operand::kOp##OP0) + ((Operand::kOp##OP1) << 3) + ((Operand::kOp##OP2) << 6) + ((Operand::kOp##OP3) << 9) + ((Operand::kOp##OP4) << 12))
 
+// ============================================================================
+// [asmjit::X86Assembler - Emit - Implementation]
+// ============================================================================
+
 Error X86Assembler::_emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) {
   Error err;
 
@@ -730,7 +662,7 @@ Error X86Assembler::_emit(uint32_t instId, const Operand_& o0, const Operand_& o
     CodeEmitter::kOptionMaybeFailureCase | // Error / Buffer check.
     CodeEmitter::kOptionStrictValidation | // Strict validation.
     X86Inst::kOptionRep                  | // REP/REPZ prefix.
-    X86Inst::kOptionRepnz                | // REP/REPNZ prefix.
+    X86Inst::kOptionRepnz                | // REPNZ prefix.
     X86Inst::kOptionLock                 ; // LOCK prefix.
 
   // Signature of the first 3 operands. Instructions that use more operands
@@ -757,9 +689,8 @@ Error X86Assembler::_emit(uint32_t instId, const Operand_& o0, const Operand_& o
 
     // Strict validation.
 #if !defined(ASMJIT_DISABLE_VALIDATION)
-    // It calls `X86Assembler_failedInstruction` on error, no need to call it.
     if (options & CodeEmitter::kOptionStrictValidation)
-      ASMJIT_PROPAGATE(X86Assembler_validateInstruction(this, instId, options, o0, o1, o2, o3));
+      ASMJIT_PROPAGATE(X86Assembler_validateInstruction(this, instId, o0, o1, o2, o3));
 #endif // !ASMJIT_DISABLE_VALIDATION
 
     uint32_t instFlags = instData->getFlags();
@@ -1027,49 +958,49 @@ CaseX86M_GPB_MulDiv:
       opCode = 0x80;
 
       if (isign3 == ENC_OPS2(Reg, Imm)) {
-        uint32_t regSize = o0.getSize();
+        uint32_t size = o0.getSize();
 
         rbReg = o0.getId();
         imVal = static_cast<const Imm&>(o1).getInt64();
 
-        if (regSize == 1) {
+        if (size == 1) {
           FIXUP_GPB(o0, rbReg);
           imLen = 1;
         }
         else {
-          if (regSize == 2) {
+          if (size == 2) {
             ADD_66H_P(1);
           }
-          else if (regSize == 4) {
+          else if (size == 4) {
             // Sign extend so isInt8 returns the right result.
             imVal = x86SignExtend32To64(imVal);
           }
-          else if (regSize == 8) {
+          else if (size == 8) {
             // In 64-bit mode it's not possible to use 64-bit immediate.
             if (Utils::isUInt32(imVal)) {
               // Zero-extend `and` by using a 32-bit GPD destination instead of a 64-bit GPQ.
               if (instId == X86Inst::kIdAnd)
-                regSize = 4;
+                size = 4;
               else if (!Utils::isInt32(imVal))
                 goto InvalidInstruction;
             }
-            ADD_REX_W_BY_SIZE(regSize);
+            ADD_REX_W_BY_SIZE(size);
           }
 
-          imLen = Utils::iMin<uint32_t>(regSize, 4);
+          imLen = Utils::iMin<uint32_t>(size, 4);
           if (Utils::isInt8(imVal) && !(options & X86Inst::kOptionLongForm))
             imLen = 1;
         }
 
         // Alternate Form - AL, AX, EAX, RAX.
-        if (rbReg == 0 && (regSize == 1 || imLen != 1) && !(options & X86Inst::kOptionLongForm)) {
+        if (rbReg == 0 && (size == 1 || imLen != 1) && !(options & X86Inst::kOptionLongForm)) {
           opCode &= X86Inst::kOpCode_PP_66 | X86Inst::kOpCode_W;
-          opCode |= ((opReg << 3) | (0x04 + (regSize != 1)));
-          imLen = Utils::iMin<uint32_t>(regSize, 4);
+          opCode |= ((opReg << 3) | (0x04 + (size != 1)));
+          imLen = Utils::iMin<uint32_t>(size, 4);
           goto EmitX86Op;
         }
 
-        opCode += regSize != 1 ? (imLen != 1 ? 1 : 3) : 0;
+        opCode += size != 1 ? (imLen != 1 ? 1 : 3) : 0;
         goto EmitX86R;
       }
 
@@ -3762,7 +3693,7 @@ EmitModSib:
         // If we know the base address and the memory operand points to an
         // absolute address it's possible to calculate REL32 that can be
         // be used as [RIP+REL32] in 64-bit mode.
-        if (baseAddress != kNoBaseAddress && !preferAbsolute) {
+        if (baseAddress != Globals::kNoBaseAddress && !preferAbsolute) {
           const uint32_t kModRel32Size = 5;
           uint64_t rip64 = baseAddress +
             static_cast<uint64_t>((uintptr_t)(cursor - _bufferData)) + imLen + kModRel32Size;
@@ -3792,7 +3723,7 @@ EmitModSib:
 
       if (is32Bit()) {
 EmitModSib_LabelRip_X86:
-        if (ASMJIT_UNLIKELY(_code->_relocations.willGrow(1) != kErrorOk))
+        if (ASMJIT_UNLIKELY(_code->_relocations.willGrow() != kErrorOk))
           goto NoHeapMemory;
 
         relOffset = rmRel->as<X86Mem>().getOffsetLo32();
@@ -4309,7 +4240,7 @@ EmitJmpCall:
       // If the base-address is known calculate a relative displacement and
       // check if it fits in 32 bits (which is always true in 32-bit mode).
       // Emit relative displacement as it was a bound label if all checks ok.
-      if (baseAddress != kNoBaseAddress) {
+      if (baseAddress != Globals::kNoBaseAddress) {
         uint64_t rel64 = jumpAddress - (ip + baseAddress) - inst32Size;
         if (getArchType() == ArchInfo::kTypeX86 || Utils::isInt32(static_cast<int64_t>(rel64))) {
           rel32 = static_cast<uint32_t>(rel64 & 0xFFFFFFFFU);
@@ -4323,7 +4254,7 @@ EmitJmpCall:
         }
       }
 
-      if (ASMJIT_UNLIKELY(_code->_relocations.willGrow(1) != kErrorOk))
+      if (ASMJIT_UNLIKELY(_code->_relocations.willGrow() != kErrorOk))
         goto NoHeapMemory;
 
       err = _code->newRelocEntry(&re, RelocEntry::kTypeAbsToRel, 0);
@@ -4494,6 +4425,83 @@ ERROR_HANDLER(AmbiguousOperandSize)
 
 Failed:
   return X86Assembler_failedInstruction(this, err, instId, options, o0, o1, o2, o3);
+}
+
+// ============================================================================
+// [asmjit::X86Assembler - Align]
+// ============================================================================
+
+Error X86Assembler::align(uint32_t mode, uint32_t alignment) {
+#if !defined(ASMJIT_DISABLE_LOGGING)
+  if (_globalOptions & kOptionLoggingEnabled)
+    _code->_logger->logf("%s.align %u\n", _code->_logger->getIndentation(), alignment);
+#endif // !ASMJIT_DISABLE_LOGGING
+
+  if (mode > kAlignZero)
+    return setLastError(DebugUtils::errored(kErrorInvalidArgument));
+
+  if (alignment <= 1)
+    return kErrorOk;
+
+  if (!Utils::isPowerOf2(alignment) || alignment > 64)
+    return setLastError(DebugUtils::errored(kErrorInvalidArgument));
+
+  uint32_t i = static_cast<uint32_t>(Utils::alignDiff<size_t>(getOffset(), alignment));
+  if (i == 0)
+    return kErrorOk;
+
+  if (getRemainingSpace() < i) {
+    Error err = _code->growBuffer(&_section->_buffer, i);
+    if (ASMJIT_UNLIKELY(err)) return setLastError(err);
+  }
+
+  uint8_t* cursor = _bufferPtr;
+  uint8_t pattern = 0x00;
+
+  switch (mode) {
+    case kAlignCode: {
+      if (_globalHints & kHintOptimizedAlign) {
+        // Intel 64 and IA-32 Architectures Software Developer's Manual - Volume 2B (NOP).
+        enum { kMaxNopSize = 9 };
+
+        static const uint8_t nopData[kMaxNopSize][kMaxNopSize] = {
+          { 0x90 },
+          { 0x66, 0x90 },
+          { 0x0F, 0x1F, 0x00 },
+          { 0x0F, 0x1F, 0x40, 0x00 },
+          { 0x0F, 0x1F, 0x44, 0x00, 0x00 },
+          { 0x66, 0x0F, 0x1F, 0x44, 0x00, 0x00 },
+          { 0x0F, 0x1F, 0x80, 0x00, 0x00, 0x00, 0x00 },
+          { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 },
+          { 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 }
+        };
+
+        do {
+          uint32_t n = Utils::iMin<uint32_t>(i, kMaxNopSize);
+          const uint8_t* src = nopData[n - 1];
+
+          i -= n;
+          do {
+            EMIT_BYTE(*src++);
+          } while (--n);
+        } while (i);
+      }
+
+      pattern = 0x90;
+      break;
+    }
+
+    case kAlignData: pattern = 0xCC; break;
+    case kAlignZero: break; // Pattern already set to zero.
+  }
+
+  while (i) {
+    EMIT_BYTE(pattern);
+    i--;
+  }
+
+  _bufferPtr = cursor;
+  return kErrorOk;
 }
 
 } // asmjit namespace

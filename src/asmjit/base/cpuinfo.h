@@ -39,20 +39,21 @@ public:
     kArmFeatureV6,                       //!< ARMv6 instruction set.
     kArmFeatureV7,                       //!< ARMv7 instruction set.
     kArmFeatureV8,                       //!< ARMv8 instruction set.
-    kArmFeatureTHUMB,                    //!< CPU provides THUMB v1 instruction set (ARM only).
-    kArmFeatureTHUMB2,                   //!< CPU provides THUMB v2 instruction set (ARM only).
-    kArmFeatureVFP2,                     //!< CPU provides VFPv2 instruction set.
-    kArmFeatureVFP3,                     //!< CPU provides VFPv3 instruction set.
-    kArmFeatureVFP4,                     //!< CPU provides VFPv4 instruction set.
+    kArmFeatureTHUMB,                    //!< CPU provides THUMB v1 instruction set (THUMB mode).
+    kArmFeatureTHUMB2,                   //!< CPU provides THUMB v2 instruction set (THUMB mode).
+    kArmFeatureVFPv2,                    //!< CPU provides VFPv2 instruction set.
+    kArmFeatureVFPv3,                    //!< CPU provides VFPv3 instruction set.
+    kArmFeatureVFPv4,                    //!< CPU provides VFPv4 instruction set.
     kArmFeatureVFP_D32,                  //!< CPU provides 32 VFP-D (64-bit) registers.
-    kArmFeatureNEON,                     //!< CPU provides NEON instruction set.
-    kArmFeatureDSP,                      //!< CPU provides DSP extensions.
-    kArmFeatureIDIV,                     //!< CPU provides hardware support for SDIV and UDIV.
+    kArmFeatureEDSP,                     //!< CPU provides EDSP extensions.
+    kArmFeatureASIMD,                    //!< CPU provides 'Advanced SIMD'.
+    kArmFeatureIDIVA,                    //!< CPU provides hardware SDIV and UDIV (ARM mode).
+    kArmFeatureIDIVT,                    //!< CPU provides hardware SDIV and UDIV (THUMB mode).
     kArmFeatureAES,                      //!< CPU provides AES instructions (ARM64 only).
-    kArmFeatureCRC32,                    //!< CPU provides CRC32 instructions (ARM64 only).
+    kArmFeatureCRC32,                    //!< CPU provides CRC32 instructions.
     kArmFeaturePMULL,                    //!< CPU provides PMULL instructions (ARM64 only).
-    kArmFeatureSHA1,                     //!< CPU provides SHA1 instructions (ARM64 only).
-    kArmFeatureSHA256,                   //!< CPU provides SHA256 instructions (ARM64 only).
+    kArmFeatureSHA1,                     //!< CPU provides SHA1 instructions.
+    kArmFeatureSHA256,                   //!< CPU provides SHA256 instructions.
     kArmFeatureAtomics64,                //!< CPU provides 64-bit load/store atomics (ARM64 only).
 
     kArmFeaturesCount                    //!< Count of ARM/ARM64 CPU features.
@@ -79,8 +80,8 @@ public:
     kX86FeatureFXSR_OPT,                 //!< CPU has FXSAVE/FXRSTOR (optimized).
     kX86FeatureMMX,                      //!< CPU has MMX.
     kX86FeatureMMX2,                     //!< CPU has extended MMX.
-    kX86Feature3DNOW,                    //!< CPU has 3dNow!
-    kX86Feature3DNOW2,                   //!< CPU has enhanced 3dNow!
+    kX86Feature3DNOW,                    //!< CPU has 3DNOW!
+    kX86Feature3DNOW2,                   //!< CPU has enhanced 3DNOW!
     kX86FeatureSSE,                      //!< CPU has SSE.
     kX86FeatureSSE2,                     //!< CPU has SSE2.
     kX86FeatureSSE3,                     //!< CPU has SSE3.
@@ -118,14 +119,16 @@ public:
     kX86FeatureERMS,                     //!< CPU has ERMS (enhanced REP MOVSB/STOSB).
     kX86FeatureFSGSBASE,                 //!< CPU has FSGSBASE.
     kX86FeatureAVX512F,                  //!< CPU has AVX-512F (foundation).
-    kX86FeatureAVX512CDI,                //!< CPU has AVX-512CDI (conflict detection instructions).
+    kX86FeatureAVX512CDI,                //!< CPU has AVX-512CDI (conflict detection).
     kX86FeatureAVX512PFI,                //!< CPU has AVX-512PFI (prefetch instructions).
-    kX86FeatureAVX512ERI,                //!< CPU has AVX-512ERI (exponential and reciprocal instructions).
+    kX86FeatureAVX512ERI,                //!< CPU has AVX-512ERI (exponential and reciprocal).
     kX86FeatureAVX512DQ,                 //!< CPU has AVX-512DQ (DWORD/QWORD).
     kX86FeatureAVX512BW,                 //!< CPU has AVX-512BW (BYTE/WORD).
     kX86FeatureAVX512VL,                 //!< CPU has AVX VL (vector length extensions).
-    kX86FeatureAVX512IFMA,               //!< CPU has AVX IFMA (integer fused multiply add using 52-bit precision).
-    kX86FeatureAVX512VBMI,               //!< CPU has AVX VBMI (vector byte manipulation instructions).
+    kX86FeatureAVX512IFMA,               //!< CPU has AVX IFMA (integer fused-multiply-add using 52-bit precision).
+    kX86FeatureAVX512VBMI,               //!< CPU has AVX VBMI (vector byte manipulation).
+    kX86FeatureAVX512_4VNNIW,            //!< CPU has AVX VNNIW (vector NN instructions word variable precision).
+    kX86FeatureAVX512_4FMAPS,            //!< CPU has AVX FMAPS (FMA packed single).
 
     kX86FeaturesCount                    //!< Count of X86/X64 CPU features.
   };

@@ -168,10 +168,10 @@ struct CallConv {
     kFlagIndirectVecArgs = 0x08          //!< Pass vector arguments indirectly (as a pointer).
   };
 
-  //! Internal limits of CallConv.
+  //! Internal limits of AsmJit/CallConv.
   ASMJIT_ENUM(Limits) {
-    kNumRegKinds         = 4,            //!< Number of RegKinds handled by CallConv.
-    kNumRegArgsPerKind   = 8             //!< Number of maximum arguments passed in register per RegKind.
+    kMaxVRegKinds        = Globals::kMaxVRegKinds,
+    kNumRegArgsPerKind   = 8
   };
 
   //! Passed registers' order.
@@ -253,24 +253,24 @@ struct CallConv {
   ASMJIT_INLINE void setRedZoneSize(uint32_t size) noexcept { _redZoneSize = static_cast<uint16_t>(size); }
 
   ASMJIT_INLINE const uint8_t* getPassedOrder(uint32_t kind) const noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
     return _passedOrder[kind].id;
   }
 
   ASMJIT_INLINE uint32_t getPassedRegs(uint32_t kind) const noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
     return _passedRegs[kind];
   }
 
   ASMJIT_INLINE void _setPassedPacked(uint32_t kind, uint32_t p0, uint32_t p1) noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
 
     reinterpret_cast<uint32_t*>(_passedOrder[kind].id)[0] = p0;
     reinterpret_cast<uint32_t*>(_passedOrder[kind].id)[1] = p1;
   }
 
   ASMJIT_INLINE void setPassedToNone(uint32_t kind) noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
 
     _setPassedPacked(kind, ASMJIT_PACK32_4x8(0xFF, 0xFF, 0xFF, 0xFF),
                            ASMJIT_PACK32_4x8(0xFF, 0xFF, 0xFF, 0xFF));
@@ -278,7 +278,7 @@ struct CallConv {
   }
 
   ASMJIT_INLINE void setPassedOrder(uint32_t kind, uint32_t a0, uint32_t a1 = 0xFF, uint32_t a2 = 0xFF, uint32_t a3 = 0xFF, uint32_t a4 = 0xFF, uint32_t a5 = 0xFF, uint32_t a6 = 0xFF, uint32_t a7 = 0xFF) noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
 
     _setPassedPacked(kind, ASMJIT_PACK32_4x8(a0, a1, a2, a3),
                            ASMJIT_PACK32_4x8(a4, a5, a6, a7));
@@ -297,13 +297,13 @@ struct CallConv {
   }
 
   ASMJIT_INLINE uint32_t getPreservedRegs(uint32_t kind) const noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
     return _preservedRegs[kind];
   }
 
 
   ASMJIT_INLINE void setPreservedRegs(uint32_t kind, uint32_t regs) noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
     _preservedRegs[kind] = regs;
   }
 
@@ -320,9 +320,9 @@ struct CallConv {
   uint8_t _spillZoneSize;                //!< Spill zone size (WIN64 == 32 bytes).
   uint16_t _redZoneSize;                 //!< Red zone size (AMD64 == 128 bytes).
 
-  RegOrder _passedOrder[kNumRegKinds];   //!< Passed registers' order, per kind.
-  uint32_t _passedRegs[kNumRegKinds];    //!< Mask of all passed registers, per kind.
-  uint32_t _preservedRegs[kNumRegKinds]; //!< Mask of all preserved registers, per kind.
+  RegOrder _passedOrder[kMaxVRegKinds];  //!< Passed registers' order, per kind.
+  uint32_t _passedRegs[kMaxVRegKinds];   //!< Mask of all passed registers, per kind.
+  uint32_t _preservedRegs[kMaxVRegKinds];//!< Mask of all preserved registers, per kind.
 };
 
 // ============================================================================
@@ -619,9 +619,8 @@ public:
 //! arguments have assigned either register type & id or stack address.
 class FuncDetail {
 public:
-  //! Limits are the same as limits defined by \ref CallConv.
   ASMJIT_ENUM(Limits) {
-    kNumRegKinds = CallConv::kNumRegKinds
+    kMaxVRegKinds = Globals::kMaxVRegKinds
   };
 
   //! Argument or return value as defined by `FuncSignature`, but with register
@@ -782,12 +781,12 @@ public:
   ASMJIT_INLINE uint32_t getPreservedRegs(uint32_t kind) const noexcept { return _callConv.getPreservedRegs(kind); }
 
   ASMJIT_INLINE uint32_t getUsedRegs(uint32_t kind) const noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
     return _usedRegs[kind];
   }
 
   ASMJIT_INLINE void addUsedRegs(uint32_t kind, uint32_t regs) noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
     _usedRegs[kind] |= regs;
   }
 
@@ -798,7 +797,7 @@ public:
   CallConv _callConv;                    //!< Calling convention.
   uint8_t _argCount;                     //!< Number of function arguments.
   uint8_t _retCount;                     //!< Number of function return values.
-  uint32_t _usedRegs[kNumRegKinds];      //!< Registers that contains arguments (signature dependent).
+  uint32_t _usedRegs[kMaxVRegKinds];     //!< Registers that contains arguments (signature dependent).
   uint32_t _argStackSize;                //!< Size of arguments passed by stack.
   Value _rets[2];                        //!< Function return values.
   Value _args[kFuncArgCountLoHi];        //!< Function arguments.
@@ -815,9 +814,8 @@ public:
 //! registers to be saved and restored. Based on this information in can
 //! calculate the optimal layout of a function as \ref FuncFrameLayout.
 struct FuncFrameInfo {
-  //! Limits are the same as limits defined by \ref CallConv.
   ASMJIT_ENUM(Limits) {
-    kNumRegKinds = CallConv::kNumRegKinds
+    kMaxVRegKinds = Globals::kMaxVRegKinds
   };
 
   //! Attributes.
@@ -852,7 +850,7 @@ struct FuncFrameInfo {
 
   ASMJIT_INLINE void reset() noexcept {
     ::memset(this, 0, sizeof(*this));
-    _stackArgsRegId = kInvalidReg;
+    _stackArgsRegId = Globals::kInvalidReg;
   }
 
   // --------------------------------------------------------------------------
@@ -912,19 +910,19 @@ struct FuncFrameInfo {
 
   //! Get which registers (by `kind`) are saved/restored in prolog/epilog, respectively.
   ASMJIT_INLINE uint32_t getDirtyRegs(uint32_t kind) const noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
     return _dirtyRegs[kind];
   }
 
   //! Set which registers (by `kind`) are saved/restored in prolog/epilog, respectively.
   ASMJIT_INLINE void setDirtyRegs(uint32_t kind, uint32_t regs) noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
     _dirtyRegs[kind] = regs;
   }
 
   //! Add registers (by `kind`) to saved/restored registers.
   ASMJIT_INLINE void addDirtyRegs(uint32_t kind, uint32_t regs) noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
     _dirtyRegs[kind] |= regs;
   }
 
@@ -936,7 +934,7 @@ struct FuncFrameInfo {
   }
 
   ASMJIT_INLINE void setAllDirty(uint32_t kind) noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
     _dirtyRegs[kind] = 0xFFFFFFFFU;
   }
 
@@ -976,7 +974,7 @@ struct FuncFrameInfo {
     _callFrameAlignment = static_cast<uint8_t>(Utils::iMax<uint32_t>(_callFrameAlignment, value));
   }
 
-  ASMJIT_INLINE bool hasStackArgsRegId() const noexcept { return _stackArgsRegId != kInvalidReg; }
+  ASMJIT_INLINE bool hasStackArgsRegId() const noexcept { return _stackArgsRegId != Globals::kInvalidReg; }
   ASMJIT_INLINE uint32_t getStackArgsRegId() const noexcept { return _stackArgsRegId; }
   ASMJIT_INLINE void setStackArgsRegId(uint32_t regId) { _stackArgsRegId = regId; }
 
@@ -985,7 +983,7 @@ struct FuncFrameInfo {
   // --------------------------------------------------------------------------
 
   uint32_t _attributes;                  //!< Function attributes.
-  uint32_t _dirtyRegs[kNumRegKinds];     //!< Registers used by the function.
+  uint32_t _dirtyRegs[kMaxVRegKinds];    //!< Registers used by the function.
 
   uint8_t _stackFrameAlignment;          //!< Minimum alignment of stack-frame.
   uint8_t _callFrameAlignment;           //!< Minimum alignment of call-frame.
@@ -1007,9 +1005,8 @@ struct FuncFrameInfo {
 //! \ref FuncDetail defines function's calling convention and signature, and \ref
 //! FuncFrameInfo specifies how much stack is used, and which registers are dirty.
 struct FuncFrameLayout {
-  //! Limits are the same as limits defined by \ref CallConv.
   ASMJIT_ENUM(Limits) {
-    kNumRegKinds = CallConv::kNumRegKinds
+    kMaxVRegKinds = Globals::kMaxVRegKinds
   };
 
   // --------------------------------------------------------------------------
@@ -1033,7 +1030,7 @@ struct FuncFrameLayout {
   ASMJIT_INLINE bool isAvxEnabled() const noexcept { return static_cast<bool>(_avxEnabled); }
 
   ASMJIT_INLINE uint32_t getSavedRegs(uint32_t kind) const noexcept {
-    ASMJIT_ASSERT(kind < kNumRegKinds);
+    ASMJIT_ASSERT(kind < kMaxVRegKinds);
     return _savedRegs[kind];
   }
 
@@ -1069,7 +1066,7 @@ struct FuncFrameLayout {
   uint8_t _stackBaseRegId;               //!< GP register that holds address of base stack address.
   uint8_t _stackArgsRegId;               //!< GP register that holds address of the first argument passed by stack.
 
-  uint32_t _savedRegs[kNumRegKinds];     //!< Registers that will be saved/restored in prolog/epilog.
+  uint32_t _savedRegs[kMaxVRegKinds];    //!< Registers that will be saved/restored in prolog/epilog.
 
   uint32_t _preservedFP : 1;             //!< Function preserves frame-pointer.
   uint32_t _dsaSlotUsed : 1;             //!< True if `_dsaSlot` contains a valid memory slot/offset.

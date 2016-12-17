@@ -23,30 +23,6 @@ namespace asmjit {
 //! \{
 
 // ============================================================================
-// [asmjit::X86Cond - Globals]
-// ============================================================================
-
-//! \internal
-//!
-//! X86/X64 condition codes to reversed condition codes map.
-ASMJIT_VARAPI const uint32_t _x86ReverseCond[20];
-
-//! \internal
-//!
-//! X86/X64 condition codes to "cmovcc" group map.
-ASMJIT_VARAPI const uint32_t _x86CondToCmovcc[20];
-
-//! \internal
-//!
-//! X86/X64 condition codes to "jcc" group map.
-ASMJIT_VARAPI const uint32_t _x86CondToJcc[20];
-
-//! \internal
-//!
-//! X86/X64 condition codes to "setcc" group map.
-ASMJIT_VARAPI const uint32_t _x86CondToSetcc[20];
-
-// ============================================================================
 // [asmjit::X86EFlags]
 // ============================================================================
 
@@ -141,16 +117,12 @@ ASMJIT_ENUM(X86FpCw) {
 
 //! X86/X64 instruction data.
 struct X86Inst {
-  //! Instruction id.
+  //! Instruction id (AsmJit specific).
   //!
-  //! Note that these instruction codes are AsmJit specific. Each instruction
-  //! has a unique ID that is used as an index to AsmJit instruction table. The
-  //! list is sorted alphabetically except instructions starting with `j`,
-  //! because the `jcc` instruction is a composition of an opcode and condition
-  //! code. It means that these instructions are sorted as `jcc`, `jecxz` and
-  //! `jmp`. Please use \ref `X86Inst::getIdByName()` if you need instruction
-  //! name to ID mapping and are not aware on how to handle such case.
+  //! Each instruction has a unique ID that is used as an index to AsmJit's
+  //! instruction table. Instructions are sorted alphabetically.
   ASMJIT_ENUM(Id) {
+    // ${idData:Begin}
     kIdNone = 0,
     kIdAaa,                              // X86
     kIdAad,                              // X86
@@ -166,12 +138,12 @@ struct X86Inst {
     kIdAddsubpd,                         // SSE3
     kIdAddsubps,                         // SSE3
     kIdAdox,                             // ADX
-    kIdAesdec,                           // AESNI
-    kIdAesdeclast,                       // AESNI
-    kIdAesenc,                           // AESNI
-    kIdAesenclast,                       // AESNI
-    kIdAesimc,                           // AESNI
-    kIdAeskeygenassist,                  // AESNI
+    kIdAesdec,                           // AES
+    kIdAesdeclast,                       // AES
+    kIdAesenc,                           // AES
+    kIdAesenclast,                       // AES
+    kIdAesimc,                           // AES
+    kIdAeskeygenassist,                  // AES
     kIdAnd,                              // ANY
     kIdAndn,                             // BMI
     kIdAndnpd,                           // SSE2
@@ -184,10 +156,10 @@ struct X86Inst {
     kIdBlcic,                            // TBM
     kIdBlcmsk,                           // TBM
     kIdBlcs,                             // TBM
-    kIdBlendpd,                          // SSE4.1
-    kIdBlendps,                          // SSE4.1
-    kIdBlendvpd,                         // SSE4.1
-    kIdBlendvps,                         // SSE4.1
+    kIdBlendpd,                          // SSE4_1
+    kIdBlendps,                          // SSE4_1
+    kIdBlendvpd,                         // SSE4_1
+    kIdBlendvps,                         // SSE4_1
     kIdBlsfill,                          // TBM
     kIdBlsi,                             // BMI
     kIdBlsic,                            // TBM
@@ -195,7 +167,7 @@ struct X86Inst {
     kIdBlsr,                             // BMI
     kIdBsf,                              // ANY
     kIdBsr,                              // ANY
-    kIdBswap,                            // I486+
+    kIdBswap,                            // ANY
     kIdBt,                               // ANY
     kIdBtc,                              // ANY
     kIdBtr,                              // ANY
@@ -213,50 +185,50 @@ struct X86Inst {
     kIdClwb,                             // CLWB
     kIdClzero,                           // CLZERO
     kIdCmc,                              // ANY
-    kIdCmova,                            // I586+ (cmovcc)
-    kIdCmovae,                           // I586+ (cmovcc)
-    kIdCmovb,                            // I586+ (cmovcc)
-    kIdCmovbe,                           // I586+ (cmovcc)
-    kIdCmovc,                            // I586+ (cmovcc)
-    kIdCmove,                            // I586+ (cmovcc)
-    kIdCmovg,                            // I586+ (cmovcc)
-    kIdCmovge,                           // I586+ (cmovcc)
-    kIdCmovl,                            // I586+ (cmovcc)
-    kIdCmovle,                           // I586+ (cmovcc)
-    kIdCmovna,                           // I586+ (cmovcc)
-    kIdCmovnae,                          // I586+ (cmovcc)
-    kIdCmovnb,                           // I586+ (cmovcc)
-    kIdCmovnbe,                          // I586+ (cmovcc)
-    kIdCmovnc,                           // I586+ (cmovcc)
-    kIdCmovne,                           // I586+ (cmovcc)
-    kIdCmovng,                           // I586+ (cmovcc)
-    kIdCmovnge,                          // I586+ (cmovcc)
-    kIdCmovnl,                           // I586+ (cmovcc)
-    kIdCmovnle,                          // I586+ (cmovcc)
-    kIdCmovno,                           // I586+ (cmovcc)
-    kIdCmovnp,                           // I586+ (cmovcc)
-    kIdCmovns,                           // I586+ (cmovcc)
-    kIdCmovnz,                           // I586+ (cmovcc)
-    kIdCmovo,                            // I586+ (cmovcc)
-    kIdCmovp,                            // I586+ (cmovcc)
-    kIdCmovpe,                           // I586+ (cmovcc)
-    kIdCmovpo,                           // I586+ (cmovcc)
-    kIdCmovs,                            // I586+ (cmovcc)
-    kIdCmovz,                            // I586+ (cmovcc)
+    kIdCmova,                            // CMOV
+    kIdCmovae,                           // CMOV
+    kIdCmovb,                            // CMOV
+    kIdCmovbe,                           // CMOV
+    kIdCmovc,                            // CMOV
+    kIdCmove,                            // CMOV
+    kIdCmovg,                            // CMOV
+    kIdCmovge,                           // CMOV
+    kIdCmovl,                            // CMOV
+    kIdCmovle,                           // CMOV
+    kIdCmovna,                           // CMOV
+    kIdCmovnae,                          // CMOV
+    kIdCmovnb,                           // CMOV
+    kIdCmovnbe,                          // CMOV
+    kIdCmovnc,                           // CMOV
+    kIdCmovne,                           // CMOV
+    kIdCmovng,                           // CMOV
+    kIdCmovnge,                          // CMOV
+    kIdCmovnl,                           // CMOV
+    kIdCmovnle,                          // CMOV
+    kIdCmovno,                           // CMOV
+    kIdCmovnp,                           // CMOV
+    kIdCmovns,                           // CMOV
+    kIdCmovnz,                           // CMOV
+    kIdCmovo,                            // CMOV
+    kIdCmovp,                            // CMOV
+    kIdCmovpe,                           // CMOV
+    kIdCmovpo,                           // CMOV
+    kIdCmovs,                            // CMOV
+    kIdCmovz,                            // CMOV
     kIdCmp,                              // ANY
     kIdCmppd,                            // SSE2
     kIdCmpps,                            // SSE
     kIdCmps,                             // ANY
     kIdCmpsd,                            // SSE2
     kIdCmpss,                            // SSE
-    kIdCmpxchg,                          // I486+
-    kIdCmpxchg16b,                       // X64
-    kIdCmpxchg8b,                        // I586+
+    kIdCmpxchg,                          // I486
+    kIdCmpxchg16b,                       // X64 CMPXCHG16B
+    kIdCmpxchg8b,                        // CMPXCHG8B
     kIdComisd,                           // SSE2
     kIdComiss,                           // SSE
-    kIdCpuid,                            // I486+
+    kIdCpuid,                            // I486
     kIdCqo,                              // X64
-    kIdCrc32,                            // SSE4.2
+    kIdCrc32,                            // SSE4_2
     kIdCvtdq2pd,                         // SSE2
     kIdCvtdq2ps,                         // SSE2
     kIdCvtpd2dq,                         // SSE2
@@ -289,110 +261,110 @@ struct X86Inst {
     kIdDivps,                            // SSE
     kIdDivsd,                            // SSE2
     kIdDivss,                            // SSE
-    kIdDppd,                             // SSE4.1
-    kIdDpps,                             // SSE4.1
+    kIdDppd,                             // SSE4_1
+    kIdDpps,                             // SSE4_1
     kIdEmms,                             // MMX
     kIdEnter,                            // ANY
-    kIdExtractps,                        // SSE4.1
+    kIdExtractps,                        // SSE4_1
     kIdExtrq,                            // SSE4A
-    kIdF2xm1,                            // FPU
-    kIdFabs,                             // FPU
-    kIdFadd,                             // FPU
-    kIdFaddp,                            // FPU
-    kIdFbld,                             // FPU
-    kIdFbstp,                            // FPU
-    kIdFchs,                             // FPU
-    kIdFclex,                            // FPU
-    kIdFcmovb,                           // FPU
-    kIdFcmovbe,                          // FPU
-    kIdFcmove,                           // FPU
-    kIdFcmovnb,                          // FPU
-    kIdFcmovnbe,                         // FPU
-    kIdFcmovne,                          // FPU
-    kIdFcmovnu,                          // FPU
-    kIdFcmovu,                           // FPU
-    kIdFcom,                             // FPU
-    kIdFcomi,                            // FPU
-    kIdFcomip,                           // FPU
-    kIdFcomp,                            // FPU
-    kIdFcompp,                           // FPU
-    kIdFcos,                             // FPU
-    kIdFdecstp,                          // FPU
-    kIdFdiv,                             // FPU
-    kIdFdivp,                            // FPU
-    kIdFdivr,                            // FPU
-    kIdFdivrp,                           // FPU
+    kIdF2xm1,                            // ANY
+    kIdFabs,                             // ANY
+    kIdFadd,                             // ANY
+    kIdFaddp,                            // ANY
+    kIdFbld,                             // ANY
+    kIdFbstp,                            // ANY
+    kIdFchs,                             // ANY
+    kIdFclex,                            // ANY
+    kIdFcmovb,                           // CMOV
+    kIdFcmovbe,                          // CMOV
+    kIdFcmove,                           // CMOV
+    kIdFcmovnb,                          // CMOV
+    kIdFcmovnbe,                         // CMOV
+    kIdFcmovne,                          // CMOV
+    kIdFcmovnu,                          // CMOV
+    kIdFcmovu,                           // CMOV
+    kIdFcom,                             // ANY
+    kIdFcomi,                            // ANY
+    kIdFcomip,                           // ANY
+    kIdFcomp,                            // ANY
+    kIdFcompp,                           // ANY
+    kIdFcos,                             // ANY
+    kIdFdecstp,                          // ANY
+    kIdFdiv,                             // ANY
+    kIdFdivp,                            // ANY
+    kIdFdivr,                            // ANY
+    kIdFdivrp,                           // ANY
     kIdFemms,                            // 3DNOW
-    kIdFfree,                            // FPU
-    kIdFiadd,                            // FPU
-    kIdFicom,                            // FPU
-    kIdFicomp,                           // FPU
-    kIdFidiv,                            // FPU
-    kIdFidivr,                           // FPU
-    kIdFild,                             // FPU
-    kIdFimul,                            // FPU
-    kIdFincstp,                          // FPU
-    kIdFinit,                            // FPU
-    kIdFist,                             // FPU
-    kIdFistp,                            // FPU
+    kIdFfree,                            // ANY
+    kIdFiadd,                            // ANY
+    kIdFicom,                            // ANY
+    kIdFicomp,                           // ANY
+    kIdFidiv,                            // ANY
+    kIdFidivr,                           // ANY
+    kIdFild,                             // ANY
+    kIdFimul,                            // ANY
+    kIdFincstp,                          // ANY
+    kIdFinit,                            // ANY
+    kIdFist,                             // ANY
+    kIdFistp,                            // ANY
     kIdFisttp,                           // SSE3
-    kIdFisub,                            // FPU
-    kIdFisubr,                           // FPU
-    kIdFld,                              // FPU
-    kIdFld1,                             // FPU
-    kIdFldcw,                            // FPU
-    kIdFldenv,                           // FPU
-    kIdFldl2e,                           // FPU
-    kIdFldl2t,                           // FPU
-    kIdFldlg2,                           // FPU
-    kIdFldln2,                           // FPU
-    kIdFldpi,                            // FPU
-    kIdFldz,                             // FPU
-    kIdFmul,                             // FPU
-    kIdFmulp,                            // FPU
-    kIdFnclex,                           // FPU
-    kIdFninit,                           // FPU
-    kIdFnop,                             // FPU
-    kIdFnsave,                           // FPU
-    kIdFnstcw,                           // FPU
-    kIdFnstenv,                          // FPU
-    kIdFnstsw,                           // FPU
-    kIdFpatan,                           // FPU
-    kIdFprem,                            // FPU
-    kIdFprem1,                           // FPU
-    kIdFptan,                            // FPU
-    kIdFrndint,                          // FPU
-    kIdFrstor,                           // FPU
-    kIdFsave,                            // FPU
-    kIdFscale,                           // FPU
-    kIdFsin,                             // FPU
-    kIdFsincos,                          // FPU
-    kIdFsqrt,                            // FPU
-    kIdFst,                              // FPU
-    kIdFstcw,                            // FPU
-    kIdFstenv,                           // FPU
-    kIdFstp,                             // FPU
-    kIdFstsw,                            // FPU
-    kIdFsub,                             // FPU
-    kIdFsubp,                            // FPU
-    kIdFsubr,                            // FPU
-    kIdFsubrp,                           // FPU
-    kIdFtst,                             // FPU
-    kIdFucom,                            // FPU
-    kIdFucomi,                           // FPU
-    kIdFucomip,                          // FPU
-    kIdFucomp,                           // FPU
-    kIdFucompp,                          // FPU
-    kIdFwait,                            // FPU
-    kIdFxam,                             // FPU
-    kIdFxch,                             // FPU
-    kIdFxrstor,                          // FPU
-    kIdFxrstor64,                        // FPU & X64
-    kIdFxsave,                           // FPU
-    kIdFxsave64,                         // FPU & X64
-    kIdFxtract,                          // FPU
-    kIdFyl2x,                            // FPU
-    kIdFyl2xp1,                          // FPU
+    kIdFisub,                            // ANY
+    kIdFisubr,                           // ANY
+    kIdFld,                              // ANY
+    kIdFld1,                             // ANY
+    kIdFldcw,                            // ANY
+    kIdFldenv,                           // ANY
+    kIdFldl2e,                           // ANY
+    kIdFldl2t,                           // ANY
+    kIdFldlg2,                           // ANY
+    kIdFldln2,                           // ANY
+    kIdFldpi,                            // ANY
+    kIdFldz,                             // ANY
+    kIdFmul,                             // ANY
+    kIdFmulp,                            // ANY
+    kIdFnclex,                           // ANY
+    kIdFninit,                           // ANY
+    kIdFnop,                             // ANY
+    kIdFnsave,                           // ANY
+    kIdFnstcw,                           // ANY
+    kIdFnstenv,                          // ANY
+    kIdFnstsw,                           // ANY
+    kIdFpatan,                           // ANY
+    kIdFprem,                            // ANY
+    kIdFprem1,                           // ANY
+    kIdFptan,                            // ANY
+    kIdFrndint,                          // ANY
+    kIdFrstor,                           // ANY
+    kIdFsave,                            // ANY
+    kIdFscale,                           // ANY
+    kIdFsin,                             // ANY
+    kIdFsincos,                          // ANY
+    kIdFsqrt,                            // ANY
+    kIdFst,                              // ANY
+    kIdFstcw,                            // ANY
+    kIdFstenv,                           // ANY
+    kIdFstp,                             // ANY
+    kIdFstsw,                            // ANY
+    kIdFsub,                             // ANY
+    kIdFsubp,                            // ANY
+    kIdFsubr,                            // ANY
+    kIdFsubrp,                           // ANY
+    kIdFtst,                             // ANY
+    kIdFucom,                            // ANY
+    kIdFucomi,                           // ANY
+    kIdFucomip,                          // ANY
+    kIdFucomp,                           // ANY
+    kIdFucompp,                          // ANY
+    kIdFwait,                            // ANY
+    kIdFxam,                             // ANY
+    kIdFxch,                             // ANY
+    kIdFxrstor,                          // FXSR
+    kIdFxrstor64,                        // X64 FXSR
+    kIdFxsave,                           // FXSR
+    kIdFxsave64,                         // X64 FXSR
+    kIdFxtract,                          // ANY
+    kIdFyl2x,                            // ANY
+    kIdFyl2xp1,                          // ANY
     kIdHaddpd,                           // SSE3
     kIdHaddps,                           // SSE3
     kIdHsubpd,                           // SSE3
@@ -402,43 +374,43 @@ struct X86Inst {
     kIdIn,                               // ANY
     kIdInc,                              // ANY
     kIdIns,                              // ANY
-    kIdInsertps,                         // SSE4.1
+    kIdInsertps,                         // SSE4_1
     kIdInsertq,                          // SSE4A
     kIdInt,                              // ANY
     kIdInt3,                             // ANY
     kIdInto,                             // ANY
-    kIdJa,                               // ANY (jcc)
-    kIdJae,                              // ANY (jcc)
-    kIdJb,                               // ANY (jcc)
-    kIdJbe,                              // ANY (jcc)
-    kIdJc,                               // ANY (jcc)
-    kIdJe,                               // ANY (jcc)
-    kIdJg,                               // ANY (jcc)
-    kIdJge,                              // ANY (jcc)
-    kIdJl,                               // ANY (jcc)
-    kIdJle,                              // ANY (jcc)
-    kIdJna,                              // ANY (jcc)
-    kIdJnae,                             // ANY (jcc)
-    kIdJnb,                              // ANY (jcc)
-    kIdJnbe,                             // ANY (jcc)
-    kIdJnc,                              // ANY (jcc)
-    kIdJne,                              // ANY (jcc)
-    kIdJng,                              // ANY (jcc)
-    kIdJnge,                             // ANY (jcc)
-    kIdJnl,                              // ANY (jcc)
-    kIdJnle,                             // ANY (jcc)
-    kIdJno,                              // ANY (jcc)
-    kIdJnp,                              // ANY (jcc)
-    kIdJns,                              // ANY (jcc)
-    kIdJnz,                              // ANY (jcc)
-    kIdJo,                               // ANY (jcc)
-    kIdJp,                               // ANY (jcc)
-    kIdJpe,                              // ANY (jcc)
-    kIdJpo,                              // ANY (jcc)
-    kIdJs,                               // ANY (jcc)
-    kIdJz,                               // ANY (jcc)
-    kIdJecxz,                            // ANY (jcxz/jecxz/jrcxz)
-    kIdJmp,                              // ANY (jmp)
+    kIdJa,                               // ANY
+    kIdJae,                              // ANY
+    kIdJb,                               // ANY
+    kIdJbe,                              // ANY
+    kIdJc,                               // ANY
+    kIdJe,                               // ANY
+    kIdJecxz,                            // ANY
+    kIdJg,                               // ANY
+    kIdJge,                              // ANY
+    kIdJl,                               // ANY
+    kIdJle,                              // ANY
+    kIdJmp,                              // ANY
+    kIdJna,                              // ANY
+    kIdJnae,                             // ANY
+    kIdJnb,                              // ANY
+    kIdJnbe,                             // ANY
+    kIdJnc,                              // ANY
+    kIdJne,                              // ANY
+    kIdJng,                              // ANY
+    kIdJnge,                             // ANY
+    kIdJnl,                              // ANY
+    kIdJnle,                             // ANY
+    kIdJno,                              // ANY
+    kIdJnp,                              // ANY
+    kIdJns,                              // ANY
+    kIdJnz,                              // ANY
+    kIdJo,                               // ANY
+    kIdJp,                               // ANY
+    kIdJpe,                              // ANY
+    kIdJpo,                              // ANY
+    kIdJs,                               // ANY
+    kIdJz,                               // ANY
     kIdKaddb,                            // AVX512DQ
     kIdKaddd,                            // AVX512BW
     kIdKaddq,                            // AVX512BW
@@ -490,7 +462,7 @@ struct X86Inst {
     kIdKxord,                            // AVX512BW
     kIdKxorq,                            // AVX512BW
     kIdKxorw,                            // AVX512F
-    kIdLahf,                             // LAHF_SAHF
+    kIdLahf,                             // LAHFSAHF
     kIdLddqu,                            // SSE3
     kIdLdmxcsr,                          // SSE
     kIdLea,                              // ANY
@@ -512,7 +484,7 @@ struct X86Inst {
     kIdMinps,                            // SSE
     kIdMinsd,                            // SSE2
     kIdMinss,                            // SSE
-    kIdMonitor,                          // SSE3
+    kIdMonitor,
     kIdMov,                              // ANY
     kIdMovapd,                           // SSE2
     kIdMovaps,                           // SSE
@@ -529,16 +501,16 @@ struct X86Inst {
     kIdMovlpd,                           // SSE2
     kIdMovlps,                           // SSE
     kIdMovmskpd,                         // SSE2
-    kIdMovmskps,                         // SSE2
+    kIdMovmskps,                         // SSE
     kIdMovntdq,                          // SSE2
-    kIdMovntdqa,                         // SSE4.1
+    kIdMovntdqa,                         // SSE4_1
     kIdMovnti,                           // SSE2
     kIdMovntpd,                          // SSE2
     kIdMovntps,                          // SSE
     kIdMovntq,                           // MMX2
     kIdMovntsd,                          // SSE4A
     kIdMovntss,                          // SSE4A
-    kIdMovq,                             // MMX|SSE|SSE2
+    kIdMovq,                             // MMX|SSE2
     kIdMovq2dq,                          // SSE2
     kIdMovs,                             // ANY
     kIdMovsd,                            // SSE2
@@ -546,18 +518,18 @@ struct X86Inst {
     kIdMovsldup,                         // SSE3
     kIdMovss,                            // SSE
     kIdMovsx,                            // ANY
-    kIdMovsxd,                           // ANY
+    kIdMovsxd,                           // X64
     kIdMovupd,                           // SSE2
     kIdMovups,                           // SSE
     kIdMovzx,                            // ANY
-    kIdMpsadbw,                          // SSE4.1
+    kIdMpsadbw,                          // SSE4_1
     kIdMul,                              // ANY
     kIdMulpd,                            // SSE2
     kIdMulps,                            // SSE
     kIdMulsd,                            // SSE2
     kIdMulss,                            // SSE
     kIdMulx,                             // BMI2
-    kIdMwait,                            // SSE3
+    kIdMwait,
     kIdNeg,                              // ANY
     kIdNop,                              // ANY
     kIdNot,                              // ANY
@@ -571,7 +543,7 @@ struct X86Inst {
     kIdPabsw,                            // SSSE3
     kIdPackssdw,                         // MMX|SSE2
     kIdPacksswb,                         // MMX|SSE2
-    kIdPackusdw,                         // SSE4.1
+    kIdPackusdw,                         // SSE4_1
     kIdPackuswb,                         // MMX|SSE2
     kIdPaddb,                            // MMX|SSE2
     kIdPaddd,                            // MMX|SSE2
@@ -581,35 +553,35 @@ struct X86Inst {
     kIdPaddusb,                          // MMX|SSE2
     kIdPaddusw,                          // MMX|SSE2
     kIdPaddw,                            // MMX|SSE2
-    kIdPalignr,                          // SSSE3
+    kIdPalignr,                          // SSE3
     kIdPand,                             // MMX|SSE2
     kIdPandn,                            // MMX|SSE2
-    kIdPause,                            // SSE2.
-    kIdPavgb,                            // MMX2
+    kIdPause,                            // ANY
+    kIdPavgb,                            // MMX2|SSE2
     kIdPavgusb,                          // 3DNOW
-    kIdPavgw,                            // MMX2
-    kIdPblendvb,                         // SSE4.1
-    kIdPblendw,                          // SSE4.1
+    kIdPavgw,                            // MMX2|SSE2
+    kIdPblendvb,                         // SSE4_1
+    kIdPblendw,                          // SSE4_1
     kIdPclmulqdq,                        // PCLMULQDQ
     kIdPcmpeqb,                          // MMX|SSE2
     kIdPcmpeqd,                          // MMX|SSE2
-    kIdPcmpeqq,                          // SSE4.1
+    kIdPcmpeqq,                          // SSE4_1
     kIdPcmpeqw,                          // MMX|SSE2
-    kIdPcmpestri,                        // SSE4.2
-    kIdPcmpestrm,                        // SSE4.2
+    kIdPcmpestri,                        // SSE4_2
+    kIdPcmpestrm,                        // SSE4_2
     kIdPcmpgtb,                          // MMX|SSE2
     kIdPcmpgtd,                          // MMX|SSE2
-    kIdPcmpgtq,                          // SSE4.2
+    kIdPcmpgtq,                          // SSE4_1
     kIdPcmpgtw,                          // MMX|SSE2
-    kIdPcmpistri,                        // SSE4.2
-    kIdPcmpistrm,                        // SSE4.2
+    kIdPcmpistri,                        // SSE4_2
+    kIdPcmpistrm,                        // SSE4_2
     kIdPcommit,                          // PCOMMIT
     kIdPdep,                             // BMI2
     kIdPext,                             // BMI2
-    kIdPextrb,                           // SSE4.1
-    kIdPextrd,                           // SSE4.1
-    kIdPextrq,                           // SSE4.1
-    kIdPextrw,                           // MMX2|SSE2
+    kIdPextrb,                           // SSE4_1
+    kIdPextrd,                           // SSE4_1
+    kIdPextrq,                           // X64 SSE4_1
+    kIdPextrw,                           // MMX2|SSE2|SSE4_1
     kIdPf2id,                            // 3DNOW
     kIdPf2iw,                            // 3DNOW2
     kIdPfacc,                            // 3DNOW
@@ -634,67 +606,67 @@ struct X86Inst {
     kIdPhaddd,                           // SSSE3
     kIdPhaddsw,                          // SSSE3
     kIdPhaddw,                           // SSSE3
-    kIdPhminposuw,                       // SSE4.1
+    kIdPhminposuw,                       // SSE4_1
     kIdPhsubd,                           // SSSE3
     kIdPhsubsw,                          // SSSE3
     kIdPhsubw,                           // SSSE3
     kIdPi2fd,                            // 3DNOW
     kIdPi2fw,                            // 3DNOW2
-    kIdPinsrb,                           // SSE4.1
-    kIdPinsrd,                           // SSE4.1
-    kIdPinsrq,                           // SSE4.1
-    kIdPinsrw,                           // MMX2
+    kIdPinsrb,                           // SSE4_1
+    kIdPinsrd,                           // SSE4_1
+    kIdPinsrq,                           // X64 SSE4_1
+    kIdPinsrw,                           // MMX2|SSE2
     kIdPmaddubsw,                        // SSSE3
     kIdPmaddwd,                          // MMX|SSE2
-    kIdPmaxsb,                           // SSE4.1
-    kIdPmaxsd,                           // SSE4.1
-    kIdPmaxsw,                           // MMX2
-    kIdPmaxub,                           // MMX2
-    kIdPmaxud,                           // SSE4.1
-    kIdPmaxuw,                           // SSE4.1
-    kIdPminsb,                           // SSE4.1
-    kIdPminsd,                           // SSE4.1
-    kIdPminsw,                           // MMX2
-    kIdPminub,                           // MMX2
-    kIdPminud,                           // SSE4.1
-    kIdPminuw,                           // SSE4.1
-    kIdPmovmskb,                         // MMX2
-    kIdPmovsxbd,                         // SSE4.1
-    kIdPmovsxbq,                         // SSE4.1
-    kIdPmovsxbw,                         // SSE4.1
-    kIdPmovsxdq,                         // SSE4.1
-    kIdPmovsxwd,                         // SSE4.1
-    kIdPmovsxwq,                         // SSE4.1
-    kIdPmovzxbd,                         // SSE4.1
-    kIdPmovzxbq,                         // SSE4.1
-    kIdPmovzxbw,                         // SSE4.1
-    kIdPmovzxdq,                         // SSE4.1
-    kIdPmovzxwd,                         // SSE4.1
-    kIdPmovzxwq,                         // SSE4.1
-    kIdPmuldq,                           // SSE4.1
+    kIdPmaxsb,                           // SSE4_1
+    kIdPmaxsd,                           // SSE4_1
+    kIdPmaxsw,                           // MMX2|SSE2
+    kIdPmaxub,                           // MMX2|SSE2
+    kIdPmaxud,                           // SSE4_1
+    kIdPmaxuw,                           // SSE4_1
+    kIdPminsb,                           // SSE4_1
+    kIdPminsd,                           // SSE4_1
+    kIdPminsw,                           // MMX2|SSE2
+    kIdPminub,                           // MMX2|SSE2
+    kIdPminud,                           // SSE4_1
+    kIdPminuw,                           // SSE4_1
+    kIdPmovmskb,                         // MMX2|SSE2
+    kIdPmovsxbd,                         // SSE4_1
+    kIdPmovsxbq,                         // SSE4_1
+    kIdPmovsxbw,                         // SSE4_1
+    kIdPmovsxdq,                         // SSE4_1
+    kIdPmovsxwd,                         // SSE4_1
+    kIdPmovsxwq,                         // SSE4_1
+    kIdPmovzxbd,                         // SSE4_1
+    kIdPmovzxbq,                         // SSE4_1
+    kIdPmovzxbw,                         // SSE4_1
+    kIdPmovzxdq,                         // SSE4_1
+    kIdPmovzxwd,                         // SSE4_1
+    kIdPmovzxwq,                         // SSE4_1
+    kIdPmuldq,                           // SSE4_1
     kIdPmulhrsw,                         // SSSE3
     kIdPmulhrw,                          // 3DNOW
-    kIdPmulhuw,                          // MMX2
+    kIdPmulhuw,                          // MMX2|SSE2
     kIdPmulhw,                           // MMX|SSE2
-    kIdPmulld,                           // SSE4.1
+    kIdPmulld,                           // SSE4_1
     kIdPmullw,                           // MMX|SSE2
     kIdPmuludq,                          // SSE2
     kIdPop,                              // ANY
     kIdPopa,                             // X86
     kIdPopad,                            // X86
-    kIdPopcnt,                           // SSE4.2
+    kIdPopcnt,                           // POPCNT
     kIdPopf,                             // ANY
     kIdPopfd,                            // X86
     kIdPopfq,                            // X64
     kIdPor,                              // MMX|SSE2
     kIdPrefetch,                         // 3DNOW
-    kIdPrefetchnta,                      // MMX2|SSE
-    kIdPrefetcht0,                       // MMX2|SSE
-    kIdPrefetcht1,                       // MMX2|SSE
-    kIdPrefetcht2,                       // MMX2|SSE
+    kIdPrefetchnta,                      // MMX2
+    kIdPrefetcht0,                       // MMX2
+    kIdPrefetcht1,                       // MMX2
+    kIdPrefetcht2,                       // MMX2
     kIdPrefetchw,                        // PREFETCHW
     kIdPrefetchwt1,                      // PREFETCHWT1
-    kIdPsadbw,                           // MMX2
+    kIdPsadbw,                           // MMX2|SSE2
     kIdPshufb,                           // SSSE3
     kIdPshufd,                           // SSE2
     kIdPshufhw,                          // SSE2
@@ -722,7 +694,7 @@ struct X86Inst {
     kIdPsubusw,                          // MMX|SSE2
     kIdPsubw,                            // MMX|SSE2
     kIdPswapd,                           // 3DNOW2
-    kIdPtest,                            // SSE4.1
+    kIdPtest,                            // SSE4_1
     kIdPunpckhbw,                        // MMX|SSE2
     kIdPunpckhdq,                        // MMX|SSE2
     kIdPunpckhqdq,                       // SSE2
@@ -742,59 +714,59 @@ struct X86Inst {
     kIdRcpps,                            // SSE
     kIdRcpss,                            // SSE
     kIdRcr,                              // ANY
-    kIdRdfsbase,                         // FSGSBASE & X64
-    kIdRdgsbase,                         // FSGSBASE & X64
+    kIdRdfsbase,                         // X64 FSGSBASE
+    kIdRdgsbase,                         // X64 FSGSBASE
     kIdRdrand,                           // RDRAND
     kIdRdseed,                           // RDSEED
-    kIdRdtsc,                            // ANY
-    kIdRdtscp,                           // ANY
+    kIdRdtsc,                            // RDTSC
+    kIdRdtscp,                           // RDTSCP
     kIdRet,                              // ANY
     kIdRol,                              // ANY
     kIdRor,                              // ANY
     kIdRorx,                             // BMI2
-    kIdRoundpd,                          // SSE4.1
-    kIdRoundps,                          // SSE4.1
-    kIdRoundsd,                          // SSE4.1
-    kIdRoundss,                          // SSE4.1
+    kIdRoundpd,                          // SSE4_1
+    kIdRoundps,                          // SSE4_1
+    kIdRoundsd,                          // SSE4_1
+    kIdRoundss,                          // SSE4_1
     kIdRsqrtps,                          // SSE
     kIdRsqrtss,                          // SSE
-    kIdSahf,                             // LAHF_SAHF
+    kIdSahf,                             // LAHFSAHF
     kIdSal,                              // ANY
     kIdSar,                              // ANY
     kIdSarx,                             // BMI2
     kIdSbb,                              // ANY
     kIdScas,                             // ANY
-    kIdSeta,                             // ANY (setcc)
-    kIdSetae,                            // ANY (setcc)
-    kIdSetb,                             // ANY (setcc)
-    kIdSetbe,                            // ANY (setcc)
-    kIdSetc,                             // ANY (setcc)
-    kIdSete,                             // ANY (setcc)
-    kIdSetg,                             // ANY (setcc)
-    kIdSetge,                            // ANY (setcc)
-    kIdSetl,                             // ANY (setcc)
-    kIdSetle,                            // ANY (setcc)
-    kIdSetna,                            // ANY (setcc)
-    kIdSetnae,                           // ANY (setcc)
-    kIdSetnb,                            // ANY (setcc)
-    kIdSetnbe,                           // ANY (setcc)
-    kIdSetnc,                            // ANY (setcc)
-    kIdSetne,                            // ANY (setcc)
-    kIdSetng,                            // ANY (setcc)
-    kIdSetnge,                           // ANY (setcc)
-    kIdSetnl,                            // ANY (setcc)
-    kIdSetnle,                           // ANY (setcc)
-    kIdSetno,                            // ANY (setcc)
-    kIdSetnp,                            // ANY (setcc)
-    kIdSetns,                            // ANY (setcc)
-    kIdSetnz,                            // ANY (setcc)
-    kIdSeto,                             // ANY (setcc)
-    kIdSetp,                             // ANY (setcc)
-    kIdSetpe,                            // ANY (setcc)
-    kIdSetpo,                            // ANY (setcc)
-    kIdSets,                             // ANY (setcc)
-    kIdSetz,                             // ANY (setcc)
-    kIdSfence,                           // MMX2|SSE
+    kIdSeta,                             // ANY
+    kIdSetae,                            // ANY
+    kIdSetb,                             // ANY
+    kIdSetbe,                            // ANY
+    kIdSetc,                             // ANY
+    kIdSete,                             // ANY
+    kIdSetg,                             // ANY
+    kIdSetge,                            // ANY
+    kIdSetl,                             // ANY
+    kIdSetle,                            // ANY
+    kIdSetna,                            // ANY
+    kIdSetnae,                           // ANY
+    kIdSetnb,                            // ANY
+    kIdSetnbe,                           // ANY
+    kIdSetnc,                            // ANY
+    kIdSetne,                            // ANY
+    kIdSetng,                            // ANY
+    kIdSetnge,                           // ANY
+    kIdSetnl,                            // ANY
+    kIdSetnle,                           // ANY
+    kIdSetno,                            // ANY
+    kIdSetnp,                            // ANY
+    kIdSetns,                            // ANY
+    kIdSetnz,                            // ANY
+    kIdSeto,                             // ANY
+    kIdSetp,                             // ANY
+    kIdSetpe,                            // ANY
+    kIdSetpo,                            // ANY
+    kIdSets,                             // ANY
+    kIdSetz,                             // ANY
+    kIdSfence,                           // MMX2
     kIdSha1msg1,                         // SHA
     kIdSha1msg2,                         // SHA
     kIdSha1nexte,                        // SHA
@@ -828,7 +800,7 @@ struct X86Inst {
     kIdSwapgs,                           // X64
     kIdT1mskc,                           // TBM
     kIdTest,                             // ANY
-    kIdTzcnt,                            // TZCNT
+    kIdTzcnt,                            // BMI
     kIdTzmsk,                            // TBM
     kIdUcomisd,                          // SSE2
     kIdUcomiss,                          // SSE
@@ -837,72 +809,72 @@ struct X86Inst {
     kIdUnpckhps,                         // SSE
     kIdUnpcklpd,                         // SSE2
     kIdUnpcklps,                         // SSE
-    kIdVaddpd,                           // AVX|AVX512F-VL
-    kIdVaddps,                           // AVX|AVX512F-VL
+    kIdVaddpd,                           // AVX|AVX512F (VL)
+    kIdVaddps,                           // AVX|AVX512F (VL)
     kIdVaddsd,                           // AVX|AVX512F
     kIdVaddss,                           // AVX|AVX512F
     kIdVaddsubpd,                        // AVX
     kIdVaddsubps,                        // AVX
-    kIdVaesdec,                          // AVX|AES
-    kIdVaesdeclast,                      // AVX|AES
-    kIdVaesenc,                          // AVX|AES
-    kIdVaesenclast,                      // AVX|AES
-    kIdVaesimc,                          // AVX|AES
-    kIdVaeskeygenassist,                 // AVX|AES
-    kIdValignd,                          // AVX512F-VL
-    kIdValignq,                          // AVX512F-VL
-    kIdVandnpd,                          // AVX|AVX512DQ-VL
-    kIdVandnps,                          // AVX|AVX512DQ-VL
-    kIdVandpd,                           // AVX|AVX512DQ-VL
-    kIdVandps,                           // AVX|AVX512DQ-VL
-    kIdVblendmb,                         // AVX512BW-VL
-    kIdVblendmd,                         // AVX512F-VL
-    kIdVblendmpd,                        // AVX512F-VL
-    kIdVblendmps,                        // AVX512F-VL
-    kIdVblendmq,                         // AVX512F-VL
-    kIdVblendmw,                         // AVX512BW-VL
+    kIdVaesdec,                          // AES|AVX
+    kIdVaesdeclast,                      // AES|AVX
+    kIdVaesenc,                          // AES|AVX
+    kIdVaesenclast,                      // AES|AVX
+    kIdVaesimc,                          // AES|AVX
+    kIdVaeskeygenassist,                 // AES|AVX
+    kIdValignd,                          // AVX512F (VL)
+    kIdValignq,                          // AVX512F (VL)
+    kIdVandnpd,                          // AVX|AVX512DQ (VL)
+    kIdVandnps,                          // AVX|AVX512DQ (VL)
+    kIdVandpd,                           // AVX|AVX512DQ (VL)
+    kIdVandps,                           // AVX|AVX512DQ (VL)
+    kIdVblendmb,                         // AVX512BW (VL)
+    kIdVblendmd,                         // AVX512F (VL)
+    kIdVblendmpd,                        // AVX512F (VL)
+    kIdVblendmps,                        // AVX512F (VL)
+    kIdVblendmq,                         // AVX512F (VL)
+    kIdVblendmw,                         // AVX512BW (VL)
     kIdVblendpd,                         // AVX
     kIdVblendps,                         // AVX
     kIdVblendvpd,                        // AVX
     kIdVblendvps,                        // AVX
     kIdVbroadcastf128,                   // AVX
-    kIdVbroadcastf32x2,                  // AVX512DQ-VL
+    kIdVbroadcastf32x2,                  // AVX512DQ (VL)
     kIdVbroadcastf32x4,                  // AVX512F
     kIdVbroadcastf32x8,                  // AVX512DQ
-    kIdVbroadcastf64x2,                  // AVX512DQ-VL
+    kIdVbroadcastf64x2,                  // AVX512DQ (VL)
     kIdVbroadcastf64x4,                  // AVX512F
     kIdVbroadcasti128,                   // AVX2
-    kIdVbroadcasti32x2,                  // AVX512DQ-VL
-    kIdVbroadcasti32x4,                  // AVX512F-VL
+    kIdVbroadcasti32x2,                  // AVX512DQ (VL)
+    kIdVbroadcasti32x4,                  // AVX512F (VL)
     kIdVbroadcasti32x8,                  // AVX512DQ
-    kIdVbroadcasti64x2,                  // AVX512DQ-VL
+    kIdVbroadcasti64x2,                  // AVX512DQ (VL)
     kIdVbroadcasti64x4,                  // AVX512F
-    kIdVbroadcastsd,                     // AVX|AVX2|AVX512F-VL
-    kIdVbroadcastss,                     // AVX|AVX2|AVX512F-VL
-    kIdVcmppd,                           // AVX|AVX512F-VL
-    kIdVcmpps,                           // AVX|AVX512F-VL
+    kIdVbroadcastsd,                     // AVX|AVX2|AVX512F (VL)
+    kIdVbroadcastss,                     // AVX|AVX2|AVX512F (VL)
+    kIdVcmppd,                           // AVX|AVX512F (VL)
+    kIdVcmpps,                           // AVX|AVX512F (VL)
     kIdVcmpsd,                           // AVX|AVX512F
     kIdVcmpss,                           // AVX|AVX512F
     kIdVcomisd,                          // AVX|AVX512F
     kIdVcomiss,                          // AVX|AVX512F
-    kIdVcompresspd,                      // AVX512F-VL
-    kIdVcompressps,                      // AVX512F-VL
-    kIdVcvtdq2pd,                        // AVX|AVX512F-VL
-    kIdVcvtdq2ps,                        // AVX|AVX512F-VL
-    kIdVcvtpd2dq,                        // AVX|AVX512F-VL
-    kIdVcvtpd2ps,                        // AVX
-    kIdVcvtpd2qq,                        // AVX512DQ-VL
-    kIdVcvtpd2udq,                       // AVX512F-VL
-    kIdVcvtpd2uqq,                       // AVX512DQ-VL
-    kIdVcvtph2ps,                        // F16C|AVX512F-VL
-    kIdVcvtps2dq,                        // AVX|AVX512F-VL
-    kIdVcvtps2pd,                        // AVX|AVX512F-VL
-    kIdVcvtps2ph,                        // F16C|AVX512F-VL
-    kIdVcvtps2qq,                        // AVX512DQ-VL
-    kIdVcvtps2udq,                       // AVX512F-VL
-    kIdVcvtps2uqq,                       // AVX512DQ-VL
-    kIdVcvtqq2pd,                        // AVX512DQ-VL
-    kIdVcvtqq2ps,                        // AVX512DQ-VL
+    kIdVcompresspd,                      // AVX512F (VL)
+    kIdVcompressps,                      // AVX512F (VL)
+    kIdVcvtdq2pd,                        // AVX|AVX512F (VL)
+    kIdVcvtdq2ps,                        // AVX|AVX512F (VL)
+    kIdVcvtpd2dq,                        // AVX|AVX512F (VL)
+    kIdVcvtpd2ps,                        // AVX|AVX512F (VL)
+    kIdVcvtpd2qq,                        // AVX512DQ (VL)
+    kIdVcvtpd2udq,                       // AVX512F (VL)
+    kIdVcvtpd2uqq,                       // AVX512DQ (VL)
+    kIdVcvtph2ps,                        // AVX512F|F16C (VL)
+    kIdVcvtps2dq,                        // AVX|AVX512F (VL)
+    kIdVcvtps2pd,                        // AVX|AVX512F (VL)
+    kIdVcvtps2ph,                        // AVX512F|F16C (VL)
+    kIdVcvtps2qq,                        // AVX512DQ (VL)
+    kIdVcvtps2udq,                       // AVX512F (VL)
+    kIdVcvtps2uqq,                       // AVX512DQ (VL)
+    kIdVcvtqq2pd,                        // AVX512DQ (VL)
+    kIdVcvtqq2ps,                        // AVX512DQ (VL)
     kIdVcvtsd2si,                        // AVX|AVX512F
     kIdVcvtsd2ss,                        // AVX|AVX512F
     kIdVcvtsd2usi,                       // AVX512F
@@ -911,156 +883,156 @@ struct X86Inst {
     kIdVcvtss2sd,                        // AVX|AVX512F
     kIdVcvtss2si,                        // AVX|AVX512F
     kIdVcvtss2usi,                       // AVX512F
-    kIdVcvttpd2dq,                       // AVX|AVX512F-VL
-    kIdVcvttpd2qq,                       // AVX512F-VL
-    kIdVcvttpd2udq,                      // AVX512F-VL
-    kIdVcvttpd2uqq,                      // AVX512DQ-VL
-    kIdVcvttps2dq,                       // AVX|AVX512F-VL
-    kIdVcvttps2qq,                       // AVX512DQ-VL
-    kIdVcvttps2udq,                      // AVX512F-VL
-    kIdVcvttps2uqq,                      // AVX512DQ-VL
+    kIdVcvttpd2dq,                       // AVX|AVX512F (VL)
+    kIdVcvttpd2qq,                       // AVX512F (VL)
+    kIdVcvttpd2udq,                      // AVX512F (VL)
+    kIdVcvttpd2uqq,                      // AVX512DQ (VL)
+    kIdVcvttps2dq,                       // AVX|AVX512F (VL)
+    kIdVcvttps2qq,                       // AVX512DQ (VL)
+    kIdVcvttps2udq,                      // AVX512F (VL)
+    kIdVcvttps2uqq,                      // AVX512DQ (VL)
     kIdVcvttsd2si,                       // AVX|AVX512F
     kIdVcvttsd2usi,                      // AVX512F
     kIdVcvttss2si,                       // AVX|AVX512F
     kIdVcvttss2usi,                      // AVX512F
-    kIdVcvtudq2pd,                       // AVX512F-VL
-    kIdVcvtudq2ps,                       // AVX512F-VL
-    kIdVcvtuqq2pd,                       // AVX512DQ-VL
-    kIdVcvtuqq2ps,                       // AVX512DQ-VL
+    kIdVcvtudq2pd,                       // AVX512F (VL)
+    kIdVcvtudq2ps,                       // AVX512F (VL)
+    kIdVcvtuqq2pd,                       // AVX512DQ (VL)
+    kIdVcvtuqq2ps,                       // AVX512DQ (VL)
     kIdVcvtusi2sd,                       // AVX512F
     kIdVcvtusi2ss,                       // AVX512F
-    kIdVdbpsadbw,                        // AVX512BW-VL
-    kIdVdivpd,                           // AVX|AVX512F-VL
-    kIdVdivps,                           // AVX|AVX512F-VL
+    kIdVdbpsadbw,                        // AVX512BW (VL)
+    kIdVdivpd,                           // AVX|AVX512F (VL)
+    kIdVdivps,                           // AVX|AVX512F (VL)
     kIdVdivsd,                           // AVX|AVX512F
     kIdVdivss,                           // AVX|AVX512F
     kIdVdppd,                            // AVX
     kIdVdpps,                            // AVX
-    kIdVexp2pd,                          // AVX512ER
-    kIdVexp2ps,                          // AVX512ER
-    kIdVexpandpd,                        // AVX512F-VL
-    kIdVexpandps,                        // AVX512F-VL
+    kIdVexp2pd,                          // AVX512ERI
+    kIdVexp2ps,                          // AVX512ERI
+    kIdVexpandpd,                        // AVX512F (VL)
+    kIdVexpandps,                        // AVX512F (VL)
     kIdVextractf128,                     // AVX
-    kIdVextractf32x4,                    // AVX512F-VL
+    kIdVextractf32x4,                    // AVX512F (VL)
     kIdVextractf32x8,                    // AVX512DQ
-    kIdVextractf64x2,                    // AVX512DQ-VL
+    kIdVextractf64x2,                    // AVX512DQ (VL)
     kIdVextractf64x4,                    // AVX512F
     kIdVextracti128,                     // AVX2
-    kIdVextracti32x4,                    // AVX512F-VL
+    kIdVextracti32x4,                    // AVX512F (VL)
     kIdVextracti32x8,                    // AVX512DQ
-    kIdVextracti64x2,                    // AVX512DQ-VL
+    kIdVextracti64x2,                    // AVX512DQ (VL)
     kIdVextracti64x4,                    // AVX512F
     kIdVextractps,                       // AVX|AVX512F
-    kIdVfixupimmpd,                      // AVX512F-VL
-    kIdVfixupimmps,                      // AVX512F-VL
+    kIdVfixupimmpd,                      // AVX512F (VL)
+    kIdVfixupimmps,                      // AVX512F (VL)
     kIdVfixupimmsd,                      // AVX512F
     kIdVfixupimmss,                      // AVX512F
-    kIdVfmadd132pd,                      // FMA3|AVX512F-VL
-    kIdVfmadd132ps,                      // FMA3|AVX512F-VL
-    kIdVfmadd132sd,                      // FMA3|AVX512F
-    kIdVfmadd132ss,                      // FMA3|AVX512F
-    kIdVfmadd213pd,                      // FMA3|AVX512F-VL
-    kIdVfmadd213ps,                      // FMA3|AVX512F-VL
-    kIdVfmadd213sd,                      // FMA3|AVX512F
-    kIdVfmadd213ss,                      // FMA3|AVX512F
-    kIdVfmadd231pd,                      // FMA3|AVX512F-VL
-    kIdVfmadd231ps,                      // FMA3|AVX512F-VL
-    kIdVfmadd231sd,                      // FMA3|AVX512F
-    kIdVfmadd231ss,                      // FMA3|AVX512F
+    kIdVfmadd132pd,                      // AVX512F|FMA (VL)
+    kIdVfmadd132ps,                      // AVX512F|FMA (VL)
+    kIdVfmadd132sd,                      // AVX512F|FMA
+    kIdVfmadd132ss,                      // AVX512F|FMA
+    kIdVfmadd213pd,                      // AVX512F|FMA (VL)
+    kIdVfmadd213ps,                      // AVX512F|FMA (VL)
+    kIdVfmadd213sd,                      // AVX512F|FMA
+    kIdVfmadd213ss,                      // AVX512F|FMA
+    kIdVfmadd231pd,                      // AVX512F|FMA (VL)
+    kIdVfmadd231ps,                      // AVX512F|FMA (VL)
+    kIdVfmadd231sd,                      // AVX512F|FMA
+    kIdVfmadd231ss,                      // AVX512F|FMA
     kIdVfmaddpd,                         // FMA4
     kIdVfmaddps,                         // FMA4
     kIdVfmaddsd,                         // FMA4
     kIdVfmaddss,                         // FMA4
-    kIdVfmaddsub132pd,                   // FMA3|AVX512F-VL
-    kIdVfmaddsub132ps,                   // FMA3|AVX512F-VL
-    kIdVfmaddsub213pd,                   // FMA3|AVX512F-VL
-    kIdVfmaddsub213ps,                   // FMA3|AVX512F-VL
-    kIdVfmaddsub231pd,                   // FMA3|AVX512F-VL
-    kIdVfmaddsub231ps,                   // FMA3|AVX512F-VL
+    kIdVfmaddsub132pd,                   // AVX512F|FMA (VL)
+    kIdVfmaddsub132ps,                   // AVX512F|FMA (VL)
+    kIdVfmaddsub213pd,                   // AVX512F|FMA (VL)
+    kIdVfmaddsub213ps,                   // AVX512F|FMA (VL)
+    kIdVfmaddsub231pd,                   // AVX512F|FMA (VL)
+    kIdVfmaddsub231ps,                   // AVX512F|FMA (VL)
     kIdVfmaddsubpd,                      // FMA4
     kIdVfmaddsubps,                      // FMA4
-    kIdVfmsub132pd,                      // FMA3|AVX512F-VL
-    kIdVfmsub132ps,                      // FMA3|AVX512F-VL
-    kIdVfmsub132sd,                      // FMA3|AVX512F
-    kIdVfmsub132ss,                      // FMA3|AVX512F
-    kIdVfmsub213pd,                      // FMA3|AVX512F-VL
-    kIdVfmsub213ps,                      // FMA3|AVX512F-VL
-    kIdVfmsub213sd,                      // FMA3|AVX512F
-    kIdVfmsub213ss,                      // FMA3|AVX512F
-    kIdVfmsub231pd,                      // FMA3|AVX512F-VL
-    kIdVfmsub231ps,                      // FMA3|AVX512F-VL
-    kIdVfmsub231sd,                      // FMA3|AVX512F
-    kIdVfmsub231ss,                      // FMA3|AVX512F
-    kIdVfmsubadd132pd,                   // FMA3|AVX512F-VL
-    kIdVfmsubadd132ps,                   // FMA3|AVX512F-VL
-    kIdVfmsubadd213pd,                   // FMA3|AVX512F-VL
-    kIdVfmsubadd213ps,                   // FMA3|AVX512F-VL
-    kIdVfmsubadd231pd,                   // FMA3|AVX512F-VL
-    kIdVfmsubadd231ps,                   // FMA3|AVX512F-VL
+    kIdVfmsub132pd,                      // AVX512F|FMA (VL)
+    kIdVfmsub132ps,                      // AVX512F|FMA (VL)
+    kIdVfmsub132sd,                      // AVX512F|FMA
+    kIdVfmsub132ss,                      // AVX512F|FMA
+    kIdVfmsub213pd,                      // AVX512F|FMA (VL)
+    kIdVfmsub213ps,                      // AVX512F|FMA (VL)
+    kIdVfmsub213sd,                      // AVX512F|FMA
+    kIdVfmsub213ss,                      // AVX512F|FMA
+    kIdVfmsub231pd,                      // AVX512F|FMA (VL)
+    kIdVfmsub231ps,                      // AVX512F|FMA (VL)
+    kIdVfmsub231sd,                      // AVX512F|FMA
+    kIdVfmsub231ss,                      // AVX512F|FMA
+    kIdVfmsubadd132pd,                   // AVX512F|FMA (VL)
+    kIdVfmsubadd132ps,                   // AVX512F|FMA (VL)
+    kIdVfmsubadd213pd,                   // AVX512F|FMA (VL)
+    kIdVfmsubadd213ps,                   // AVX512F|FMA (VL)
+    kIdVfmsubadd231pd,                   // AVX512F|FMA (VL)
+    kIdVfmsubadd231ps,                   // AVX512F|FMA (VL)
     kIdVfmsubaddpd,                      // FMA4
     kIdVfmsubaddps,                      // FMA4
     kIdVfmsubpd,                         // FMA4
     kIdVfmsubps,                         // FMA4
     kIdVfmsubsd,                         // FMA4
     kIdVfmsubss,                         // FMA4
-    kIdVfnmadd132pd,                     // FMA3|AVX512F-VL
-    kIdVfnmadd132ps,                     // FMA3|AVX512F-VL
-    kIdVfnmadd132sd,                     // FMA3|AVX512F
-    kIdVfnmadd132ss,                     // FMA3|AVX512F
-    kIdVfnmadd213pd,                     // FMA3|AVX512F-VL
-    kIdVfnmadd213ps,                     // FMA3|AVX512F-VL
-    kIdVfnmadd213sd,                     // FMA3|AVX512F
-    kIdVfnmadd213ss,                     // FMA3|AVX512F
-    kIdVfnmadd231pd,                     // FMA3|AVX512F-VL
-    kIdVfnmadd231ps,                     // FMA3|AVX512F-VL
-    kIdVfnmadd231sd,                     // FMA3|AVX512F
-    kIdVfnmadd231ss,                     // FMA3|AVX512F
+    kIdVfnmadd132pd,                     // AVX512F|FMA (VL)
+    kIdVfnmadd132ps,                     // AVX512F|FMA (VL)
+    kIdVfnmadd132sd,                     // AVX512F|FMA
+    kIdVfnmadd132ss,                     // AVX512F|FMA
+    kIdVfnmadd213pd,                     // AVX512F|FMA (VL)
+    kIdVfnmadd213ps,                     // AVX512F|FMA (VL)
+    kIdVfnmadd213sd,                     // AVX512F|FMA
+    kIdVfnmadd213ss,                     // AVX512F|FMA
+    kIdVfnmadd231pd,                     // AVX512F|FMA (VL)
+    kIdVfnmadd231ps,                     // AVX512F|FMA (VL)
+    kIdVfnmadd231sd,                     // AVX512F|FMA
+    kIdVfnmadd231ss,                     // AVX512F|FMA
     kIdVfnmaddpd,                        // FMA4
     kIdVfnmaddps,                        // FMA4
     kIdVfnmaddsd,                        // FMA4
     kIdVfnmaddss,                        // FMA4
-    kIdVfnmsub132pd,                     // FMA3|AVX512F-VL
-    kIdVfnmsub132ps,                     // FMA3|AVX512F-VL
-    kIdVfnmsub132sd,                     // FMA3|AVX512F
-    kIdVfnmsub132ss,                     // FMA3|AVX512F
-    kIdVfnmsub213pd,                     // FMA3|AVX512F-VL
-    kIdVfnmsub213ps,                     // FMA3|AVX512F-VL
-    kIdVfnmsub213sd,                     // FMA3|AVX512F
-    kIdVfnmsub213ss,                     // FMA3|AVX512F
-    kIdVfnmsub231pd,                     // FMA3|AVX512F-VL
-    kIdVfnmsub231ps,                     // FMA3|AVX512F-VL
-    kIdVfnmsub231sd,                     // FMA3|AVX512F
-    kIdVfnmsub231ss,                     // FMA3|AVX512F
+    kIdVfnmsub132pd,                     // AVX512F|FMA (VL)
+    kIdVfnmsub132ps,                     // AVX512F|FMA (VL)
+    kIdVfnmsub132sd,                     // AVX512F|FMA
+    kIdVfnmsub132ss,                     // AVX512F|FMA
+    kIdVfnmsub213pd,                     // AVX512F|FMA (VL)
+    kIdVfnmsub213ps,                     // AVX512F|FMA (VL)
+    kIdVfnmsub213sd,                     // AVX512F|FMA
+    kIdVfnmsub213ss,                     // AVX512F|FMA
+    kIdVfnmsub231pd,                     // AVX512F|FMA (VL)
+    kIdVfnmsub231ps,                     // AVX512F|FMA (VL)
+    kIdVfnmsub231sd,                     // AVX512F|FMA
+    kIdVfnmsub231ss,                     // AVX512F|FMA
     kIdVfnmsubpd,                        // FMA4
     kIdVfnmsubps,                        // FMA4
     kIdVfnmsubsd,                        // FMA4
     kIdVfnmsubss,                        // FMA4
-    kIdVfpclasspd,                       // AVX512DQ-VL
-    kIdVfpclassps,                       // AVX512DQ-VL
+    kIdVfpclasspd,                       // AVX512DQ (VL)
+    kIdVfpclassps,                       // AVX512DQ (VL)
     kIdVfpclasssd,                       // AVX512DQ
     kIdVfpclassss,                       // AVX512DQ
     kIdVfrczpd,                          // XOP
     kIdVfrczps,                          // XOP
     kIdVfrczsd,                          // XOP
     kIdVfrczss,                          // XOP
-    kIdVgatherdpd,                       // AVX2|AVX512F-VL
-    kIdVgatherdps,                       // AVX2|AVX512F-VL
-    kIdVgatherpf0dpd,                    // AVX512PF
-    kIdVgatherpf0dps,                    // AVX512PF
-    kIdVgatherpf0qpd,                    // AVX512PF
-    kIdVgatherpf0qps,                    // AVX512PF
-    kIdVgatherpf1dpd,                    // AVX512PF
-    kIdVgatherpf1dps,                    // AVX512PF
-    kIdVgatherpf1qpd,                    // AVX512PF
-    kIdVgatherpf1qps,                    // AVX512PF
-    kIdVgatherqpd,                       // AVX2|AVX512F-VL
-    kIdVgatherqps,                       // AVX2|AVX512F-VL
-    kIdVgetexppd,                        // AVX512F-VL
-    kIdVgetexpps,                        // AVX512F-VL
+    kIdVgatherdpd,                       // AVX2|AVX512F (VL)
+    kIdVgatherdps,                       // AVX2|AVX512F (VL)
+    kIdVgatherpf0dpd,                    // AVX512PFI
+    kIdVgatherpf0dps,                    // AVX512PFI
+    kIdVgatherpf0qpd,                    // AVX512PFI
+    kIdVgatherpf0qps,                    // AVX512PFI
+    kIdVgatherpf1dpd,                    // AVX512PFI
+    kIdVgatherpf1dps,                    // AVX512PFI
+    kIdVgatherpf1qpd,                    // AVX512PFI
+    kIdVgatherpf1qps,                    // AVX512PFI
+    kIdVgatherqpd,                       // AVX2|AVX512F (VL)
+    kIdVgatherqps,                       // AVX2|AVX512F (VL)
+    kIdVgetexppd,                        // AVX512F (VL)
+    kIdVgetexpps,                        // AVX512F (VL)
     kIdVgetexpsd,                        // AVX512F
     kIdVgetexpss,                        // AVX512F
-    kIdVgetmantpd,                       // AVX512F-VL
-    kIdVgetmantps,                       // AVX512F-VL
+    kIdVgetmantpd,                       // AVX512F (VL)
+    kIdVgetmantps,                       // AVX512F (VL)
     kIdVgetmantsd,                       // AVX512F
     kIdVgetmantss,                       // AVX512F
     kIdVhaddpd,                          // AVX
@@ -1068,14 +1040,14 @@ struct X86Inst {
     kIdVhsubpd,                          // AVX
     kIdVhsubps,                          // AVX
     kIdVinsertf128,                      // AVX
-    kIdVinsertf32x4,                     // AVX512F-VL
+    kIdVinsertf32x4,                     // AVX512F (VL)
     kIdVinsertf32x8,                     // AVX512DQ
-    kIdVinsertf64x2,                     // AVX512DQ-VL
+    kIdVinsertf64x2,                     // AVX512DQ (VL)
     kIdVinsertf64x4,                     // AVX512F
     kIdVinserti128,                      // AVX2
-    kIdVinserti32x4,                     // AVX512F-VL
+    kIdVinserti32x4,                     // AVX512F (VL)
     kIdVinserti32x8,                     // AVX512DQ
-    kIdVinserti64x2,                     // AVX512DQ-VL
+    kIdVinserti64x2,                     // AVX512DQ (VL)
     kIdVinserti64x4,                     // AVX512F
     kIdVinsertps,                        // AVX|AVX512F
     kIdVlddqu,                           // AVX
@@ -1083,26 +1055,26 @@ struct X86Inst {
     kIdVmaskmovdqu,                      // AVX
     kIdVmaskmovpd,                       // AVX
     kIdVmaskmovps,                       // AVX
-    kIdVmaxpd,                           // AVX|AVX512F-VL
-    kIdVmaxps,                           // AVX|AVX512F-VL
-    kIdVmaxsd,                           // AVX|AVX512F-VL
-    kIdVmaxss,                           // AVX|AVX512F-VL
-    kIdVminpd,                           // AVX|AVX512F-VL
-    kIdVminps,                           // AVX|AVX512F-VL
-    kIdVminsd,                           // AVX|AVX512F-VL
-    kIdVminss,                           // AVX|AVX512F-VL
-    kIdVmovapd,                          // AVX|AVX512F-VL
-    kIdVmovaps,                          // AVX|AVX512F-VL
+    kIdVmaxpd,                           // AVX|AVX512F (VL)
+    kIdVmaxps,                           // AVX|AVX512F (VL)
+    kIdVmaxsd,                           // AVX|AVX512F (VL)
+    kIdVmaxss,                           // AVX|AVX512F (VL)
+    kIdVminpd,                           // AVX|AVX512F (VL)
+    kIdVminps,                           // AVX|AVX512F (VL)
+    kIdVminsd,                           // AVX|AVX512F (VL)
+    kIdVminss,                           // AVX|AVX512F (VL)
+    kIdVmovapd,                          // AVX|AVX512F (VL)
+    kIdVmovaps,                          // AVX|AVX512F (VL)
     kIdVmovd,                            // AVX|AVX512F
-    kIdVmovddup,                         // AVX|AVX512F-VL
+    kIdVmovddup,                         // AVX|AVX512F (VL)
     kIdVmovdqa,                          // AVX
-    kIdVmovdqa32,                        // AVX512F-VL
-    kIdVmovdqa64,                        // AVX512F-VL
+    kIdVmovdqa32,                        // AVX512F (VL)
+    kIdVmovdqa64,                        // AVX512F (VL)
     kIdVmovdqu,                          // AVX
-    kIdVmovdqu16,                        // AVX512BW-VL
-    kIdVmovdqu32,                        // AVX512F-VL
-    kIdVmovdqu64,                        // AVX512F-VL
-    kIdVmovdqu8,                         // AVX512BW-VL
+    kIdVmovdqu16,                        // AVX512BW (VL)
+    kIdVmovdqu32,                        // AVX512F (VL)
+    kIdVmovdqu64,                        // AVX512F (VL)
+    kIdVmovdqu8,                         // AVX512BW (VL)
     kIdVmovhlps,                         // AVX|AVX512F
     kIdVmovhpd,                          // AVX|AVX512F
     kIdVmovhps,                          // AVX|AVX512F
@@ -1111,126 +1083,126 @@ struct X86Inst {
     kIdVmovlps,                          // AVX|AVX512F
     kIdVmovmskpd,                        // AVX
     kIdVmovmskps,                        // AVX
-    kIdVmovntdq,                         // AVX|AVX512F-VL
-    kIdVmovntdqa,                        // AVX|AVX2|AVX512F-VL
-    kIdVmovntpd,                         // AVX|AVX512F-VL
-    kIdVmovntps,                         // AVX|AVX512F-VL
+    kIdVmovntdq,                         // AVX|AVX512F (VL)
+    kIdVmovntdqa,                        // AVX|AVX2|AVX512F (VL)
+    kIdVmovntpd,                         // AVX|AVX512F (VL)
+    kIdVmovntps,                         // AVX|AVX512F (VL)
     kIdVmovq,                            // AVX|AVX512F
     kIdVmovsd,                           // AVX|AVX512F
-    kIdVmovshdup,                        // AVX|AVX512F-VL
-    kIdVmovsldup,                        // AVX|AVX512F-VL
+    kIdVmovshdup,                        // AVX|AVX512F (VL)
+    kIdVmovsldup,                        // AVX|AVX512F (VL)
     kIdVmovss,                           // AVX|AVX512F
-    kIdVmovupd,                          // AVX|AVX512F-VL
-    kIdVmovups,                          // AVX|AVX512F-VL
+    kIdVmovupd,                          // AVX|AVX512F (VL)
+    kIdVmovups,                          // AVX|AVX512F (VL)
     kIdVmpsadbw,                         // AVX|AVX2
-    kIdVmulpd,                           // AVX|AVX2|AVX512F-VL
-    kIdVmulps,                           // AVX|AVX2|AVX512F-VL
+    kIdVmulpd,                           // AVX|AVX2|AVX512F (VL)
+    kIdVmulps,                           // AVX|AVX2|AVX512F (VL)
     kIdVmulsd,                           // AVX|AVX512F
     kIdVmulss,                           // AVX|AVX512F
-    kIdVorpd,                            // AVX|AVX512DQ-VL
-    kIdVorps,                            // AVX|AVX512F-VL
-    kIdVpabsb,                           // AVX|AVX2|AVX512BW-VL
-    kIdVpabsd,                           // AVX|AVX2|AVX512F-VL
-    kIdVpabsq,                           // AVX512F-VL
-    kIdVpabsw,                           // AVX|AVX2|AVX512BW-VL
-    kIdVpackssdw,                        // AVX|AVX2|AVX512BW-VL
-    kIdVpacksswb,                        // AVX|AVX2|AVX512BW-VL
-    kIdVpackusdw,                        // AVX|AVX2|AVX512BW-VL
-    kIdVpackuswb,                        // AVX|AVX2|AVX512BW-VL
-    kIdVpaddb,                           // AVX|AVX2|AVX512BW-VL
-    kIdVpaddd,                           // AVX|AVX2|AVX512F-VL
-    kIdVpaddq,                           // AVX|AVX2|AVX512F-VL
-    kIdVpaddsb,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpaddsw,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpaddusb,                         // AVX|AVX2|AVX512BW-VL
-    kIdVpaddusw,                         // AVX|AVX2|AVX512BW-VL
-    kIdVpaddw,                           // AVX|AVX2|AVX512BW-VL
-    kIdVpalignr,                         // AVX|AVX2|AVX512BW-VL
+    kIdVorpd,                            // AVX|AVX512DQ (VL)
+    kIdVorps,                            // AVX|AVX512F (VL)
+    kIdVpabsb,                           // AVX|AVX2|AVX512BW (VL)
+    kIdVpabsd,                           // AVX|AVX2|AVX512F (VL)
+    kIdVpabsq,                           // AVX512F (VL)
+    kIdVpabsw,                           // AVX|AVX2|AVX512BW (VL)
+    kIdVpackssdw,                        // AVX|AVX2|AVX512BW (VL)
+    kIdVpacksswb,                        // AVX|AVX2|AVX512BW (VL)
+    kIdVpackusdw,                        // AVX|AVX2|AVX512BW (VL)
+    kIdVpackuswb,                        // AVX|AVX2|AVX512BW (VL)
+    kIdVpaddb,                           // AVX|AVX2|AVX512BW (VL)
+    kIdVpaddd,                           // AVX|AVX2|AVX512F (VL)
+    kIdVpaddq,                           // AVX|AVX2|AVX512F (VL)
+    kIdVpaddsb,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpaddsw,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpaddusb,                         // AVX|AVX2|AVX512BW (VL)
+    kIdVpaddusw,                         // AVX|AVX2|AVX512BW (VL)
+    kIdVpaddw,                           // AVX|AVX2|AVX512BW (VL)
+    kIdVpalignr,                         // AVX|AVX2|AVX512BW (VL)
     kIdVpand,                            // AVX|AVX2
-    kIdVpandd,                           // AVX512F-VL
+    kIdVpandd,                           // AVX512F (VL)
     kIdVpandn,                           // AVX|AVX2
-    kIdVpandnd,                          // AVX512F-VL
-    kIdVpandnq,                          // AVX512F-VL
-    kIdVpandq,                           // AVX512F-VL
-    kIdVpavgb,                           // AVX|AVX512BW-VL
-    kIdVpavgw,                           // AVX2|AVX512BW-VL
+    kIdVpandnd,                          // AVX512F (VL)
+    kIdVpandnq,                          // AVX512F (VL)
+    kIdVpandq,                           // AVX512F (VL)
+    kIdVpavgb,                           // AVX|AVX512BW (VL)
+    kIdVpavgw,                           // AVX2|AVX512BW (VL)
     kIdVpblendd,                         // AVX2
     kIdVpblendvb,                        // AVX|AVX2
     kIdVpblendw,                         // AVX|AVX2
-    kIdVpbroadcastb,                     // AVX2|AVX512BW-VL
-    kIdVpbroadcastd,                     // AVX2|AVX512F-VL
-    kIdVpbroadcastmb2d,                  // AVX512CD-VL
-    kIdVpbroadcastmb2q,                  // AVX512CD-VL
-    kIdVpbroadcastq,                     // AVX2|AVX512F-VL
-    kIdVpbroadcastw,                     // AVX2|AVX512BW-VL
+    kIdVpbroadcastb,                     // AVX2|AVX512BW (VL)
+    kIdVpbroadcastd,                     // AVX2|AVX512F (VL)
+    kIdVpbroadcastmb2d,                  // AVX512CDI (VL)
+    kIdVpbroadcastmb2q,                  // AVX512CDI (VL)
+    kIdVpbroadcastq,                     // AVX2|AVX512F (VL)
+    kIdVpbroadcastw,                     // AVX2|AVX512BW (VL)
     kIdVpclmulqdq,                       // AVX|PCLMULQDQ
     kIdVpcmov,                           // XOP
-    kIdVpcmpb,                           // AVX512BW-VL
-    kIdVpcmpd,                           // AVX512F-VL
-    kIdVpcmpeqb,                         // AVX|AVX2|AVX512BW-VL
-    kIdVpcmpeqd,                         // AVX|AVX2|AVX512F-VL
-    kIdVpcmpeqq,                         // AVX|AVX2|AVX512F-VL
-    kIdVpcmpeqw,                         // AVX|AVX2|AVX512BW-VL
+    kIdVpcmpb,                           // AVX512BW (VL)
+    kIdVpcmpd,                           // AVX512F (VL)
+    kIdVpcmpeqb,                         // AVX|AVX2|AVX512BW (VL)
+    kIdVpcmpeqd,                         // AVX|AVX2|AVX512F (VL)
+    kIdVpcmpeqq,                         // AVX|AVX2|AVX512F (VL)
+    kIdVpcmpeqw,                         // AVX|AVX2|AVX512BW (VL)
     kIdVpcmpestri,                       // AVX
     kIdVpcmpestrm,                       // AVX
-    kIdVpcmpgtb,                         // AVX|AVX2|AVX512BW-VL
-    kIdVpcmpgtd,                         // AVX|AVX2|AVX512F-VL
-    kIdVpcmpgtq,                         // AVX|AVX2|AVX512F-VL
-    kIdVpcmpgtw,                         // AVX|AVX2|AVX512BW-VL
+    kIdVpcmpgtb,                         // AVX|AVX2|AVX512BW (VL)
+    kIdVpcmpgtd,                         // AVX|AVX2|AVX512F (VL)
+    kIdVpcmpgtq,                         // AVX|AVX2|AVX512F (VL)
+    kIdVpcmpgtw,                         // AVX|AVX2|AVX512BW (VL)
     kIdVpcmpistri,                       // AVX
     kIdVpcmpistrm,                       // AVX
-    kIdVpcmpq,                           // AVX512F-VL
-    kIdVpcmpub,                          // AVX512BW-VL
-    kIdVpcmpud,                          // AVX512F-VL
-    kIdVpcmpuq,                          // AVX512F-VL
-    kIdVpcmpuw,                          // AVX512BW-VL
-    kIdVpcmpw,                           // AVX512BW-VL
+    kIdVpcmpq,                           // AVX512F (VL)
+    kIdVpcmpub,                          // AVX512BW (VL)
+    kIdVpcmpud,                          // AVX512F (VL)
+    kIdVpcmpuq,                          // AVX512F (VL)
+    kIdVpcmpuw,                          // AVX512BW (VL)
+    kIdVpcmpw,                           // AVX512BW (VL)
     kIdVpcomb,                           // XOP
     kIdVpcomd,                           // XOP
-    kIdVpcompressd,                      // AVX512F-VL
-    kIdVpcompressq,                      // AVX512F-VL
+    kIdVpcompressd,                      // AVX512F (VL)
+    kIdVpcompressq,                      // AVX512F (VL)
     kIdVpcomq,                           // XOP
     kIdVpcomub,                          // XOP
     kIdVpcomud,                          // XOP
     kIdVpcomuq,                          // XOP
     kIdVpcomuw,                          // XOP
     kIdVpcomw,                           // XOP
-    kIdVpconflictd,                      // AVX512CD-VL
-    kIdVpconflictq,                      // AVX512CD-VL
+    kIdVpconflictd,                      // AVX512CDI (VL)
+    kIdVpconflictq,                      // AVX512CDI (VL)
     kIdVperm2f128,                       // AVX
     kIdVperm2i128,                       // AVX2
-    kIdVpermb,                           // AVX512VBMI-VL
-    kIdVpermd,                           // AVX2|AVX512F-VL
-    kIdVpermi2b,                         // AVX512VBMI-VL
-    kIdVpermi2d,                         // AVX512F-VL
-    kIdVpermi2pd,                        // AVX512F-VL
-    kIdVpermi2ps,                        // AVX512F-VL
-    kIdVpermi2q,                         // AVX512F-VL
-    kIdVpermi2w,                         // AVX512BW-VL
+    kIdVpermb,                           // AVX512VBMI (VL)
+    kIdVpermd,                           // AVX2|AVX512F (VL)
+    kIdVpermi2b,                         // AVX512VBMI (VL)
+    kIdVpermi2d,                         // AVX512F (VL)
+    kIdVpermi2pd,                        // AVX512F (VL)
+    kIdVpermi2ps,                        // AVX512F (VL)
+    kIdVpermi2q,                         // AVX512F (VL)
+    kIdVpermi2w,                         // AVX512BW (VL)
     kIdVpermil2pd,                       // XOP
     kIdVpermil2ps,                       // XOP
-    kIdVpermilpd,                        // AVX|AVX512F-VL
-    kIdVpermilps,                        // AVX|AVX512F-VL
+    kIdVpermilpd,                        // AVX|AVX512F (VL)
+    kIdVpermilps,                        // AVX|AVX512F (VL)
     kIdVpermpd,                          // AVX2
     kIdVpermps,                          // AVX2
-    kIdVpermq,                           // AVX2|AVX512F-VL
-    kIdVpermt2b,                         // AVX512VBMI-VL
-    kIdVpermt2d,                         // AVX512F-VL
-    kIdVpermt2pd,                        // AVX512F-VL
-    kIdVpermt2ps,                        // AVX512F-VL
-    kIdVpermt2q,                         // AVX512F-VL
-    kIdVpermt2w,                         // AVX512BW-VL
-    kIdVpermw,                           // AVX512BW-VL
-    kIdVpexpandd,                        // AVX512F-VL
-    kIdVpexpandq,                        // AVX512F-VL
+    kIdVpermq,                           // AVX2|AVX512F (VL)
+    kIdVpermt2b,                         // AVX512VBMI (VL)
+    kIdVpermt2d,                         // AVX512F (VL)
+    kIdVpermt2pd,                        // AVX512F (VL)
+    kIdVpermt2ps,                        // AVX512F (VL)
+    kIdVpermt2q,                         // AVX512F (VL)
+    kIdVpermt2w,                         // AVX512BW (VL)
+    kIdVpermw,                           // AVX512BW (VL)
+    kIdVpexpandd,                        // AVX512F (VL)
+    kIdVpexpandq,                        // AVX512F (VL)
     kIdVpextrb,                          // AVX|AVX512BW
     kIdVpextrd,                          // AVX|AVX512DQ
-    kIdVpextrq,                          // AVX|AVX512DQ
+    kIdVpextrq,                          // X64 AVX|AVX512DQ
     kIdVpextrw,                          // AVX|AVX512BW
-    kIdVpgatherdd,                       // AVX2|AVX512F-VL
-    kIdVpgatherdq,                       // AVX2|AVX512F-VL
-    kIdVpgatherqd,                       // AVX2|AVX512F-VL
-    kIdVpgatherqq,                       // AVX2|AVX512F-VL
+    kIdVpgatherdd,                       // AVX2|AVX512F (VL)
+    kIdVpgatherdq,                       // AVX2|AVX512F (VL)
+    kIdVpgatherqd,                       // AVX2|AVX512F (VL)
+    kIdVpgatherqq,                       // AVX2|AVX512F (VL)
     kIdVphaddbd,                         // XOP
     kIdVphaddbq,                         // XOP
     kIdVphaddbw,                         // XOP
@@ -1255,10 +1227,10 @@ struct X86Inst {
     kIdVphsubwd,                         // XOP
     kIdVpinsrb,                          // AVX|AVX512BW
     kIdVpinsrd,                          // AVX|AVX512DQ
-    kIdVpinsrq,                          // AVX|AVX512DQ
+    kIdVpinsrq,                          // X64 AVX|AVX512DQ
     kIdVpinsrw,                          // AVX|AVX512BW
-    kIdVplzcntd,                         // AVX512CD-VL
-    kIdVplzcntq,                         // AVX512CD-VL
+    kIdVplzcntd,                         // AVX512CDI (VL)
+    kIdVplzcntq,                         // AVX512CDI (VL)
     kIdVpmacsdd,                         // XOP
     kIdVpmacsdqh,                        // XOP
     kIdVpmacsdql,                        // XOP
@@ -1271,97 +1243,97 @@ struct X86Inst {
     kIdVpmacsww,                         // XOP
     kIdVpmadcsswd,                       // XOP
     kIdVpmadcswd,                        // XOP
-    kIdVpmadd52huq,                      // AVX512IFMA-VL
-    kIdVpmadd52luq,                      // AVX512IFMA-VL
-    kIdVpmaddubsw,                       // AVX|AVX2|AVX512BW-VL
-    kIdVpmaddwd,                         // AVX|AVX2|AVX512BW-VL
+    kIdVpmadd52huq,                      // AVX512IFMA (VL)
+    kIdVpmadd52luq,                      // AVX512IFMA (VL)
+    kIdVpmaddubsw,                       // AVX|AVX2|AVX512BW (VL)
+    kIdVpmaddwd,                         // AVX|AVX2|AVX512BW (VL)
     kIdVpmaskmovd,                       // AVX2
     kIdVpmaskmovq,                       // AVX2
-    kIdVpmaxsb,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpmaxsd,                          // AVX|AVX2|AVX512F-VL
-    kIdVpmaxsq,                          // AVX512F-VL
-    kIdVpmaxsw,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpmaxub,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpmaxud,                          // AVX|AVX2|AVX512F-VL
-    kIdVpmaxuq,                          // AVX512F-VL
-    kIdVpmaxuw,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpminsb,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpminsd,                          // AVX|AVX2|AVX512F-VL
-    kIdVpminsq,                          // AVX512F-VL
-    kIdVpminsw,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpminub,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpminud,                          // AVX|AVX2|AVX512F-VL
-    kIdVpminuq,                          // AVX512F-VL
-    kIdVpminuw,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpmovb2m,                         // AVX512BW-VL
-    kIdVpmovd2m,                         // AVX512DQ-VL
-    kIdVpmovdb,                          // AVX512F-VL
-    kIdVpmovdw,                          // AVX512F-VL
-    kIdVpmovm2b,                         // AVX512BW-VL
-    kIdVpmovm2d,                         // AVX512DQ-VL
-    kIdVpmovm2q,                         // AVX512DQ-VL
-    kIdVpmovm2w,                         // AVX512BW-VL
+    kIdVpmaxsb,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpmaxsd,                          // AVX|AVX2|AVX512F (VL)
+    kIdVpmaxsq,                          // AVX512F (VL)
+    kIdVpmaxsw,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpmaxub,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpmaxud,                          // AVX|AVX2|AVX512F (VL)
+    kIdVpmaxuq,                          // AVX512F (VL)
+    kIdVpmaxuw,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpminsb,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpminsd,                          // AVX|AVX2|AVX512F (VL)
+    kIdVpminsq,                          // AVX512F (VL)
+    kIdVpminsw,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpminub,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpminud,                          // AVX|AVX2|AVX512F (VL)
+    kIdVpminuq,                          // AVX512F (VL)
+    kIdVpminuw,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpmovb2m,                         // AVX512BW (VL)
+    kIdVpmovd2m,                         // AVX512DQ (VL)
+    kIdVpmovdb,                          // AVX512F (VL)
+    kIdVpmovdw,                          // AVX512F (VL)
+    kIdVpmovm2b,                         // AVX512BW (VL)
+    kIdVpmovm2d,                         // AVX512DQ (VL)
+    kIdVpmovm2q,                         // AVX512DQ (VL)
+    kIdVpmovm2w,                         // AVX512BW (VL)
     kIdVpmovmskb,                        // AVX|AVX2
-    kIdVpmovq2m,                         // AVX512DQ-VL
-    kIdVpmovqb,                          // AVX512F-VL
-    kIdVpmovqd,                          // AVX512F-VL
-    kIdVpmovqw,                          // AVX512F-VL
-    kIdVpmovsdb,                         // AVX512F-VL
-    kIdVpmovsdw,                         // AVX512F-VL
-    kIdVpmovsqb,                         // AVX512F-VL
-    kIdVpmovsqd,                         // AVX512F-VL
-    kIdVpmovsqw,                         // AVX512F-VL
-    kIdVpmovswb,                         // AVX512BW-VL
-    kIdVpmovsxbd,                        // AVX|AVX2|AVX512F-VL
-    kIdVpmovsxbq,                        // AVX|AVX2|AVX512F-VL
-    kIdVpmovsxbw,                        // AVX|AVX2|AVX512BW-VL
-    kIdVpmovsxdq,                        // AVX|AVX2|AVX512F-VL
-    kIdVpmovsxwd,                        // AVX|AVX2|AVX512F-VL
-    kIdVpmovsxwq,                        // AVX|AVX2|AVX512F-VL
-    kIdVpmovusdb,                        // AVX512F-VL
-    kIdVpmovusdw,                        // AVX512F-VL
-    kIdVpmovusqb,                        // AVX512F-VL
-    kIdVpmovusqd,                        // AVX512F-VL
-    kIdVpmovusqw,                        // AVX512F-VL
-    kIdVpmovuswb,                        // AVX512BW-VL
-    kIdVpmovw2m,                         // AVX512BW-VL
-    kIdVpmovwb,                          // AVX512BW-VL
-    kIdVpmovzxbd,                        // AVX|AVX2|AVX512F-VL
-    kIdVpmovzxbq,                        // AVX|AVX2|AVX512F-VL
-    kIdVpmovzxbw,                        // AVX|AVX2|AVX512BW-VL
-    kIdVpmovzxdq,                        // AVX|AVX2|AVX512F-VL
-    kIdVpmovzxwd,                        // AVX|AVX2|AVX512F-VL
-    kIdVpmovzxwq,                        // AVX|AVX2|AVX512F-VL
-    kIdVpmuldq,                          // AVX|AVX2|AVX512F-VL
-    kIdVpmulhrsw,                        // AVX|AVX2|AVX512BW-VL
-    kIdVpmulhuw,                         // AVX|AVX2|AVX512BW-VL
-    kIdVpmulhw,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpmulld,                          // AVX|AVX2|AVX512F-VL
-    kIdVpmullq,                          // AVX512DQ-VL
-    kIdVpmullw,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpmultishiftqb,                   // AVX512VBMI-VL
-    kIdVpmuludq,                         // AVX|AVX2|AVX512F-VL
+    kIdVpmovq2m,                         // AVX512DQ (VL)
+    kIdVpmovqb,                          // AVX512F (VL)
+    kIdVpmovqd,                          // AVX512F (VL)
+    kIdVpmovqw,                          // AVX512F (VL)
+    kIdVpmovsdb,                         // AVX512F (VL)
+    kIdVpmovsdw,                         // AVX512F (VL)
+    kIdVpmovsqb,                         // AVX512F (VL)
+    kIdVpmovsqd,                         // AVX512F (VL)
+    kIdVpmovsqw,                         // AVX512F (VL)
+    kIdVpmovswb,                         // AVX512BW (VL)
+    kIdVpmovsxbd,                        // AVX|AVX2|AVX512F (VL)
+    kIdVpmovsxbq,                        // AVX|AVX2|AVX512F (VL)
+    kIdVpmovsxbw,                        // AVX|AVX2|AVX512BW (VL)
+    kIdVpmovsxdq,                        // AVX|AVX2|AVX512F (VL)
+    kIdVpmovsxwd,                        // AVX|AVX2|AVX512F (VL)
+    kIdVpmovsxwq,                        // AVX|AVX2|AVX512F (VL)
+    kIdVpmovusdb,                        // AVX512F (VL)
+    kIdVpmovusdw,                        // AVX512F (VL)
+    kIdVpmovusqb,                        // AVX512F (VL)
+    kIdVpmovusqd,                        // AVX512F (VL)
+    kIdVpmovusqw,                        // AVX512F (VL)
+    kIdVpmovuswb,                        // AVX512BW (VL)
+    kIdVpmovw2m,                         // AVX512BW (VL)
+    kIdVpmovwb,                          // AVX512BW (VL)
+    kIdVpmovzxbd,                        // AVX|AVX2|AVX512F (VL)
+    kIdVpmovzxbq,                        // AVX|AVX2|AVX512F (VL)
+    kIdVpmovzxbw,                        // AVX|AVX2|AVX512BW (VL)
+    kIdVpmovzxdq,                        // AVX|AVX2|AVX512F (VL)
+    kIdVpmovzxwd,                        // AVX|AVX2|AVX512F (VL)
+    kIdVpmovzxwq,                        // AVX|AVX2|AVX512F (VL)
+    kIdVpmuldq,                          // AVX|AVX2|AVX512F (VL)
+    kIdVpmulhrsw,                        // AVX|AVX2|AVX512BW (VL)
+    kIdVpmulhuw,                         // AVX|AVX2|AVX512BW (VL)
+    kIdVpmulhw,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpmulld,                          // AVX|AVX2|AVX512F (VL)
+    kIdVpmullq,                          // AVX512DQ (VL)
+    kIdVpmullw,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpmultishiftqb,                   // AVX512VBMI (VL)
+    kIdVpmuludq,                         // AVX|AVX2|AVX512F (VL)
     kIdVpor,                             // AVX|AVX2
-    kIdVpord,                            // AVX512F-VL
-    kIdVporq,                            // AVX512F-VL
+    kIdVpord,                            // AVX512F (VL)
+    kIdVporq,                            // AVX512F (VL)
     kIdVpperm,                           // XOP
-    kIdVprold,                           // AVX512F-VL
-    kIdVprolq,                           // AVX512F-VL
-    kIdVprolvd,                          // AVX512F-VL
-    kIdVprolvq,                          // AVX512F-VL
-    kIdVprord,                           // AVX512F-VL
-    kIdVprorq,                           // AVX512F-VL
-    kIdVprorvd,                          // AVX512F-VL
-    kIdVprorvq,                          // AVX512F-VL
+    kIdVprold,                           // AVX512F (VL)
+    kIdVprolq,                           // AVX512F (VL)
+    kIdVprolvd,                          // AVX512F (VL)
+    kIdVprolvq,                          // AVX512F (VL)
+    kIdVprord,                           // AVX512F (VL)
+    kIdVprorq,                           // AVX512F (VL)
+    kIdVprorvd,                          // AVX512F (VL)
+    kIdVprorvq,                          // AVX512F (VL)
     kIdVprotb,                           // XOP
     kIdVprotd,                           // XOP
     kIdVprotq,                           // XOP
     kIdVprotw,                           // XOP
-    kIdVpsadbw,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpscatterdd,                      // AVX512F-VL
-    kIdVpscatterdq,                      // AVX512F-VL
-    kIdVpscatterqd,                      // AVX512F-VL
-    kIdVpscatterqq,                      // AVX512F-VL
+    kIdVpsadbw,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpscatterdd,                      // AVX512F (VL)
+    kIdVpscatterdq,                      // AVX512F (VL)
+    kIdVpscatterqd,                      // AVX512F (VL)
+    kIdVpscatterqq,                      // AVX512F (VL)
     kIdVpshab,                           // XOP
     kIdVpshad,                           // XOP
     kIdVpshaq,                           // XOP
@@ -1370,175 +1342,168 @@ struct X86Inst {
     kIdVpshld,                           // XOP
     kIdVpshlq,                           // XOP
     kIdVpshlw,                           // XOP
-    kIdVpshufb,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpshufd,                          // AVX|AVX2|AVX512F-VL
-    kIdVpshufhw,                         // AVX|AVX2|AVX512BW-VL
-    kIdVpshuflw,                         // AVX|AVX2|AVX512BW-VL
+    kIdVpshufb,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpshufd,                          // AVX|AVX2|AVX512F (VL)
+    kIdVpshufhw,                         // AVX|AVX2|AVX512BW (VL)
+    kIdVpshuflw,                         // AVX|AVX2|AVX512BW (VL)
     kIdVpsignb,                          // AVX|AVX2
     kIdVpsignd,                          // AVX|AVX2
     kIdVpsignw,                          // AVX|AVX2
-    kIdVpslld,                           // AVX|AVX2|AVX512F-VL
-    kIdVpslldq,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpsllq,                           // AVX|AVX2|AVX512F-VL
-    kIdVpsllvd,                          // AVX2|AVX512F-VL
-    kIdVpsllvq,                          // AVX2|AVX512F-VL
-    kIdVpsllvw,                          // AVX512BW-VL
-    kIdVpsllw,                           // AVX|AVX2|AVX512BW-VL
-    kIdVpsrad,                           // AVX|AVX2|AVX512F-VL
-    kIdVpsraq,                           // AVX512F-VL
-    kIdVpsravd,                          // AVX2|AVX512F-VL
-    kIdVpsravq,                          // AVX512F-VL
-    kIdVpsravw,                          // AVX512BW-VL
-    kIdVpsraw,                           // AVX|AVX2|AVX512BW-VL
-    kIdVpsrld,                           // AVX|AVX2|AVX512F-VL
-    kIdVpsrldq,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpsrlq,                           // AVX|AVX2|AVX512F-VL
-    kIdVpsrlvd,                          // AVX2|AVX512F-VL
-    kIdVpsrlvq,                          // AVX2|AVX512F-VL
-    kIdVpsrlvw,                          // AVX512BW-VL
-    kIdVpsrlw,                           // AVX|AVX2|AVX512BW-VL
-    kIdVpsubb,                           // AVX|AVX2|AVX512BW-VL
-    kIdVpsubd,                           // AVX|AVX2|AVX512F-VL
-    kIdVpsubq,                           // AVX|AVX2|AVX512F-VL
-    kIdVpsubsb,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpsubsw,                          // AVX|AVX2|AVX512BW-VL
-    kIdVpsubusb,                         // AVX|AVX2|AVX512BW-VL
-    kIdVpsubusw,                         // AVX|AVX2|AVX512BW-VL
-    kIdVpsubw,                           // AVX|AVX2|AVX512BW-VL
-    kIdVpternlogd,                       // AVX512F-VL
-    kIdVpternlogq,                       // AVX512F-VL
+    kIdVpslld,                           // AVX|AVX2|AVX512F (VL)
+    kIdVpslldq,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpsllq,                           // AVX|AVX2|AVX512F (VL)
+    kIdVpsllvd,                          // AVX2|AVX512F (VL)
+    kIdVpsllvq,                          // AVX2|AVX512F (VL)
+    kIdVpsllvw,                          // AVX512BW (VL)
+    kIdVpsllw,                           // AVX|AVX2|AVX512BW (VL)
+    kIdVpsrad,                           // AVX|AVX2|AVX512F (VL)
+    kIdVpsraq,                           // AVX512F (VL)
+    kIdVpsravd,                          // AVX2|AVX512F (VL)
+    kIdVpsravq,                          // AVX512F (VL)
+    kIdVpsravw,                          // AVX512BW (VL)
+    kIdVpsraw,                           // AVX|AVX2|AVX512BW (VL)
+    kIdVpsrld,                           // AVX|AVX2|AVX512F (VL)
+    kIdVpsrldq,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpsrlq,                           // AVX|AVX2|AVX512F (VL)
+    kIdVpsrlvd,                          // AVX2|AVX512F (VL)
+    kIdVpsrlvq,                          // AVX2|AVX512F (VL)
+    kIdVpsrlvw,                          // AVX512BW (VL)
+    kIdVpsrlw,                           // AVX|AVX2|AVX512BW (VL)
+    kIdVpsubb,                           // AVX|AVX2|AVX512BW (VL)
+    kIdVpsubd,                           // AVX|AVX2|AVX512F (VL)
+    kIdVpsubq,                           // AVX|AVX2|AVX512F (VL)
+    kIdVpsubsb,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpsubsw,                          // AVX|AVX2|AVX512BW (VL)
+    kIdVpsubusb,                         // AVX|AVX2|AVX512BW (VL)
+    kIdVpsubusw,                         // AVX|AVX2|AVX512BW (VL)
+    kIdVpsubw,                           // AVX|AVX2|AVX512BW (VL)
+    kIdVpternlogd,                       // AVX512F (VL)
+    kIdVpternlogq,                       // AVX512F (VL)
     kIdVptest,                           // AVX
-    kIdVptestmb,                         // AVX512BW-VL
-    kIdVptestmd,                         // AVX512F-VL
-    kIdVptestmq,                         // AVX512F-VL
-    kIdVptestmw,                         // AVX512BW-VL
-    kIdVptestnmb,                        // AVX512BW-VL
-    kIdVptestnmd,                        // AVX512F-VL
-    kIdVptestnmq,                        // AVX512F-VL
-    kIdVptestnmw,                        // AVX512BW-VL
-    kIdVpunpckhbw,                       // AVX|AVX2|AVX512BW-VL
-    kIdVpunpckhdq,                       // AVX|AVX2|AVX512F-VL
-    kIdVpunpckhqdq,                      // AVX|AVX2|AVX512F-VL
-    kIdVpunpckhwd,                       // AVX|AVX2|AVX512BW-VL
-    kIdVpunpcklbw,                       // AVX|AVX2|AVX512BW-VL
-    kIdVpunpckldq,                       // AVX|AVX2|AVX512F-VL
-    kIdVpunpcklqdq,                      // AVX|AVX2|AVX512F-VL
-    kIdVpunpcklwd,                       // AVX|AVX2|AVX512BW-VL
+    kIdVptestmb,                         // AVX512BW (VL)
+    kIdVptestmd,                         // AVX512F (VL)
+    kIdVptestmq,                         // AVX512F (VL)
+    kIdVptestmw,                         // AVX512BW (VL)
+    kIdVptestnmb,                        // AVX512BW (VL)
+    kIdVptestnmd,                        // AVX512F (VL)
+    kIdVptestnmq,                        // AVX512F (VL)
+    kIdVptestnmw,                        // AVX512BW (VL)
+    kIdVpunpckhbw,                       // AVX|AVX2|AVX512BW (VL)
+    kIdVpunpckhdq,                       // AVX|AVX2|AVX512F (VL)
+    kIdVpunpckhqdq,                      // AVX|AVX2|AVX512F (VL)
+    kIdVpunpckhwd,                       // AVX|AVX2|AVX512BW (VL)
+    kIdVpunpcklbw,                       // AVX|AVX2|AVX512BW (VL)
+    kIdVpunpckldq,                       // AVX|AVX2|AVX512F (VL)
+    kIdVpunpcklqdq,                      // AVX|AVX2|AVX512F (VL)
+    kIdVpunpcklwd,                       // AVX|AVX2|AVX512BW (VL)
     kIdVpxor,                            // AVX|AVX2
-    kIdVpxord,                           // AVX512F-VL
-    kIdVpxorq,                           // AVX512F-VL
-    kIdVrangepd,                         // AVX512DQ-VL
-    kIdVrangeps,                         // AVX512DQ-VL
+    kIdVpxord,                           // AVX512F (VL)
+    kIdVpxorq,                           // AVX512F (VL)
+    kIdVrangepd,                         // AVX512DQ (VL)
+    kIdVrangeps,                         // AVX512DQ (VL)
     kIdVrangesd,                         // AVX512DQ
     kIdVrangess,                         // AVX512DQ
-    kIdVrcp14pd,                         // AVX512F-VL
-    kIdVrcp14ps,                         // AVX512F-VL
+    kIdVrcp14pd,                         // AVX512F (VL)
+    kIdVrcp14ps,                         // AVX512F (VL)
     kIdVrcp14sd,                         // AVX512F
     kIdVrcp14ss,                         // AVX512F
-    kIdVrcp28pd,                         // AVX512ER
-    kIdVrcp28ps,                         // AVX512ER
-    kIdVrcp28sd,                         // AVX512ER
-    kIdVrcp28ss,                         // AVX512ER
+    kIdVrcp28pd,                         // AVX512ERI
+    kIdVrcp28ps,                         // AVX512ERI
+    kIdVrcp28sd,                         // AVX512ERI
+    kIdVrcp28ss,                         // AVX512ERI
     kIdVrcpps,                           // AVX
     kIdVrcpss,                           // AVX
-    kIdVreducepd,                        // AVX512DQ-VL
-    kIdVreduceps,                        // AVX512DQ-VL
+    kIdVreducepd,                        // AVX512DQ (VL)
+    kIdVreduceps,                        // AVX512DQ (VL)
     kIdVreducesd,                        // AVX512DQ
     kIdVreducess,                        // AVX512DQ
-    kIdVrndscalepd,                      // AVX512F-VL
-    kIdVrndscaleps,                      // AVX512F-VL
+    kIdVrndscalepd,                      // AVX512F (VL)
+    kIdVrndscaleps,                      // AVX512F (VL)
     kIdVrndscalesd,                      // AVX512F
     kIdVrndscaless,                      // AVX512F
     kIdVroundpd,                         // AVX
     kIdVroundps,                         // AVX
     kIdVroundsd,                         // AVX
     kIdVroundss,                         // AVX
-    kIdVrsqrt14pd,                       // AVX512F-VL
-    kIdVrsqrt14ps,                       // AVX512F-VL
+    kIdVrsqrt14pd,                       // AVX512F (VL)
+    kIdVrsqrt14ps,                       // AVX512F (VL)
     kIdVrsqrt14sd,                       // AVX512F
     kIdVrsqrt14ss,                       // AVX512F
-    kIdVrsqrt28pd,                       // AVX512ER
-    kIdVrsqrt28ps,                       // AVX512ER
-    kIdVrsqrt28sd,                       // AVX512ER
-    kIdVrsqrt28ss,                       // AVX512ER
+    kIdVrsqrt28pd,                       // AVX512ERI
+    kIdVrsqrt28ps,                       // AVX512ERI
+    kIdVrsqrt28sd,                       // AVX512ERI
+    kIdVrsqrt28ss,                       // AVX512ERI
     kIdVrsqrtps,                         // AVX
     kIdVrsqrtss,                         // AVX
-    kIdVscalefpd,                        // AVX512F-VL
-    kIdVscalefps,                        // AVX512F-VL
+    kIdVscalefpd,                        // AVX512F (VL)
+    kIdVscalefps,                        // AVX512F (VL)
     kIdVscalefsd,                        // AVX512F
     kIdVscalefss,                        // AVX512F
-    kIdVscatterdpd,                      // AVX512F-VL
-    kIdVscatterdps,                      // AVX512F-VL
-    kIdVscatterpf0dpd,                   // AVX512PF
-    kIdVscatterpf0dps,                   // AVX512PF
-    kIdVscatterpf0qpd,                   // AVX512PF
-    kIdVscatterpf0qps,                   // AVX512PF
-    kIdVscatterpf1dpd,                   // AVX512PF
-    kIdVscatterpf1dps,                   // AVX512PF
-    kIdVscatterpf1qpd,                   // AVX512PF
-    kIdVscatterpf1qps,                   // AVX512PF
-    kIdVscatterqpd,                      // AVX512F-VL
-    kIdVscatterqps,                      // AVX512F-VL
-    kIdVshuff32x4,                       // AVX512F-VL
-    kIdVshuff64x2,                       // AVX512F-VL
-    kIdVshufi32x4,                       // AVX512F-VL
-    kIdVshufi64x2,                       // AVX512F-VL
-    kIdVshufpd,                          // AVX|AVX512F-VL
-    kIdVshufps,                          // AVX|AVX512F-VL
-    kIdVsqrtpd,                          // AVX|AVX512F-VL
-    kIdVsqrtps,                          // AVX|AVX512F-VL
+    kIdVscatterdpd,                      // AVX512F (VL)
+    kIdVscatterdps,                      // AVX512F (VL)
+    kIdVscatterpf0dpd,                   // AVX512PFI
+    kIdVscatterpf0dps,                   // AVX512PFI
+    kIdVscatterpf0qpd,                   // AVX512PFI
+    kIdVscatterpf0qps,                   // AVX512PFI
+    kIdVscatterpf1dpd,                   // AVX512PFI
+    kIdVscatterpf1dps,                   // AVX512PFI
+    kIdVscatterpf1qpd,                   // AVX512PFI
+    kIdVscatterpf1qps,                   // AVX512PFI
+    kIdVscatterqpd,                      // AVX512F (VL)
+    kIdVscatterqps,                      // AVX512F (VL)
+    kIdVshuff32x4,                       // AVX512F (VL)
+    kIdVshuff64x2,                       // AVX512F (VL)
+    kIdVshufi32x4,                       // AVX512F (VL)
+    kIdVshufi64x2,                       // AVX512F (VL)
+    kIdVshufpd,                          // AVX|AVX512F (VL)
+    kIdVshufps,                          // AVX|AVX512F (VL)
+    kIdVsqrtpd,                          // AVX|AVX512F (VL)
+    kIdVsqrtps,                          // AVX|AVX512F (VL)
     kIdVsqrtsd,                          // AVX|AVX512F
     kIdVsqrtss,                          // AVX|AVX512F
     kIdVstmxcsr,                         // AVX
-    kIdVsubpd,                           // AVX|AVX2|AVX512F-VL
-    kIdVsubps,                           // AVX|AVX2|AVX512F-VL
+    kIdVsubpd,                           // AVX|AVX2|AVX512F (VL)
+    kIdVsubps,                           // AVX|AVX2|AVX512F (VL)
     kIdVsubsd,                           // AVX|AVX512F
     kIdVsubss,                           // AVX|AVX512F
     kIdVtestpd,                          // AVX
     kIdVtestps,                          // AVX
     kIdVucomisd,                         // AVX|AVX512F
     kIdVucomiss,                         // AVX|AVX512F
-    kIdVunpckhpd,                        // AVX|AVX512F-VL
-    kIdVunpckhps,                        // AVX|AVX512F-VL
-    kIdVunpcklpd,                        // AVX|AVX512F-VL
-    kIdVunpcklps,                        // AVX|AVX512F-VL
-    kIdVxorpd,                           // AVX|AVX512DQ-VL
-    kIdVxorps,                           // AVX|AVX512DQ-VL
+    kIdVunpckhpd,                        // AVX|AVX512F (VL)
+    kIdVunpckhps,                        // AVX|AVX512F (VL)
+    kIdVunpcklpd,                        // AVX|AVX512F (VL)
+    kIdVunpcklps,                        // AVX|AVX512F (VL)
+    kIdVxorpd,                           // AVX|AVX512DQ (VL)
+    kIdVxorps,                           // AVX|AVX512DQ (VL)
     kIdVzeroall,                         // AVX
     kIdVzeroupper,                       // AVX
-    kIdWrfsbase,                         // FSGSBASE & X64
-    kIdWrgsbase,                         // FSGSBASE & X64
-    kIdXadd,                             // I486+
+    kIdWrfsbase,                         // X64 FSGSBASE
+    kIdWrgsbase,                         // X64 FSGSBASE
+    kIdXadd,                             // I486
     kIdXchg,                             // ANY
     kIdXgetbv,                           // XSAVE
     kIdXor,                              // ANY
     kIdXorpd,                            // SSE2
     kIdXorps,                            // SSE
     kIdXrstor,                           // XSAVE
-    kIdXrstor64,                         // XSAVE
+    kIdXrstor64,                         // X64 XSAVE
     kIdXrstors,                          // XSAVE
-    kIdXrstors64,                        // XSAVE
+    kIdXrstors64,                        // X64 XSAVE
     kIdXsave,                            // XSAVE
-    kIdXsave64,                          // XSAVE
+    kIdXsave64,                          // X64 XSAVE
     kIdXsavec,                           // XSAVE
-    kIdXsavec64,                         // XSAVE
-    kIdXsaveopt,                         // XSAVE
-    kIdXsaveopt64,                       // XSAVE
+    kIdXsavec64,                         // X64 XSAVE
+    kIdXsaveopt,                         // XSAVE_OPT
+    kIdXsaveopt64,                       // X64 XSAVE_OPT
     kIdXsaves,                           // XSAVE
-    kIdXsaves64,                         // XSAVE
+    kIdXsaves64,                         // X64 XSAVE
     kIdXsetbv,                           // XSAVE
-
-    _kIdCount,
-
-    _kIdCmovcc = kIdCmova,
-    _kIdJcc    = kIdJa,
-    _kIdSetcc  = kIdSeta,
-
-    _kIdJbegin = kIdJa,
-    _kIdJend   = kIdJmp
+    _kIdCount
+    // ${idData:End}
   };
 
-  //! Instruction encodings, used by \ref X86Assembler.
+  //! Instruction encodings, used by \ref X86Assembler (AsmJit specific).
   ASMJIT_ENUM(EncodingType) {
     kEncodingNone = 0,                   //!< Never used.
     kEncodingX86Op,                      //!< X86 [OP].
@@ -1678,7 +1643,7 @@ struct X86Inst {
 
   //! \internal
   //!
-  //! Instruction flags.
+  //! Instruction flags (AsmJit specific).
   ASMJIT_ENUM(InstFlags) {
     kInstFlagNone         = 0x00000000U, //!< No flags.
 
@@ -1723,34 +1688,10 @@ struct X86Inst {
     kInstFlagVM           = 0x00010000U, //!< Instruction uses a vector memory index (VSIB).
     kInstFlagVex          = 0x00020000U, //!< Instruction can be encoded by VEX (AVX|AVX2|BMI|...).
     kInstFlagVex_VM       = 0x00030000U, //!< Combination of `kInstFlagVex` and `kInstFlagVM`.
-
-    kInstFlagEvex         = 0x00040000U, //!< Instruction can be encoded by EVEX (AVX-512).
-    /*
-    kInstFlagEvex0        = 0U,          //!< Used inside macros.
-
-    kInstFlagEvexK_       = 0x00100000U, //!< Supports masking {k0..k7}.
-    kInstFlagEvexKZ       = 0x00200000U, //!< Supports zeroing of elements {k0..k7}{z}.
-    kInstFlagEvexB0       = 0x00000000U, //!< No broadcast (used by instruction tables).
-    kInstFlagEvexB4       = 0x00400000U, //!< Supports broadcast 'b32'.
-    kInstFlagEvexB8       = 0x00800000U, //!< Supports broadcast 'b64'.
-    kInstFlagEvexSAE      = 0x01000000U, //!< Supports 'suppress-all-exceptions' {sae}.
-    kInstFlagEvexER       = 0x02000000U, //!< Supports 'embedded-rounding-control' {rc} with implicit {sae},
-    kInstFlagEvexVL       = 0x04000000U, //!< Supports access to XMM|YMM registers (AVX512-VL).
-
-    kInstFlagEvexSet_Shift= 28,
-    kInstFlagEvexSet_Mask = 0xF0000000U, //!< AVX-512 feature set required to execute the instruction.
-    kInstFlagEvexSet_F_   = 0x00000000U, //!< Supported by AVX512-F (no extra requirements).
-    kInstFlagEvexSet_CDI  = 0x10000000U, //!< Supported by AVX512-CDI.
-    kInstFlagEvexSet_PFI  = 0x20000000U, //!< Supported by AVX512-PFI.
-    kInstFlagEvexSet_ERI  = 0x30000000U, //!< Supported by AVX512-ERI.
-    kInstFlagEvexSet_DQ   = 0x40000000U, //!< Supported by AVX512-DQ.
-    kInstFlagEvexSet_BW   = 0x50000000U, //!< Supported by AVX512-BW.
-    kInstFlagEvexSet_IFMA = 0x60000000U, //!< Supported by AVX512-IFMA.
-    kInstFlagEvexSet_VBMI = 0x70000000U  //!< Supported by AVX512-VBMI.
-    */
+    kInstFlagEvex         = 0x00040000U  //!< Instruction can be encoded by EVEX (AVX-512).
   };
 
-  //! Specifies meaning of all bits in an opcode (AsmJit specific).
+  //! Describes a meaning of all bits of AsmJit's 32-bit opcode (AsmJit specific).
   //!
   //! This schema is AsmJit specific and has been designed to allow encoding of
   //! all X86 instructions available. X86, MMX, and SSE+ instructions always use
@@ -1999,7 +1940,7 @@ struct X86Inst {
     kOpCode_LL_512        = 0x02U << kOpCode_LL_Shift
   };
 
-  //! Instruction options.
+  //! Instruction options (AsmJit specific).
   ASMJIT_ENUM(Options) {
     // NOTE: Don't collide with reserved bits used by CodeEmitter (0x000000FF).
 
@@ -2041,54 +1982,54 @@ struct X86Inst {
 
   //! Condition codes.
   ASMJIT_ENUM(Cond) {
-    kCondA                = 0x07U,       // CF==0 & ZF==0          (unsigned)
-    kCondAE               = 0x03U,       // CF==0                  (unsigned)
-    kCondB                = 0x02U,       // CF==1                  (unsigned)
-    kCondBE               = 0x06U,       // CF==1 | ZF==1          (unsigned)
+    kCondA                = 0x07U,       // CF==0 & ZF==0          (unsigned > )
+    kCondAE               = 0x03U,       // CF==0                  (unsigned >=)
+    kCondB                = 0x02U,       // CF==1                  (unsigned < )
+    kCondBE               = 0x06U,       // CF==1 | ZF==1          (unsigned <=)
     kCondC                = 0x02U,       // CF==1
-    kCondE                = 0x04U,       //         ZF==1          (signed/unsigned)
-    kCondG                = 0x0FU,       //         ZF==0 & SF==OF (signed)
-    kCondGE               = 0x0DU,       //                 SF==OF (signed)
-    kCondL                = 0x0CU,       //                 SF!=OF (signed)
-    kCondLE               = 0x0EU,       //         ZF==1 | SF!=OF (signed)
-    kCondNA               = 0x06U,       // CF==1 | ZF==1          (unsigned)
-    kCondNAE              = 0x02U,       // CF==1                  (unsigned)
-    kCondNB               = 0x03U,       // CF==0                  (unsigned)
-    kCondNBE              = 0x07U,       // CF==0 & ZF==0          (unsigned)
+    kCondE                = 0x04U,       //         ZF==1          (any_sign ==)
+    kCondG                = 0x0FU,       //         ZF==0 & SF==OF (signed   > )
+    kCondGE               = 0x0DU,       //                 SF==OF (signed   >=)
+    kCondL                = 0x0CU,       //                 SF!=OF (signed   < )
+    kCondLE               = 0x0EU,       //         ZF==1 | SF!=OF (signed   <=)
+    kCondNA               = 0x06U,       // CF==1 | ZF==1          (unsigned <=)
+    kCondNAE              = 0x02U,       // CF==1                  (unsigned < )
+    kCondNB               = 0x03U,       // CF==0                  (unsigned >=)
+    kCondNBE              = 0x07U,       // CF==0 & ZF==0          (unsigned > )
     kCondNC               = 0x03U,       // CF==0
-    kCondNE               = 0x05U,       //         ZF==0          (signed/unsigned)
-    kCondNG               = 0x0EU,       //         ZF==1 | SF!=OF (signed)
-    kCondNGE              = 0x0CU,       //                 SF!=OF (signed)
-    kCondNL               = 0x0DU,       //                 SF==OF (signed)
-    kCondNLE              = 0x0FU,       //         ZF==0 & SF==OF (signed)
+    kCondNE               = 0x05U,       //         ZF==0          (any_sign !=)
+    kCondNG               = 0x0EU,       //         ZF==1 | SF!=OF (signed   <=)
+    kCondNGE              = 0x0CU,       //                 SF!=OF (signed   < )
+    kCondNL               = 0x0DU,       //                 SF==OF (signed   >=)
+    kCondNLE              = 0x0FU,       //         ZF==0 & SF==OF (signed   > )
     kCondNO               = 0x01U,       //                 OF==0
     kCondNP               = 0x0BU,       // PF==0
     kCondNS               = 0x09U,       //                 SF==0
-    kCondNZ               = 0x05U,       //         ZF==0
+    kCondNZ               = 0x05U,       //         ZF==0          (any_sign !=)
     kCondO                = 0x00U,       //                 OF==1
     kCondP                = 0x0AU,       // PF==1
     kCondPE               = 0x0AU,       // PF==1
     kCondPO               = 0x0BU,       // PF==0
     kCondS                = 0x08U,       //                 SF==1
-    kCondZ                = 0x04U,       //         ZF==1
+    kCondZ                = 0x04U,       //         ZF==1          (any_sign ==)
 
     // Simplified condition codes.
-    kCondSign             = kCondS,      //!< Sign (S).
-    kCondNotSign          = kCondNS,     //!< Not Sign (NS).
+    kCondSign             = kCondS,      //!< Sign.
+    kCondNotSign          = kCondNS,     //!< Not Sign.
 
-    kCondOverflow         = kCondO,      //!< Signed  Overflow (O)
-    kCondNotOverflow      = kCondNO,     //!< Not Signed Overflow (NO)
+    kCondOverflow         = kCondO,      //!< Signed overflow.
+    kCondNotOverflow      = kCondNO,     //!< Not signed overflow.
 
-    kCondLess             = kCondL,      //!< Signed     `a <  b` (L  or NGE).
-    kCondLessEqual        = kCondLE,     //!< Signed     `a <= b` (LE or NG ).
-    kCondGreater          = kCondG,      //!< Signed     `a >  b` (G  or NLE).
-    kCondGreaterEqual     = kCondGE,     //!< Signed     `a >= b` (GE or NL ).
-    kCondBelow            = kCondB,      //!< Unsigned   `a <  b` (B  or NAE).
-    kCondBelowEqual       = kCondBE,     //!< Unsigned   `a <= b` (BE or NA ).
-    kCondAbove            = kCondA,      //!< Unsigned   `a >  b` (A  or NBE).
-    kCondAboveEqual       = kCondAE,     //!< Unsigned   `a >= b` (AE or NB ).
-    kCondEqual            = kCondE,      //!< Equal      `a == b` (E  or Z  ).
-    kCondNotEqual         = kCondNE,     //!< Not Equal  `a != b` (NE or NZ ).
+    kCondEqual            = kCondE,      //!< Equal      `a == b`.
+    kCondNotEqual         = kCondNE,     //!< Not Equal  `a != b`.
+    kCondSignedLT         = kCondL,      //!< Signed     `a <  b`.
+    kCondSignedLE         = kCondLE,     //!< Signed     `a <= b`.
+    kCondSignedGT         = kCondG,      //!< Signed     `a >  b`.
+    kCondSignedGE         = kCondGE,     //!< Signed     `a >= b`.
+    kCondUnsignedLT       = kCondB,      //!< Unsigned   `a <  b`.
+    kCondUnsignedLE       = kCondBE,     //!< Unsigned   `a <= b`.
+    kCondUnsignedGT       = kCondA,      //!< Unsigned   `a >  b`.
+    kCondUnsignedGE       = kCondAE,     //!< Unsigned   `a >= b`.
 
     kCondParityEven       = kCondP,
     kCondParityOdd        = kCondPO,
@@ -2098,15 +2039,17 @@ struct X86Inst {
     kCondNegative         = kCondS,
     kCondPositive         = kCondNS,
 
+    // TODO: Review these two...
     // FPU-only.
     kCondFpuUnordered     = 0x10,
     kCondFpuNotUnordered  = 0x11,
 
     //! No condition code.
-    kCondNone             = 0x12
+    kCondNone             = 0x12,
+    kCondCount            = 0x14
   };
 
-  //! Comparison predicate used by CMP[PD|PS|SD|SS] instructions.
+  //! A predicate used by CMP[PD|PS|SD|SS] instructions.
   ASMJIT_ENUM(CmpPredicate) {
     kCmpEQ                = 0x00,        //!< Equal             (Quiet).
     kCmpLT                = 0x01,        //!< Less              (Signaling).
@@ -2118,7 +2061,38 @@ struct X86Inst {
     kCmpORD               = 0x07         //!< Ordered           (Quiet).
   };
 
-  //! Comparison predicate used by VCMP[PD|PS|SD|SS] instructions.
+  //! A predicate used by [V]PCMP[I|E]STR[I|M] instructions.
+  ASMJIT_ENUM(PCmpStrPredicate) {
+    // Source data format:
+    kPCmpStrUB            = 0x00 << 0,   //!< The source data format is unsigned bytes.
+    kPCmpStrUW            = 0x01 << 0,   //!< The source data format is unsigned words.
+    kPCmpStrSB            = 0x02 << 0,   //!< The source data format is signed bytes.
+    kPCmpStrSW            = 0x03 << 0,   //!< The source data format is signed words.
+
+    // Aggregation operation:
+    kPCmpStrEqualAny      = 0x00 << 2,   //!< The arithmetic comparison is "equal".
+    kPCmpStrRanges        = 0x01 << 2,   //!< The arithmetic comparison is “greater than or equal”
+                                         //!< between even indexed elements and “less than or equal”
+                                         //!< between odd indexed elements.
+    kPCmpStrEqualEach     = 0x02 << 2,   //!< The arithmetic comparison is "equal".
+    kPCmpStrEqualOrdered  = 0x03 << 2,   //!< The arithmetic comparison is "equal".
+
+    // Polarity:
+    kPCmpStrPosPolarity   = 0x00 << 4,   //!< IntRes2 = IntRes1.
+    kPCmpStrNegPolarity   = 0x01 << 4,   //!< IntRes2 = -1 XOR IntRes1.
+    kPCmpStrPosMasked     = 0x02 << 4,   //!< IntRes2 = IntRes1.
+    kPCmpStrNegMasked     = 0x03 << 4,   //!< IntRes2[i] = second[i] == invalid ? IntRes1[i] : ~IntRes1[i].
+
+    // Output selection (pcmpstri):
+    kPCmpStrOutputLSI     = 0x00 << 6,   //!< The index returned to ECX is of the least significant set bit in IntRes2.
+    kPCmpStrOutputMSI     = 0x01 << 6,   //!< The index returned to ECX is of the most significant set bit in IntRes2.
+
+    // Output selection (pcmpstrm):
+    kPCmpStrBitMask       = 0x00 << 6,   //!< IntRes2 is returned as the mask to the least significant bits of XMM0.
+    kPCmpStrIndexMask     = 0x01 << 6    //!< IntRes2 is expanded into a byte/word mask and placed in XMM0.
+  };
+
+  //! A predicate used by VCMP[PD|PS|SD|SS] instructions.
   //!
   //! The first 8 values are compatible with \ref CmpPredicate.
   ASMJIT_ENUM(VCmpPredicate) {
@@ -2156,7 +2130,108 @@ struct X86Inst {
     kVCmpTRUE_US          = 0x1F         //!< True              (Signaling, Unordered).
   };
 
-  //! Round predicate used by ROUND[PD|PS|SD|SS] instructions.
+  //! A predicate used by VPCMP[U][B|W|D|Q] instructions (AVX-512).
+  ASMJIT_ENUM(VPCmpPredicate) {
+    kVPCmpEQ              = 0x00,        //!< Equal.
+    kVPCmpLT              = 0x01,        //!< Less.
+    kVPCmpLE              = 0x02,        //!< Less/Equal.
+    kVPCmpFALSE           = 0x03,        //!< False.
+    kVPCmpNE              = 0x04,        //!< Not Equal.
+    kVPCmpGE              = 0x05,        //!< Greater/Equal.
+    kVPCmpGT              = 0x06,        //!< Greater.
+    kVPCmpTRUE            = 0x07         //!< True.
+  };
+
+  //! A predicate used by VPCOM[U][B|W|D|Q] instructions (XOP).
+  ASMJIT_ENUM(VPComPredicate) {
+    kVPComLT              = 0x00,        //!< Less.
+    kVPComLE              = 0x01,        //!< Less/Equal
+    kVPComGT              = 0x02,        //!< Greater.
+    kVPComGE              = 0x03,        //!< Greater/Equal.
+    kVPComEQ              = 0x04,        //!< Equal.
+    kVPComNE              = 0x05,        //!< Not Equal.
+    kVPComFALSE           = 0x06,        //!< False.
+    kVPComTRUE            = 0x07         //!< True.
+  };
+
+  //! A predicate used by VFPCLASS[PD|PS|SD|SS] instructions (AVX-512).
+  ASMJIT_ENUM(VFPClassPredicate) {
+    kVFPClassQNaN         = 0x00,
+    kVFPClassPZero        = 0x01,
+    kVFPClassNZero        = 0x02,
+    kVFPClassPInf         = 0x03,
+    kVFPClassNInf         = 0x04,
+    kVFPClassDenormal     = 0x05,
+    kVFPClassNegative     = 0x06,
+    kVFPClassSNaN         = 0x07
+  };
+
+  //! A predicate used by VFIXUPIMM[PD|PS|SD|SS] instructions (AVX-512).
+  ASMJIT_ENUM(VFixupImmPredicate) {
+    VFixupImmZEOnZero     = 0x01,
+    VFixupImmIEOnZero     = 0x02,
+    VFixupImmZEOnOne      = 0x04,
+    VFixupImmIEOnOne      = 0x08,
+    VFixupImmIEOnSNaN     = 0x10,
+    VFixupImmIEOnNInf     = 0x20,
+    VFixupImmIEOnNegative = 0x40,
+    VFixupImmIEOnPInf     = 0x80
+  };
+
+  //! A predicate used by VGETMANT[PD|PS|SD|SS] instructions (AVX-512).
+  ASMJIT_ENUM(VGetMantPredicate) {
+    kVGetMant1To2         = 0x00,
+    kVGetMant1Div2To2     = 0x01,
+    kVGetMant1Div2To1     = 0x02,
+    kVGetMant3Div4To3Div2 = 0x03,
+    kVGetMantNoSign       = 0x04,
+    kVGetMantQNaNIfSign   = 0x08
+  };
+
+  //! A predicate used by VRANGE[PD|PS|SD|SS] instructions (AVX-512).
+  ASMJIT_ENUM(VRangePredicate) {
+    kVRangeSelectMin      = 0x00,        //!< Select minimum value.
+    kVRangeSelectMax      = 0x01,        //!< Select maximum value.
+    kVRangeSelectAbsMin   = 0x02,        //!< Select minimum absolute value.
+    kVRangeSelectAbsMax   = 0x03,        //!< Select maximum absolute value.
+    kVRangeSignSrc1       = 0x00,        //!< Select sign of SRC1.
+    kVRangeSignSrc2       = 0x04,        //!< Select sign of SRC2.
+    kVRangeSign0          = 0x08,        //!< Set sign to 0.
+    kVRangeSign1          = 0x0C         //!< Set sign to 1.
+  };
+
+  //! A predicate used by VREDUCE[PD|PS|SD|SS] instructions (AVX-512).
+  ASMJIT_ENUM(VReducePredicate) {
+    kVReduceRoundCurrent  = 0x00,        //!< Round to the current mode set.
+    kVReduceRoundEven     = 0x04,        //!< Round to nearest even.
+    kVReduceRoundDown     = 0x05,        //!< Round down.
+    kVReduceRoundUp       = 0x06,        //!< Round up.
+    kVReduceRoundTrunc    = 0x07,        //!< Truncate.
+    kVReduceSuppress      = 0x08         //!< Suppress exceptions.
+  };
+
+  //! A predicate that can be used to create an immediate for VTERNLOG[D|Q].
+  ASMJIT_ENUM(TLogPredicate) {
+    kTLog0                = 0x00,
+    kTLog1                = 0xFF,
+    kTLogA                = 0xF0,
+    kTLogB                = 0xCC,
+    kTLogC                = 0xAA,
+    kTLogNotA             = kTLogA ^ 0xFF,
+    kTLogNotB             = kTLogB ^ 0xFF,
+    kTLogNotC             = kTLogC ^ 0xFF,
+
+    kTLogAB               = kTLogA & kTLogB,
+    kTLogAC               = kTLogA & kTLogC,
+    kTLogBC               = kTLogB & kTLogC,
+    kTLogABC              = kTLogA & kTLogB & kTLogC,
+    kTLogNotAB            = kTLogAB ^ 0xFF,
+    kTLogNotAC            = kTLogAC ^ 0xFF,
+    kTLogNotBC            = kTLogBC ^ 0xFF,
+    kTLogNotABC           = kTLogABC ^ 0xFF,
+  };
+
+  //! A predicate used by ROUND[PD|PS|SD|SS] instructions.
   ASMJIT_ENUM(RoundPredicate) {
     kRoundNearest         = 0x00,        //!< Round to nearest (even).
     kRoundDown            = 0x01,        //!< Round to down toward -INF (floor),
@@ -2172,8 +2247,14 @@ struct X86Inst {
     kArchMaskX64          = 0x02         //!< X64 mode supported.
   };
 
+  ASMJIT_ENUM(SingleRegCase) {
+    kSingleRegNone        = 0,           //!< No special handling.
+    kSingleRegRO          = 1,           //!< Operands become read-only  - `AND REG, REG` and similar.
+    kSingleRegWO          = 2            //!< Operands become write-only - `XOR REG, REG` and similar.
+  };
+
   //! Instruction's operand flags.
-  enum OpFlags {
+  ASMJIT_ENUM(OpFlags) {
     kOpNone               = 0x00000000U, //!< No operand.
 
     kOpGpbLo              = 0x00000001U, //!< Operand can be a low 8-bit GPB register.
@@ -2211,7 +2292,7 @@ struct X86Inst {
   };
 
   //! Instruction's memory operand flags.
-  enum MemOpFlags {
+  ASMJIT_ENUM(MemOpFlags) {
     // NOTE: Instruction uses either scalar or vector memory operands, they
     // never collide, this is the reason "M" and "Vm" can share bits here.
 
@@ -2242,10 +2323,6 @@ struct X86Inst {
 
   //! Common data - aggregated data that is shared across many instructions.
   struct CommonData {
-    // ------------------------------------------------------------------------
-    // [Accessors]
-    // ------------------------------------------------------------------------
-
     //! Get all instruction flags, see \ref InstFlags.
     ASMJIT_INLINE uint32_t getFlags() const noexcept { return _flags; }
     //! Get whether the instruction has a `flag`, see `InstFlags`.
@@ -2310,9 +2387,7 @@ struct X86Inst {
     //! Get alternative opcode, see \ref OpCodeBits.
     ASMJIT_INLINE uint32_t getAltOpCode() const noexcept;
 
-    // ------------------------------------------------------------------------
-    // [Members]
-    // ------------------------------------------------------------------------
+    ASMJIT_INLINE uint32_t getSingleRegCase() const noexcept { return _singleRegCase; }
 
     uint32_t _flags;                     //!< Instruction flags.
 
@@ -2324,7 +2399,8 @@ struct X86Inst {
     uint32_t _altOpCodeIndex  : 8;       //!< Index to table with alternative opcodes.
     uint32_t _iSignatureIndex : 9;       //!< First `ISignature` entry in the database.
     uint32_t _iSignatureCount : 4;       //!< Number of relevant `ISignature` entries.
-    uint32_t _reserved        : 19;      //!< \internal
+    uint32_t _singleRegCase   : 2;       //!< Specifies what happens if all operands share the same register.
+    uint32_t _reserved        : 9;       //!< \internal
   };
 
   //! Data specific to FPU family instructions that access FPU stack.
@@ -2354,9 +2430,9 @@ struct X86Inst {
     //! SSE to AVX conversion mode.
     enum AvxConvMode {
       kAvxConvNone            = 0,       //!< No translation possible (MMX/SSE4A/SHA instruction).
-      kAvxConvNonDestructive  = 1,       //!< The first SSE operand becomes first and second AVX operand.
-      kAvxConvMove            = 2,       //!< No change (no operands changed).
-      kAvxConvMoveIfMem       = 3,       //!< No change if second operand is a memory, otherwise NonDestructive.
+      kAvxConvMove            = 1,       //!< No change (no operands changed).
+      kAvxConvMoveIfMem       = 2,       //!< No change if second operand is a memory, otherwise Extend.
+      kAvxConvExtend          = 3,       //!< The first SSE operand becomes first and second AVX operand.
       kAvxConvBlend           = 4        //!< Special case for 'vblendvpd', 'vblendvps', and 'vpblendvb'.
     };
 
@@ -2365,7 +2441,7 @@ struct X86Inst {
     int32_t avxConvDelta      : 13;      //!< Delta to get a corresponding AVX instruction.
   };
 
-  //! Data specific to AVX+ and FMA+ family instructions.
+  //! Data specific to AVX+ (including XOP and AVX-512), FMA+ (FMA3 and FMA4), and F16C instructions.
   struct AvxData {
     //! AVX/AVX512 features.
     enum Features {
@@ -2419,9 +2495,9 @@ struct X86Inst {
   //! Contains a sequence of operands' combinations and other metadata that defines
   //! a single instruction. This data is used by instruction validator.
   struct ISignature {
-    uint8_t opCount           : 3;       //!< Count of operands in `opIndex` (0..6).
-    uint8_t archMask          : 2;       //!< Architecture mask of this record.
-    uint8_t implicit          : 3;       //!< Number of implicit operands.
+    uint8_t opCount  : 3;                //!< Count of operands in `opIndex` (0..6).
+    uint8_t archMask : 2;                //!< Architecture mask of this record.
+    uint8_t implicit : 3;                //!< Number of implicit operands.
     uint8_t reserved;                    //!< Reserved for future use.
     uint8_t operands[6];                 //!< Indexes to `OSignature` table.
   };
@@ -2429,7 +2505,7 @@ struct X86Inst {
   //! Operand signature, used by \ref ISignature.
   //!
   //! Contains all possible operand combinations, memory size information,
-  //! and register index (or \ref kInvalidReg if not mandatory).
+  //! and register index (or \ref Globals::kInvalidReg if not mandatory).
   struct OSignature {
     uint32_t flags;                      //!< Operand flags.
     uint16_t memFlags;                   //!< Memory flags.
@@ -2437,11 +2513,20 @@ struct X86Inst {
     uint8_t regMask;                     //!< Mask of possible register IDs.
   };
 
+  //! Data that is not related to a specific X86 instruction (not referenced by
+  //! any tables).
+  struct MiscData {
+    uint32_t condToJcc[kCondCount];
+    uint32_t condToSetcc[kCondCount];
+    uint32_t condToCmovcc[kCondCount];
+    uint32_t reversedCond[kCondCount];
+  };
+
   // --------------------------------------------------------------------------
   // [Accessors]
   // --------------------------------------------------------------------------
 
-  //! Get instruction's name (null terminated).
+  //! Get instruction name (null terminated).
   //!
   //! NOTE: If AsmJit was compiled with `ASMJIT_DISABLE_TEXT` then this will
   //! return an empty string (null terminated string of zero length).
@@ -2514,6 +2599,89 @@ struct X86Inst {
   // [Utilities]
   // --------------------------------------------------------------------------
 
+  static ASMJIT_INLINE const MiscData& getMiscData() noexcept;
+
+  //! Get the equivalent of a negated condition code.
+  static ASMJIT_INLINE uint32_t negateCond(uint32_t cond) noexcept {
+    ASMJIT_ASSERT(cond < kCondCount);
+    return cond ^ static_cast<uint32_t>(cond < X86Inst::kCondNone);
+  }
+
+  //! Convert a condition code into a condition code that reverses the
+  //! corresponding operands of a comparison.
+  static ASMJIT_INLINE uint32_t reverseCond(uint32_t cond) noexcept {
+    ASMJIT_ASSERT(cond < kCondCount);
+    return getMiscData().reversedCond[cond];
+  }
+
+  //! Translate a condition code `cc` to a "cmovcc" instruction id.
+  static ASMJIT_INLINE uint32_t condToCmovcc(uint32_t cond) noexcept {
+    ASMJIT_ASSERT(cond < kCondCount);
+    return getMiscData().condToCmovcc[cond];
+  }
+
+  //! Translate a condition code `cc` to a "jcc" instruction id.
+  static ASMJIT_INLINE uint32_t condToJcc(uint32_t cond) noexcept {
+    ASMJIT_ASSERT(cond < kCondCount);
+    return getMiscData().condToJcc[cond];
+  }
+
+  //! Translate a condition code `cc` to a "setcc" instruction id.
+  static ASMJIT_INLINE uint32_t condToSetcc(uint32_t cond) noexcept {
+    ASMJIT_ASSERT(cond < kCondCount);
+    return getMiscData().condToSetcc[cond];
+  }
+
+  //! Pack a shuffle constant to be used by SSE/AVX/AVX-512 instructions (2 values).
+  //!
+  //! \param a Position of the first  component [0, 1].
+  //! \param b Position of the second component [0, 1].
+  //!
+  //! Shuffle constants can be used to encode an immediate for these instructions:
+  //!   - `shufpd`
+  static ASMJIT_INLINE int shufImm(uint32_t a, uint32_t b) noexcept {
+    ASMJIT_ASSERT(a <= 1 && b <= 1);
+    uint32_t result = (a << 1) | b;
+    return static_cast<int>(result);
+  }
+
+  //! Pack a shuffle constant to be used by SSE/AVX/AVX-512 instructions (4 values).
+  //!
+  //! \param a Position of the first  component [0, 3].
+  //! \param b Position of the second component [0, 3].
+  //! \param c Position of the third  component [0, 3].
+  //! \param d Position of the fourth component [0, 3].
+  //!
+  //! Shuffle constants can be used to encode an immediate for these instructions:
+  //!   - `pshufw()`
+  //!   - `pshufd()`
+  //!   - `pshuflw()`
+  //!   - `pshufhw()`
+  //!   - `shufps()`
+  static ASMJIT_INLINE int shufImm(uint32_t a, uint32_t b, uint32_t c, uint32_t d) noexcept {
+    ASMJIT_ASSERT(a <= 3 && b <= 3 && c <= 3 && d <= 3);
+    uint32_t result = (a << 6) | (b << 4) | (c << 2) | d;
+    return static_cast<int>(result);
+  }
+
+  //! Create an immediate that can be used by VTERNLOGD and VTERNLOGQ instructions.
+  static ASMJIT_INLINE int tlogImm(
+    uint32_t b000, uint32_t b001, uint32_t b010, uint32_t b011,
+    uint32_t b100, uint32_t b101, uint32_t b110, uint32_t b111) noexcept {
+
+    ASMJIT_ASSERT(b000 <= 1 && b001 <= 1 && b010 <= 1 && b011 <= 1 &&
+                  b100 <= 1 && b101 <= 1 && b110 <= 1 && b111 <= 1);
+    return static_cast<int>((b000 << 0) | (b001 << 1) | (b010 << 2) | (b011 << 3) |
+                            (b100 << 4) | (b101 << 5) | (b110 << 6) | (b111 << 7));
+  }
+
+  //! Create an immediate that can be used by VTERNLOG[D|Q] instructions.
+  static ASMJIT_INLINE int tlogVal(int x) noexcept { return x & 0xFF; }
+  //! Negate an immediate that can be used by VTERNLOG[D|Q] instructions.
+  static ASMJIT_INLINE int tlogNot(int x) noexcept { return x ^ 0xFF; }
+  //! Create an if/else logic that can be used by VTERNLOG[D|Q] instructions.
+  static ASMJIT_INLINE int tlogIf(int cond, int a, int b) noexcept { return (cond & a) | (tlogNot(cond) & b); }
+
   //! Get a 'kmov?' instruction by register `size`.
   static ASMJIT_INLINE uint32_t kmovIdFromSize(uint32_t size) noexcept {
     return size == 1 ? X86Inst::kIdKmovb :
@@ -2532,46 +2700,11 @@ struct X86Inst {
   //! match. If there is an exact match the instruction id is returned, otherwise
   //! `kInvalidInst` (zero) is returned instead. The given `name` doesn't have to
   //! be null-terminated if `len` is provided.
-  ASMJIT_API static uint32_t getIdByName(const char* name, size_t len = kInvalidIndex) noexcept;
+  ASMJIT_API static uint32_t getIdByName(const char* name, size_t len = Globals::kInvalidIndex) noexcept;
 
   //! Get an instruction name from a given instruction id `instId`.
   ASMJIT_API static const char* getNameById(uint32_t instId) noexcept;
 #endif // !ASMJIT_DISABLE_TEXT
-
-  // --------------------------------------------------------------------------
-  // [Condition Codes]
-  // --------------------------------------------------------------------------
-
-  //! Convert a condition code into a condition code that reverses the
-  //! corresponding operands of a comparison.
-  static ASMJIT_INLINE uint32_t reverseCond(uint32_t cond) noexcept {
-    ASMJIT_ASSERT(cond < ASMJIT_ARRAY_SIZE(_x86ReverseCond));
-    return _x86ReverseCond[cond];
-  }
-
-  //! Get the equivalent of a negated condition code.
-  static ASMJIT_INLINE uint32_t negateCond(uint32_t cond) noexcept {
-    ASMJIT_ASSERT(cond < ASMJIT_ARRAY_SIZE(_x86ReverseCond));
-    return cond ^ static_cast<uint32_t>(cond < X86Inst::kCondNone);
-  }
-
-  //! Translate a condition code `cc` to a "cmovcc" instruction id.
-  static ASMJIT_INLINE uint32_t condToCmovcc(uint32_t cond) noexcept {
-    ASMJIT_ASSERT(static_cast<uint32_t>(cond) < ASMJIT_ARRAY_SIZE(_x86CondToCmovcc));
-    return _x86CondToCmovcc[cond];
-  }
-
-  //! Translate a condition code `cc` to a "jcc" instruction id.
-  static ASMJIT_INLINE uint32_t condToJcc(uint32_t cond) noexcept {
-    ASMJIT_ASSERT(static_cast<uint32_t>(cond) < ASMJIT_ARRAY_SIZE(_x86CondToJcc));
-    return _x86CondToJcc[cond];
-  }
-
-  //! Translate a condition code `cc` to a "setcc" instruction id.
-  static ASMJIT_INLINE uint32_t condToSetcc(uint32_t cond) noexcept {
-    ASMJIT_ASSERT(static_cast<uint32_t>(cond) < ASMJIT_ARRAY_SIZE(_x86CondToSetcc));
-    return _x86CondToSetcc[cond];
-  }
 
   // --------------------------------------------------------------------------
   // [Validation]
@@ -2606,6 +2739,7 @@ struct X86InstDB {
   ASMJIT_API static const X86Inst::AvxData avxData[];
   ASMJIT_API static const uint32_t altOpCodeData[];
   ASMJIT_API static const char nameData[];
+  ASMJIT_API static const X86Inst::MiscData miscData;
 };
 
 ASMJIT_INLINE const X86Inst& X86Inst::getInst(uint32_t instId) noexcept {
@@ -2635,42 +2769,15 @@ ASMJIT_INLINE uint32_t X86Inst::CommonData::getAltOpCode() const noexcept {
   return X86InstDB::altOpCodeData[_altOpCodeIndex];
 }
 
+ASMJIT_INLINE const X86Inst::MiscData& X86Inst::getMiscData() noexcept {
+  return X86InstDB::miscData;
+}
+
 // ============================================================================
 // [asmjit::X86Util]
 // ============================================================================
 
 struct X86Util {
-  //! Pack a shuffle constant to be used with SSE/AVX instruction (2 values).
-  //!
-  //! \param a Position of the first  component [0, 1].
-  //! \param b Position of the second component [0, 1].
-  //!
-  //! Shuffle constants can be used to encode an immediate for these instructions:
-  //!   - `shufpd`
-  static ASMJIT_INLINE int shuffle(uint32_t a, uint32_t b) noexcept {
-    ASMJIT_ASSERT(a <= 0x1 && b <= 0x1);
-    uint32_t result = (a << 1) | b;
-    return static_cast<int>(result);
-  }
-
-  //! Pack a shuffle constant to be used with SSE/AVX instruction (4 values).
-  //!
-  //! \param a Position of the first  component [0, 3].
-  //! \param b Position of the second component [0, 3].
-  //! \param c Position of the third  component [0, 3].
-  //! \param d Position of the fourth component [0, 3].
-  //!
-  //! Shuffle constants can be used to encode an immediate for these instructions:
-  //!   - `pshufw()`
-  //!   - `pshufd()`
-  //!   - `pshuflw()`
-  //!   - `pshufhw()`
-  //!   - `shufps()`
-  static ASMJIT_INLINE int shuffle(uint32_t a, uint32_t b, uint32_t c, uint32_t d) noexcept {
-    ASMJIT_ASSERT(a <= 0x3 && b <= 0x3 && c <= 0x3 && d <= 0x3);
-    uint32_t result = (a << 6) | (b << 4) | (c << 2) | d;
-    return static_cast<int>(result);
-  }
 };
 
 //! \}

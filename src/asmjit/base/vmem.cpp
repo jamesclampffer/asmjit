@@ -990,13 +990,13 @@ UNIT(base_vmem) {
   int i;
   int kCount = 200000;
 
-  INFO("Memory alloc/free test - %d allocations.", static_cast<int>(kCount));
+  INFO("Memory alloc/free test - %d allocations", static_cast<int>(kCount));
 
   void** a = (void**)ASMJIT_ALLOC(sizeof(void*) * kCount);
   void** b = (void**)ASMJIT_ALLOC(sizeof(void*) * kCount);
 
   EXPECT(a != nullptr && b != nullptr,
-    "Couldn't allocate %u bytes on heap.", kCount * 2);
+    "Couldn't allocate %u bytes on heap", kCount * 2);
 
   INFO("Allocating virtual memory...");
   for (i = 0; i < kCount; i++) {
@@ -1012,21 +1012,21 @@ UNIT(base_vmem) {
   INFO("Freeing virtual memory...");
   for (i = 0; i < kCount; i++) {
     EXPECT(memmgr.release(a[i]) == kErrorOk,
-      "Failed to free %p.", b[i]);
+      "Failed to free %p", b[i]);
   }
   VMemTest_stats(memmgr);
 
-  INFO("Verified alloc/free test - %d allocations.", static_cast<int>(kCount));
+  INFO("Verified alloc/free test - %d allocations", static_cast<int>(kCount));
   for (i = 0; i < kCount; i++) {
     int r = (rand() % 1000) + 4;
 
     a[i] = memmgr.alloc(r);
     EXPECT(a[i] != nullptr,
-      "Couldn't allocate %d bytes of virtual memory.", r);
+      "Couldn't allocate %d bytes of virtual memory", r);
 
     b[i] = ASMJIT_ALLOC(r);
     EXPECT(b[i] != nullptr,
-      "Couldn't allocate %d bytes on heap.", r);
+      "Couldn't allocate %d bytes on heap", r);
 
     VMemTest_fill(a[i], b[i], r);
   }
@@ -1039,22 +1039,22 @@ UNIT(base_vmem) {
   for (i = 0; i < kCount / 2; i++) {
     VMemTest_verify(a[i], b[i]);
     EXPECT(memmgr.release(a[i]) == kErrorOk,
-      "Failed to free %p.", a[i]);
+      "Failed to free %p", a[i]);
     ASMJIT_FREE(b[i]);
   }
   VMemTest_stats(memmgr);
 
-  INFO("Alloc again.");
+  INFO("Alloc again");
   for (i = 0; i < kCount / 2; i++) {
     int r = (rand() % 1000) + 4;
 
     a[i] = memmgr.alloc(r);
     EXPECT(a[i] != nullptr,
-      "Couldn't allocate %d bytes of virtual memory.", r);
+      "Couldn't allocate %d bytes of virtual memory", r);
 
     b[i] = ASMJIT_ALLOC(r);
     EXPECT(b[i] != nullptr,
-      "Couldn't allocate %d bytes on heap.");
+      "Couldn't allocate %d bytes on heap");
 
     VMemTest_fill(a[i], b[i], r);
   }
@@ -1064,7 +1064,7 @@ UNIT(base_vmem) {
   for (i = 0; i < kCount; i++) {
     VMemTest_verify(a[i], b[i]);
     EXPECT(memmgr.release(a[i]) == kErrorOk,
-      "Failed to free %p.", a[i]);
+      "Failed to free %p", a[i]);
     ASMJIT_FREE(b[i]);
   }
   VMemTest_stats(memmgr);

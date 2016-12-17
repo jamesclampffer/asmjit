@@ -16,8 +16,6 @@
 #include "../base/simdtypes.h"
 #include "../base/utils.h"
 #include "../base/zone.h"
-#include "../base/zonecontainers.h"
-#include "../base/zoneheap.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
@@ -114,10 +112,10 @@ public:
       _cdeclCallConv(CallConv::kIdNone),
       _stdCallConv(CallConv::kIdNone),
       _fastCallConv(CallConv::kIdNone),
-      _baseAddress(kNoBaseAddress) {}
+      _baseAddress(Globals::kNoBaseAddress) {}
   ASMJIT_INLINE CodeInfo(const CodeInfo& other) noexcept { init(other); }
 
-  explicit ASMJIT_INLINE CodeInfo(uint32_t archType, uint32_t archMode = 0, uint64_t baseAddress = kNoBaseAddress) noexcept
+  explicit ASMJIT_INLINE CodeInfo(uint32_t archType, uint32_t archMode = 0, uint64_t baseAddress = Globals::kNoBaseAddress) noexcept
     : _archInfo(archType, archMode),
       _packedMiscInfo(0),
       _baseAddress(baseAddress) {}
@@ -136,7 +134,7 @@ public:
     _baseAddress = other._baseAddress;
   }
 
-  ASMJIT_INLINE void init(uint32_t archType, uint32_t archMode = 0, uint64_t baseAddress = kNoBaseAddress) noexcept {
+  ASMJIT_INLINE void init(uint32_t archType, uint32_t archMode = 0, uint64_t baseAddress = Globals::kNoBaseAddress) noexcept {
     _archInfo.init(archType, archMode);
     _packedMiscInfo = 0;
     _baseAddress = baseAddress;
@@ -148,7 +146,7 @@ public:
     _cdeclCallConv = CallConv::kIdNone;
     _stdCallConv = CallConv::kIdNone;
     _fastCallConv = CallConv::kIdNone;
-    _baseAddress = kNoBaseAddress;
+    _baseAddress = Globals::kNoBaseAddress;
   }
 
   // --------------------------------------------------------------------------
@@ -189,10 +187,10 @@ public:
   // [Addressing Information]
   // --------------------------------------------------------------------------
 
-  ASMJIT_INLINE bool hasBaseAddress() const noexcept { return _baseAddress != kNoBaseAddress; }
+  ASMJIT_INLINE bool hasBaseAddress() const noexcept { return _baseAddress != Globals::kNoBaseAddress; }
   ASMJIT_INLINE uint64_t getBaseAddress() const noexcept { return _baseAddress; }
   ASMJIT_INLINE void setBaseAddress(uint64_t p) noexcept { _baseAddress = p; }
-  ASMJIT_INLINE void resetBaseAddress() noexcept { _baseAddress = kNoBaseAddress; }
+  ASMJIT_INLINE void resetBaseAddress() noexcept { _baseAddress = Globals::kNoBaseAddress; }
 
   // --------------------------------------------------------------------------
   // [Operator Overload]
@@ -362,6 +360,7 @@ public:
   //! Get label flags, returns 0 at the moment.
   ASMJIT_INLINE uint32_t getFlags() const noexcept { return _flags; }
 
+  ASMJIT_INLINE bool hasParent() const noexcept { return _parentId != 0; }
   //! Get label's parent id.
   ASMJIT_INLINE uint32_t getParentId() const noexcept { return _parentId; }
 
@@ -614,7 +613,7 @@ public:
   ASMJIT_API Error newNamedLabelId(uint32_t& idOut, const char* name, size_t nameLength, uint32_t type, uint32_t parentId) noexcept;
 
   //! Get a label id by name.
-  ASMJIT_API uint32_t getLabelIdByName(const char* name, size_t nameLength = kInvalidIndex, uint32_t parentId = kInvalidValue) noexcept;
+  ASMJIT_API uint32_t getLabelIdByName(const char* name, size_t nameLength = Globals::kInvalidIndex, uint32_t parentId = 0) noexcept;
 
   //! Create a new label-link used to store information about yet unbound labels.
   //!
@@ -704,7 +703,7 @@ public:
   //!
   //! A given buffer will be overwritten, to get the number of bytes required,
   //! use `getCodeSize()`.
-  ASMJIT_API size_t relocate(void* dst, uint64_t baseAddress = kNoBaseAddress) const noexcept;
+  ASMJIT_API size_t relocate(void* dst, uint64_t baseAddress = Globals::kNoBaseAddress) const noexcept;
 
   // --------------------------------------------------------------------------
   // [Members]

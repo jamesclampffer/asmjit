@@ -49,10 +49,6 @@ static void generateAlphaBlend(asmjit::X86Compiler& cc) {
   cc.setArg(1, src);
   cc.setArg(2, i);
 
-  cc.alloc(dst);
-  cc.alloc(src);
-  cc.alloc(i);
-
   // How many pixels have to be processed to make the loop aligned.
   cc.lea(t, ptr(L_DataPool));
   cc.xor_(j, j);
@@ -77,16 +73,15 @@ static void generateAlphaBlend(asmjit::X86Compiler& cc) {
   // Small loop.
   cc.bind(L_SmallLoop);
 
-  cc.pcmpeqb(a0, a0);
   cc.movd(y0, ptr(src));
-
-  cc.pxor(a0, y0);
   cc.movd(x0, ptr(dst));
 
+  cc.pcmpeqb(a0, a0);
+  cc.pxor(a0, y0);
   cc.psrlw(a0, 8);
   cc.punpcklbw(x0, cZero);
 
-  cc.pshuflw(a0, a0, X86Util::shuffle(1, 1, 1, 1));
+  cc.pshuflw(a0, a0, X86Inst::shufImm(1, 1, 1, 1));
   cc.punpcklbw(y0, cZero);
 
   cc.pmullw(x0, a0);
@@ -119,9 +114,9 @@ static void generateAlphaBlend(asmjit::X86Compiler& cc) {
   cc.bind(L_LargeLoop);
 
   cc.movups(y0, ptr(src));
-  cc.pcmpeqb(a0, a0);
   cc.movaps(x0, ptr(dst));
 
+  cc.pcmpeqb(a0, a0);
   cc.xorps(a0, y0);
   cc.movaps(x1, x0);
 
@@ -134,8 +129,8 @@ static void generateAlphaBlend(asmjit::X86Compiler& cc) {
   cc.punpckhbw(x1, cZero);
   cc.punpckhwd(a1, a1);
 
-  cc.pshufd(a0, a0, X86Util::shuffle(3, 3, 1, 1));
-  cc.pshufd(a1, a1, X86Util::shuffle(3, 3, 1, 1));
+  cc.pshufd(a0, a0, X86Inst::shufImm(3, 3, 1, 1));
+  cc.pshufd(a1, a1, X86Inst::shufImm(3, 3, 1, 1));
 
   cc.pmullw(x0, a0);
   cc.pmullw(x1, a1);

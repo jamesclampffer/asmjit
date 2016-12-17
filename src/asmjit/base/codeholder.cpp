@@ -116,7 +116,7 @@ Error CodeHolder::init(const CodeInfo& info) noexcept {
   ASMJIT_ASSERT(_emitters == nullptr);
 
   // Create the default section and insert it to the `_sections` array.
-  Error err = _sections.willGrow(1);
+  Error err = _sections.willGrow();
   if (err == kErrorOk) {
     SectionEntry* se = _baseZone.allocZeroedT<SectionEntry>();
     if (ASMJIT_LIKELY(se)) {
@@ -319,26 +319,26 @@ Error CodeHolder::growBuffer(CodeBuffer* cb, size_t n) noexcept {
   if (capacity < 8096)
     capacity = 8096;
   else
-    capacity += kMemAllocOverhead;
+    capacity += Globals::kAllocOverhead;
 
   do {
     size_t old = capacity;
-    if (capacity < kMemAllocGrowMax)
+    if (capacity < Globals::kAllocThreshold)
       capacity *= 2;
     else
-      capacity += kMemAllocGrowMax;
+      capacity += Globals::kAllocThreshold;
 
-    if (capacity < kMemAllocGrowMax)
+    if (capacity < Globals::kAllocThreshold)
       capacity *= 2;
     else
-      capacity += kMemAllocGrowMax;
+      capacity += Globals::kAllocThreshold;
 
     // Overflow.
     if (ASMJIT_UNLIKELY(old > capacity))
       return DebugUtils::errored(kErrorNoHeapMemory);
-  } while (capacity - kMemAllocOverhead < required);
+  } while (capacity - Globals::kAllocOverhead < required);
 
-  return CodeHolder_reserveInternal(this, cb, capacity - kMemAllocOverhead);
+  return CodeHolder_reserveInternal(this, cb, capacity - Globals::kAllocOverhead);
 }
 
 Error CodeHolder::reserveBuffer(CodeBuffer* cb, size_t n) noexcept {
@@ -379,10 +379,10 @@ public:
   uint32_t hVal;
 };
 
-// Returns a hash of `name` and fixes `nameLength` if it's `kInvalidIndex`.
+// Returns a hash of `name` and fixes `nameLength` if it's `Globals::kInvalidIndex`.
 static uint32_t CodeHolder_hashNameAndFixLen(const char* name, size_t& nameLength) noexcept {
   uint32_t hVal = 0;
-  if (nameLength == kInvalidIndex) {
+  if (nameLength == Globals::kInvalidIndex) {
     size_t i = 0;
     for (;;) {
       uint8_t c = static_cast<uint8_t>(name[i]);
@@ -421,13 +421,13 @@ LabelLink* CodeHolder::newLabelLink(LabelEntry* le, uint32_t sectionId, size_t o
 }
 
 Error CodeHolder::newLabelId(uint32_t& idOut) noexcept {
-  idOut = kInvalidValue;
+  idOut = 0;
 
   size_t index = _labels.getLength();
-  if (ASMJIT_LIKELY(index > Label::kPackedIdCount))
+  if (ASMJIT_LIKELY(index >= Operand::kPackedIdCount))
     return DebugUtils::errored(kErrorLabelIndexOverflow);
 
-  ASMJIT_PROPAGATE(_labels.willGrow(1));
+  ASMJIT_PROPAGATE(_labels.willGrow());
   LabelEntry* le = _baseHeap.allocZeroedT<LabelEntry>();
 
   if (ASMJIT_UNLIKELY(!le))
@@ -435,7 +435,7 @@ Error CodeHolder::newLabelId(uint32_t& idOut) noexcept {
 
   uint32_t id = Operand::packId(static_cast<uint32_t>(index));
   le->_setId(id);
-  le->_parentId = kInvalidValue;
+  le->_parentId = 0;
   le->_sectionId = SectionEntry::kInvalidId;
   le->_offset = 0;
 
@@ -445,13 +445,13 @@ Error CodeHolder::newLabelId(uint32_t& idOut) noexcept {
 }
 
 Error CodeHolder::newNamedLabelId(uint32_t& idOut, const char* name, size_t nameLength, uint32_t type, uint32_t parentId) noexcept {
-  idOut = kInvalidValue;
+  idOut = 0;
   uint32_t hVal = CodeHolder_hashNameAndFixLen(name, nameLength);
 
   if (ASMJIT_UNLIKELY(nameLength == 0))
     return DebugUtils::errored(kErrorInvalidLabelName);
 
-  if (ASMJIT_UNLIKELY(nameLength > Label::kMaxNameLength))
+  if (ASMJIT_UNLIKELY(nameLength > Globals::kMaxLabelLength))
     return DebugUtils::errored(kErrorLabelNameTooLong);
 
   switch (type) {
@@ -463,7 +463,7 @@ Error CodeHolder::newNamedLabelId(uint32_t& idOut, const char* name, size_t name
       break;
 
     case Label::kTypeGlobal:
-      if (ASMJIT_UNLIKELY(parentId != kInvalidValue))
+      if (ASMJIT_UNLIKELY(parentId != 0))
         return DebugUtils::errored(kErrorNonLocalLabelCantHaveParent);
 
       break;
@@ -482,10 +482,10 @@ Error CodeHolder::newNamedLabelId(uint32_t& idOut, const char* name, size_t name
   Error err = kErrorOk;
   size_t index = _labels.getLength();
 
-  if (ASMJIT_UNLIKELY(index > Label::kPackedIdCount))
+  if (ASMJIT_UNLIKELY(index >= Operand::kPackedIdCount))
     return DebugUtils::errored(kErrorLabelIndexOverflow);
 
-  ASMJIT_PROPAGATE(_labels.willGrow(1));
+  ASMJIT_PROPAGATE(_labels.willGrow());
   le = _baseHeap.allocZeroedT<LabelEntry>();
 
   if (ASMJIT_UNLIKELY(!le))
@@ -495,7 +495,7 @@ Error CodeHolder::newNamedLabelId(uint32_t& idOut, const char* name, size_t name
   le->_hVal = hVal;
   le->_setId(id);
   le->_type = static_cast<uint8_t>(type);
-  le->_parentId = kInvalidValue;
+  le->_parentId = 0;
   le->_sectionId = SectionEntry::kInvalidId;
   le->_offset = 0;
 
@@ -518,10 +518,10 @@ Error CodeHolder::newNamedLabelId(uint32_t& idOut, const char* name, size_t name
 
 uint32_t CodeHolder::getLabelIdByName(const char* name, size_t nameLength, uint32_t parentId) noexcept {
   uint32_t hVal = CodeHolder_hashNameAndFixLen(name, nameLength);
-  if (ASMJIT_UNLIKELY(!nameLength)) return kInvalidValue;
+  if (ASMJIT_UNLIKELY(!nameLength)) return 0;
 
   LabelEntry* le = _namedLabels.get(LabelByName(name, nameLength, hVal));
-  return le ? le->getId() : static_cast<uint32_t>(kInvalidValue);
+  return le ? le->getId() : static_cast<uint32_t>(0);
 }
 
 // ============================================================================
@@ -534,7 +534,7 @@ static ASMJIT_INLINE uint32_t x86EncodeMod(uint32_t m, uint32_t o, uint32_t rm) 
 }
 
 Error CodeHolder::newRelocEntry(RelocEntry** dst, uint32_t type, uint32_t size) noexcept {
-  ASMJIT_PROPAGATE(_relocations.willGrow(1));
+  ASMJIT_PROPAGATE(_relocations.willGrow());
 
   size_t index = _relocations.getLength();
   if (ASMJIT_UNLIKELY(index > size_t(0xFFFFFFFFU)))
@@ -565,7 +565,7 @@ size_t CodeHolder::relocate(void* _dst, uint64_t baseAddress) const noexcept {
   uint32_t archType = getArchType();
   uint8_t* dst = static_cast<uint8_t*>(_dst);
 
-  if (baseAddress == kNoBaseAddress)
+  if (baseAddress == Globals::kNoBaseAddress)
     baseAddress = static_cast<uint64_t>((uintptr_t)dst);
 
 #if !defined(ASMJIT_DISABLE_LOGGING)

@@ -122,12 +122,12 @@ UNIT(base_operand) {
   INFO("Checking basic functionality of Label");
   Label label;
   EXPECT(label.isValid() == false);
-  EXPECT(label.getId() == kInvalidValue);
+  EXPECT(label.getId() == 0);
 
   INFO("Checking basic functionality of Reg");
   EXPECT(Reg().isValid() == false,
     "Default constructed Reg() should not be valid");
-  EXPECT(Reg()._any.reserved8_4  == 0,
+  EXPECT(Reg()._any.reserved8_4 == 0,
     "A default constructed Reg() should zero its 'reserved8_4' field");
   EXPECT(Reg()._any.reserved12_4 == 0,
     "A default constructed Reg() should zero its 'reserved12_4' field");
@@ -148,7 +148,7 @@ UNIT(base_operand) {
   EXPECT(r1.isVirtReg()    == false);
   EXPECT(r1.getSignature() == rSig);
   EXPECT(r1.getRegType()   == 1);
-  EXPECT(r1.getRegKind()   == 2);
+  EXPECT(r1.getKind()      == 2);
   EXPECT(r1.getSize()      == 8);
   EXPECT(r1.getId()        == 5);
   EXPECT(r1.isReg(1, 5)    == true); // RegType and Id.
@@ -165,7 +165,7 @@ UNIT(base_operand) {
   EXPECT(r2.isVirtReg()    == false);
   EXPECT(r2.getSignature() == rSig);
   EXPECT(r2.getRegType()   == r1.getRegType());
-  EXPECT(r2.getRegKind()   == r1.getRegKind());
+  EXPECT(r2.getKind()      == r1.getKind());
   EXPECT(r2.getSize()      == r1.getSize());
   EXPECT(r2.getId()        == 6);
   EXPECT(r2.isReg(1, 6)    == true);

@@ -85,12 +85,16 @@ public:
   // --------------------------------------------------------------------------
 
   ASMJIT_API virtual Label newLabel() override;
-  ASMJIT_API virtual Label newNamedLabel(const char* name, size_t nameLength = kInvalidIndex, uint32_t type = Label::kTypeGlobal, uint32_t parentId = kInvalidValue) override;
+  ASMJIT_API virtual Label newNamedLabel(
+    const char* name,
+    size_t nameLength = Globals::kInvalidIndex,
+    uint32_t type = Label::kTypeGlobal,
+    uint32_t parentId = 0) override;
   ASMJIT_API virtual Error bind(const Label& label) override;
   ASMJIT_API virtual Error embed(const void* data, uint32_t size) override;
   ASMJIT_API virtual Error embedLabel(const Label& label) override;
   ASMJIT_API virtual Error embedConstPool(const Label& label, const ConstPool& pool) override;
-  ASMJIT_API virtual Error comment(const char* s, size_t len = kInvalidIndex) override;
+  ASMJIT_API virtual Error comment(const char* s, size_t len = Globals::kInvalidIndex) override;
 
   // --------------------------------------------------------------------------
   // [Members]

@@ -28,87 +28,28 @@ namespace asmjit {
 // [Forward Declarations]
 // ============================================================================
 
-struct Operand_;
+class CodeEmitter;
 class Reg;
+struct Operand_;
 
-// ============================================================================
-// [asmjit::LogUtil]
-// ============================================================================
-
-// Only used by asmjit internals, not available to consumers.
-#if defined(ASMJIT_EXPORTS)
-struct LogUtil {
-  enum {
-    // Has to be big to be able to hold all metadata compiler can assign to a
-    // single instruction.
-    kMaxCommentLength = 512,
-    kMaxInstLength = 40,
-    kMaxBinaryLength = 26
-  };
-
-  static Error formatLine(
-    StringBuilder& sb,
-    const uint8_t* binData, size_t binLen, size_t dispLen, size_t imLen, const char* comment) noexcept;
-};
-#endif // ASMJIT_EXPORTS
-
-// ============================================================================
-// [asmjit::Formatter]
-// ============================================================================
-
-class ASMJIT_VIRTAPI Formatter {
-public:
-  typedef Error (ASMJIT_CDECL* VirtRegHandlerFunc)(
-    StringBuilder& out, uint32_t logOptions, const Reg& r, void* handlerData);
-
-  ASMJIT_API Formatter() noexcept;
-  ASMJIT_API virtual ~Formatter() noexcept;
-
-  virtual Error formatRegister(
-    StringBuilder& out,
-    uint32_t logOptions,
-    uint32_t regType,
-    uint32_t regId) const noexcept = 0;
-
-  virtual Error formatOperand(
-    StringBuilder& out,
-    uint32_t logOptions,
-    const Operand_& op) const noexcept = 0;
-
-  virtual Error formatInstruction(
-    StringBuilder& out,
-    uint32_t logOptions,
-    uint32_t instId,
-    uint32_t options,
-    const Operand_& opExtra,
-    const Operand_* opArray, uint32_t opCount) const noexcept = 0;
-
-  ASMJIT_INLINE Error formatVirtReg(StringBuilder& out, uint32_t logOptions, const Reg& r) const {
-    ASMJIT_ASSERT(hasVirtRegHandler());
-    return _virtRegHandlerFunc(out, logOptions, r, _virtRegHandlerData);
-  }
-
-  ASMJIT_INLINE bool hasVirtRegHandler() const noexcept { return _virtRegHandlerFunc != nullptr; }
-
-  ASMJIT_INLINE void setVirtRegHandler(VirtRegHandlerFunc func, void* data) noexcept {
-    _virtRegHandlerFunc = func;
-    _virtRegHandlerData = data;
-  }
-  ASMJIT_INLINE void resetVirtRegHandler() { setVirtRegHandler(nullptr, nullptr); }
-
-  VirtRegHandlerFunc _virtRegHandlerFunc;
-  void* _virtRegHandlerData;
-};
+#if !defined(ASMJIT_DISABLE_BUILDER)
+class CodeBuilder;
+class CBNode;
+#endif // !ASMJIT_DISABLE_BUILDER
 
 // ============================================================================
 // [asmjit::Logger]
 // ============================================================================
 
-//! Abstract logging class.
+//! Abstract logging interface and helpers.
 //!
 //! This class can be inherited and reimplemented to fit into your logging
 //! subsystem. When reimplementing use `Logger::log()` method to log into
 //! a custom stream.
+//!
+//! There are two \ref Logger implementations offered by AsmJit:
+//!   - \ref FileLogger - allows to log into a `FILE*` stream.
+//!   - \ref StringLogger - logs into a \ref StringBuilder.
 class ASMJIT_VIRTAPI Logger {
 public:
   ASMJIT_NONCOPYABLE(Logger)
@@ -120,8 +61,9 @@ public:
   //! Logger options.
   ASMJIT_ENUM(Options) {
     kOptionBinaryForm      = 0x00000001, //! Output instructions also in binary form.
-    kOptionHexImmediate    = 0x00000002, //! Output constants in hexadecimal form.
-    kOptionHexDisplacement = 0x00000004  //! Output displacements in hexadecimal form.
+    kOptionImmExtended     = 0x00000002, //! Output a meaning of some immediates.
+    kOptionHexImmediate    = 0x00000004, //! Output constants in hexadecimal form.
+    kOptionHexDisplacement = 0x00000008  //! Output displacements in hexadecimal form.
   };
 
   // --------------------------------------------------------------------------
@@ -138,7 +80,7 @@ public:
   // --------------------------------------------------------------------------
 
   //! Log output.
-  virtual Error log(const char* buf, size_t len = kInvalidIndex) noexcept = 0;
+  virtual Error log(const char* buf, size_t len = Globals::kInvalidIndex) noexcept = 0;
 
   //! Format the message by using "sprintf()" and then send to `log()`.
   ASMJIT_API Error logf(const char* fmt, ...) noexcept;
@@ -216,7 +158,7 @@ public:
   // [Logging]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error log(const char* buf, size_t len = kInvalidIndex) noexcept override;
+  ASMJIT_API virtual Error log(const char* buf, size_t len = Globals::kInvalidIndex) noexcept override;
 
   // --------------------------------------------------------------------------
   // [Members]
@@ -262,7 +204,7 @@ public:
   // [Logging]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error log(const char* buf, size_t len = kInvalidIndex) noexcept override;
+  ASMJIT_API virtual Error log(const char* buf, size_t len = Globals::kInvalidIndex) noexcept override;
 
   // --------------------------------------------------------------------------
   // [Members]
@@ -271,8 +213,67 @@ public:
   //! Output string.
   StringBuilder _stringBuilder;
 };
+
+// ============================================================================
+// [asmjit::Logging]
+// ============================================================================
+
+struct Logging {
+  ASMJIT_API static Error formatRegister(
+    StringBuilder& sb,
+    uint32_t logOptions,
+    const CodeEmitter* emitter,
+    uint32_t archType,
+    uint32_t regType,
+    uint32_t regId) noexcept;
+
+  ASMJIT_API static Error formatLabel(
+    StringBuilder& sb,
+    uint32_t logOptions,
+    const CodeEmitter* emitter,
+    uint32_t labelId) noexcept;
+
+  ASMJIT_API static Error formatOperand(
+    StringBuilder& sb,
+    uint32_t logOptions,
+    const CodeEmitter* emitter,
+    uint32_t archType,
+    const Operand_& op) noexcept;
+
+  ASMJIT_API static Error formatInstruction(
+    StringBuilder& sb,
+    uint32_t logOptions,
+    const CodeEmitter* emitter,
+    uint32_t archType,
+    uint32_t instId,
+    uint32_t options,
+    const Operand_& opExtra,
+    const Operand_* opArray, uint32_t opCount) noexcept;
+
+#if !defined(ASMJIT_DISABLE_BUILDER)
+  ASMJIT_API static Error formatNode(
+    StringBuilder& sb,
+    uint32_t logOptions,
+    const CodeBuilder* cb,
+    const CBNode* node_) noexcept;
+#endif // !ASMJIT_DISABLE_BUILDER
+
+// Only used by AsmJit internals, not available for users.
+#if defined(ASMJIT_EXPORTS)
+  enum {
+    // Has to be big to be able to hold all metadata compiler can assign to a
+    // single instruction.
+    kMaxCommentLength = 512,
+    kMaxInstLength = 40,
+    kMaxBinaryLength = 26
+  };
+
+  static Error formatLine(
+    StringBuilder& sb,
+    const uint8_t* binData, size_t binLen, size_t dispLen, size_t imLen, const char* comment) noexcept;
+#endif // ASMJIT_EXPORTS
+};
 #else
-class Formatter;
 class Logger;
 #endif // !ASMJIT_DISABLE_LOGGING
 

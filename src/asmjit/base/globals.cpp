@@ -9,6 +9,7 @@
 
 // [Dependencies]
 #include "../base/globals.h"
+#include "../base/utils.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
@@ -29,6 +30,7 @@ static const char errorMessages[] =
   "Invalid architecture\0"
   "Not initialized\0"
   "Already initialized\0"
+  "Feature not enabled\0"
   "Slot occupied\0"
   "No code generated\0"
   "Code too large\0"
@@ -44,6 +46,7 @@ static const char errorMessages[] =
   "Invalid relocation entry\0"
   "Invalid instruction\0"
   "Invalid register type\0"
+  "Invalid register kind\0"
   "Invalid register's physical id\0"
   "Invalid register's virtual id\0"
   "Invalid rex prefix\0"
@@ -65,31 +68,14 @@ static const char errorMessages[] =
   "Invalid use of a 64-bit GPQ register in 32-bit mode\0"
   "Invalid use of an 80-bit float\0"
   "No more physical registers\0"
-  "Overlapping register arguments\0"
+  "Overlapped registers\0"
   "Overlapping register and arguments base-address register\0"
   "Unknown error\0";
-
-ASMJIT_FAVOR_SIZE static const char* findPackedString(const char* p, uint32_t id, uint32_t maxId) noexcept {
-  uint32_t i = 0;
-
-  if (id > maxId)
-    id = maxId;
-
-  while (i < id) {
-    while (p[0])
-      p++;
-
-    p++;
-    i++;
-  }
-
-  return p;
-}
 #endif // ASMJIT_DISABLE_TEXT
 
 ASMJIT_FAVOR_SIZE const char* DebugUtils::errorAsString(Error err) noexcept {
 #if !defined(ASMJIT_DISABLE_TEXT)
-  return findPackedString(errorMessages, err, kErrorCount);
+  return Utils::findPackedString(errorMessages, Utils::iMin<Error>(err, kErrorCount));
 #else
   static const char noMessage[] = "";
   return noMessage;

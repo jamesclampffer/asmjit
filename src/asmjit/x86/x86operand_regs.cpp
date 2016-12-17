@@ -27,8 +27,8 @@ namespace asmjit {
 // Register Signature {
 //   uint8_t opType;
 //   uint8_t regType;
-//   uint8_t regKind;
-//   uint8_t regSize;
+//   uint8_t kind;
+//   uint8_t size;
 // }
 #define ASMJIT_X86_INV_SIGNATURE(TYPE) {{  \
   uint8_t(Operand::kOpNone),               \
@@ -47,8 +47,8 @@ namespace asmjit {
 // Register Operand {
 //   uint8_t opType;
 //   uint8_t regType;
-//   uint8_t regKind;
-//   uint8_t regSize;
+//   uint8_t kind;
+//   uint8_t size;
 //   uint32_t id;
 //   uint32_t reserved8_4;
 //   uint32_t reserved12_4;

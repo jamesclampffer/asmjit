@@ -12,8 +12,6 @@
 #include "../base/assembler.h"
 #include "../base/utils.h"
 #include "../x86/x86emitter.h"
-#include "../x86/x86logging.h"
-#include "../x86/x86misc.h"
 #include "../x86/x86operand.h"
 
 // [Api-Begin]
@@ -77,16 +75,8 @@ public:
   ASMJIT_INLINE uint32_t _getAddressOverrideMask() const noexcept { return _privateData; }
   ASMJIT_INLINE void _setAddressOverrideMask(uint32_t m) noexcept { _privateData = m; }
 
-  ASMJIT_API virtual Error align(uint32_t mode, uint32_t alignment) override;
   ASMJIT_API virtual Error _emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) override;
-
-  // --------------------------------------------------------------------------
-  // [Members]
-  // --------------------------------------------------------------------------
-
-#if !defined(ASMJIT_DISABLE_LOGGING)
-  X86Formatter _formatter;
-#endif // !ASMJIT_DISABLE_LOGGING
+  ASMJIT_API virtual Error align(uint32_t mode, uint32_t alignment) override;
 };
 
 //! \}

@@ -28,8 +28,6 @@
 #include "./base/utils.h"
 #include "./base/vmem.h"
 #include "./base/zone.h"
-#include "./base/zonecontainers.h"
-#include "./base/zoneheap.h"
 
 // [Guard]
 #endif // _ASMJIT_BASE_H

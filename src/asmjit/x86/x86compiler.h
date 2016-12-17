@@ -15,7 +15,6 @@
 #include "../base/codecompiler.h"
 #include "../base/simdtypes.h"
 #include "../x86/x86emitter.h"
-#include "../x86/x86misc.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
@@ -68,14 +67,8 @@ public:
   ASMJIT_API virtual Error onAttach(CodeHolder* code) noexcept override;
 
   // --------------------------------------------------------------------------
-  // [Code-Generation]
-  // --------------------------------------------------------------------------
-
-  ASMJIT_API virtual Error _emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) override;
-
-  // -------------------------------------------------------------------------
   // [Finalize]
-  // -------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
 
   ASMJIT_API virtual Error finalize() override;
 
@@ -132,6 +125,7 @@ public:
   ASMJIT_NEW_REG_USER(newGpReg  , X86Gp  )
   ASMJIT_NEW_REG_USER(newMmReg  , X86Mm  )
   ASMJIT_NEW_REG_USER(newKReg   , X86KReg)
+  ASMJIT_NEW_REG_USER(newVecReg , X86Vec )
   ASMJIT_NEW_REG_USER(newXmmReg , X86Xmm )
   ASMJIT_NEW_REG_USER(newYmmReg , X86Ymm )
   ASMJIT_NEW_REG_USER(newZmmReg , X86Zmm )
@@ -237,9 +231,9 @@ public:
   //! Put a YMM `val` to a constant-pool.
   ASMJIT_INLINE X86Mem newYmmConst(uint32_t scope, const Data256& val) noexcept { return newConst(scope, &val, 32); }
 
-  // -------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
   // [Instruction Options]
-  // -------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
 
   //! Force the compiler to not follow the conditional or unconditional jump.
   ASMJIT_INLINE X86Compiler& unfollow() noexcept { _options |= kOptionUnfollow; return *this; }

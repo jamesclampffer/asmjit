@@ -77,12 +77,12 @@ public:
 
   template<typename Func>
   ASMJIT_INLINE Error add(Func* dst, CodeHolder* code) noexcept {
-    return _add(ptr_cast<void**, Func*>(dst), code);
+    return _add(Internal::ptr_cast<void**, Func*>(dst), code);
   }
 
   template<typename Func>
   ASMJIT_INLINE Error release(Func dst) noexcept {
-    return _release(ptr_cast<void*, Func>(dst));
+    return _release(Internal::ptr_cast<void*, Func>(dst));
   }
 
   //! Allocate a memory needed for a code stored in the \ref CodeHolder and

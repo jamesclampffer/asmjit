@@ -47,8 +47,6 @@ public:
   typedef FuncDetail::Value SrcArg;
   typedef FuncArgsMapper::Value DstArg;
 
-  enum { kNumRegKinds = CallConv::kNumRegKinds };
-
   struct WorkData {
     uint32_t archRegs;                   //!< Architecture provided and allocable regs.
     uint32_t workRegs;                   //!< Registers that can be used by shuffler.
@@ -73,7 +71,7 @@ public:
   // [Members]
   // --------------------------------------------------------------------------
 
-  WorkData _workData[kNumRegKinds];
+  WorkData _workData[Globals::kMaxVRegKinds];
   bool _hasStackArgs;
   bool _hasRegSwaps;
 };
@@ -85,8 +83,8 @@ X86FuncArgsContext::X86FuncArgsContext() noexcept {
 }
 
 ASMJIT_FAVOR_SIZE Error X86FuncArgsContext::initWorkData(const FuncArgsMapper& args, const uint32_t* dirtyRegs, bool preservedFP) noexcept {
-  // This code has to be updated if this changes.
-  ASMJIT_ASSERT(kNumRegKinds == 4);
+  // The code has to be updated if this changes.
+  ASMJIT_ASSERT(Globals::kMaxVRegKinds == 4);
 
   uint32_t i;
   const FuncDetail& func = *args.getFuncDetail();
@@ -104,7 +102,7 @@ ASMJIT_FAVOR_SIZE Error X86FuncArgsContext::initWorkData(const FuncArgsMapper& a
     _workData[X86Reg::kKindGp].archRegs &= ~Utils::mask(X86Gp::kIdBp);
 
   // Initialize WorkData::workRegs.
-  for (i = 0; i < kNumRegKinds; i++)
+  for (i = 0; i < Globals::kMaxVRegKinds; i++)
     _workData[i].workRegs = _workData[i].archRegs & (dirtyRegs[i] | ~func.getCallConv().getPreservedRegs(i));
 
   // Build WorkData.
@@ -121,7 +119,7 @@ ASMJIT_FAVOR_SIZE Error X86FuncArgsContext::initWorkData(const FuncArgsMapper& a
       return DebugUtils::errored(kErrorInvalidRegType);
 
     uint32_t dstRegKind = X86Reg::kindOf(dstRegType);
-    if (ASMJIT_UNLIKELY(dstRegKind >= kNumRegKinds))
+    if (ASMJIT_UNLIKELY(dstRegKind >= Globals::kMaxVRegKinds))
       return DebugUtils::errored(kErrorInvalidState);
 
     WorkData& dstData = _workData[dstRegKind];
@@ -131,7 +129,7 @@ ASMJIT_FAVOR_SIZE Error X86FuncArgsContext::initWorkData(const FuncArgsMapper& a
 
     uint32_t dstRegMask = Utils::mask(dstRegId);
     if (ASMJIT_UNLIKELY(dstData.usedRegs & dstRegMask))
-      return DebugUtils::errored(kErrorOverlappingRegArgs);
+      return DebugUtils::errored(kErrorOverlappedRegs);
 
     dstData.usedRegs |= dstRegMask;
     dstData.argIndex[dstRegId] = static_cast<uint8_t>(i);
@@ -156,7 +154,7 @@ ASMJIT_FAVOR_SIZE Error X86FuncArgsContext::initWorkData(const FuncArgsMapper& a
         dstData.srcRegs |= srcRegMask;
       }
       else {
-        if (ASMJIT_UNLIKELY(srcRegKind >= kNumRegKinds))
+        if (ASMJIT_UNLIKELY(srcRegKind >= Globals::kMaxVRegKinds))
           return DebugUtils::errored(kErrorInvalidState);
 
         WorkData& srcData = _workData[srcRegKind];
@@ -176,7 +174,7 @@ ASMJIT_FAVOR_SIZE Error X86FuncArgsContext::initWorkData(const FuncArgsMapper& a
 }
 
 ASMJIT_FAVOR_SIZE Error X86FuncArgsContext::markDstRegsDirty(FuncFrameInfo& ffi) noexcept {
-  for (uint32_t i = 0; i < kNumRegKinds; i++) {
+  for (uint32_t i = 0; i < Globals::kMaxVRegKinds; i++) {
     WorkData& wd = _workData[i];
     uint32_t regs = wd.usedRegs | wd.dstRegs;
 
@@ -194,7 +192,7 @@ ASMJIT_FAVOR_SIZE Error X86FuncArgsContext::markRegsForSwaps(FuncFrameInfo& ffi)
   // If some registers require swapping then select one dirty register that
   // can be used as a temporary. We can do it also without it (by using xors),
   // but using temporary is always safer and also faster approach.
-  for (uint32_t i = 0; i < kNumRegKinds; i++) {
+  for (uint32_t i = 0; i < Globals::kMaxVRegKinds; i++) {
     // Skip all register kinds where swapping is natively supported (GP regs).
     if (i == X86Reg::kKindGp) continue;
 
@@ -235,7 +233,7 @@ ASMJIT_FAVOR_SIZE Error X86FuncArgsContext::markStackArgsReg(FuncFrameInfo& ffi)
     uint32_t saRegId = ffi.getStackArgsRegId();
     uint32_t usedRegs = wd.usedRegs;
 
-    if (saRegId != kInvalidReg) {
+    if (saRegId != Globals::kInvalidReg) {
       // Check if the user chosen SA register doesn't overlap with others.
       // However, it's fine if it overlaps with some 'dstMove' register.
       if (usedRegs & Utils::mask(saRegId))
@@ -437,8 +435,8 @@ ASMJIT_FAVOR_SIZE Error X86Internal::initFuncDetail(FuncDetail& func, const Func
       uint32_t typeId = arg.getTypeId();
 
       if (TypeId::isInt(typeId)) {
-        uint32_t regId = gpzPos < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindGp].id[gpzPos] : kInvalidReg;
-        if (regId != kInvalidReg) {
+        uint32_t regId = gpzPos < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindGp].id[gpzPos] : Globals::kInvalidReg;
+        if (regId != Globals::kInvalidReg) {
           uint32_t regType = (typeId <= TypeId::kU32)
             ? X86Reg::kRegGpd
             : X86Reg::kRegGpq;
@@ -455,13 +453,13 @@ ASMJIT_FAVOR_SIZE Error X86Internal::initFuncDetail(FuncDetail& func, const Func
       }
 
       if (TypeId::isFloat(typeId) || TypeId::isVec(typeId)) {
-        uint32_t regId = vecPos < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindVec].id[vecPos] : kInvalidReg;
+        uint32_t regId = vecPos < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindVec].id[vecPos] : Globals::kInvalidReg;
 
         // If this is a float, but `floatByVec` is false, we have to pass by stack.
         if (TypeId::isFloat(typeId) && !cc.hasFlag(CallConv::kFlagPassFloatsByVec))
-          regId = kInvalidReg;
+          regId = Globals::kInvalidReg;
 
-        if (regId != kInvalidReg) {
+        if (regId != Globals::kInvalidReg) {
           arg.initReg(typeId, x86VecTypeIdToRegType(typeId), regId);
           func.addUsedRegs(X86Reg::kKindVec, Utils::mask(regId));
           vecPos++;
@@ -484,8 +482,8 @@ ASMJIT_FAVOR_SIZE Error X86Internal::initFuncDetail(FuncDetail& func, const Func
       uint32_t size = TypeId::sizeOf(typeId);
 
       if (TypeId::isInt(typeId) || TypeId::isMmx(typeId)) {
-        uint32_t regId = i < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindGp].id[i] : kInvalidReg;
-        if (regId != kInvalidReg) {
+        uint32_t regId = i < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindGp].id[i] : Globals::kInvalidReg;
+        if (regId != Globals::kInvalidReg) {
           uint32_t regType = (size <= 4 && !TypeId::isMmx(typeId))
             ? X86Reg::kRegGpd
             : X86Reg::kRegGpq;
@@ -501,8 +499,8 @@ ASMJIT_FAVOR_SIZE Error X86Internal::initFuncDetail(FuncDetail& func, const Func
       }
 
       if (TypeId::isFloat(typeId) || TypeId::isVec(typeId)) {
-        uint32_t regId = i < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindVec].id[i] : kInvalidReg;
-        if (regId != kInvalidReg && (TypeId::isFloat(typeId) || cc.hasFlag(CallConv::kFlagVectorCall))) {
+        uint32_t regId = i < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindVec].id[i] : Globals::kInvalidReg;
+        if (regId != Globals::kInvalidReg && (TypeId::isFloat(typeId) || cc.hasFlag(CallConv::kFlagVectorCall))) {
           uint32_t regType = x86VecTypeIdToRegType(typeId);
           uint32_t regId = cc._passedOrder[X86Reg::kKindVec].id[i];
 
@@ -533,7 +531,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::initFrameLayout(FuncFrameLayout& layout, co
   uint32_t gpSize = (func.getCallConv().getArchType() == ArchInfo::kTypeX86) ? 4 : 8;
 
   // Calculate a bit-mask of all registers that must be saved & restored.
-  for (kind = 0; kind < CallConv::kNumRegKinds; kind++)
+  for (kind = 0; kind < Globals::kMaxVRegKinds; kind++)
     layout._savedRegs[kind] = ffi.getDirtyRegs(kind) & func.getPreservedRegs(kind);
 
   // Include EBP|RBP if the function preserves the frame-pointer.
@@ -567,7 +565,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::initFrameLayout(FuncFrameLayout& layout, co
 
   // These two are identical if the function doesn't align its stack dynamically.
   uint32_t stackArgsRegId = ffi.getStackArgsRegId();
-  if (stackArgsRegId == kInvalidReg)
+  if (stackArgsRegId == Globals::kInvalidReg)
     stackArgsRegId = X86Gp::kIdSp;
 
   // Fix stack arguments base-register from ESP|RSP to EBP|RBP in case it was
@@ -687,7 +685,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitRegMove(X86Emitter* emitter,
   Operand dst(dst_);
   Operand src(src_);
 
-  uint32_t instId = kInvalidInst;
+  uint32_t instId = Globals::kInvalidInst;
   uint32_t memFlags = 0;
 
   enum MemFlags {
@@ -792,8 +790,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitArgMove(X86Emitter* emitter,
 
   uint32_t dstSize = TypeId::sizeOf(dstTypeId);
   uint32_t srcSize = TypeId::sizeOf(srcTypeId);
-
-  int32_t instId = kInvalidInst;
+  uint32_t instId = Globals::kInvalidInst;
 
   // Not a real loop, just 'break' is nicer than 'goto'.
   for (;;) {
@@ -1015,7 +1012,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitProlog(X86Emitter* emitter, const FuncF
 
   // Emit: 'mov saReg, zsp'.
   uint32_t stackArgsRegId = layout.getStackArgsRegId();
-  if (stackArgsRegId != kInvalidReg && stackArgsRegId != X86Gp::kIdSp) {
+  if (stackArgsRegId != Globals::kInvalidReg && stackArgsRegId != X86Gp::kIdSp) {
     saReg.setId(stackArgsRegId);
     if (!(layout.hasPreservedFP() && stackArgsRegId == X86Gp::kIdBp))
       ASMJIT_PROPAGATE(emitter->mov(saReg, zsp));
@@ -1147,7 +1144,6 @@ ASMJIT_FAVOR_SIZE Error X86Internal::allocArgs(X86Emitter* emitter, const FuncFr
   typedef X86FuncArgsContext::SrcArg SrcArg;
   typedef X86FuncArgsContext::DstArg DstArg;
   typedef X86FuncArgsContext::WorkData WorkData;
-  enum { kNumRegKinds = CallConv::kNumRegKinds };
 
   uint32_t i;
   const FuncDetail& func = *args.getFuncDetail();
@@ -1164,8 +1160,8 @@ ASMJIT_FAVOR_SIZE Error X86Internal::allocArgs(X86Emitter* emitter, const FuncFr
   // Free registers are changed during shuffling - when an argument is moved
   // to the final register then the register itself is removed from freeRegs
   // (it can't be altered anymore during shuffling).
-  uint32_t freeRegs[kNumRegKinds];
-  for (i = 0; i < kNumRegKinds; i++)
+  uint32_t freeRegs[Globals::kMaxVRegKinds];
+  for (i = 0; i < Globals::kMaxVRegKinds; i++)
     freeRegs[i] = ctx._workData[i].workRegs & ~ctx._workData[i].srcRegs;
 
   // This is an iterative process that runs until there is a work to do. When
@@ -1177,7 +1173,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::allocArgs(X86Emitter* emitter, const FuncFr
     bool hasWork = false; // Do we have a work to do?
     bool didWork = false; // If we did something...
 
-    uint32_t dstRegKind = kNumRegKinds;
+    uint32_t dstRegKind = Globals::kMaxVRegKinds;
     do {
       WorkData& wd = ctx._workData[--dstRegKind];
       if (wd.numOps > wd.numStackArgs) {
@@ -1269,7 +1265,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::allocArgs(X86Emitter* emitter, const FuncFr
     // Base address of all arguments passed by stack.
     X86Mem saBase = x86::ptr(emitter->gpz(layout.getStackArgsRegId()), layout.getStackArgsOffset());
 
-    uint32_t dstRegKind = kNumRegKinds;
+    uint32_t dstRegKind = Globals::kMaxVRegKinds;
     do {
       WorkData& wd = ctx._workData[--dstRegKind];
       if (wd.numStackArgs) {

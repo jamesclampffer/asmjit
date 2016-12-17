@@ -26,6 +26,10 @@
 //!
 //! \brief X86/X64 Backend API.
 
+//! \defgroup asmjit_arm AsmJit ARM32/ARM64 API
+//!
+//! \brief ARM32/ARM64 Backend API.
+
 // [Dependencies]
 #include "./base.h"
 

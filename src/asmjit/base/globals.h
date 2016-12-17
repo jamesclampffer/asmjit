@@ -27,8 +27,10 @@ namespace asmjit {
 typedef uint32_t Error;
 
 // ============================================================================
-// [asmjit::GlobalDefs]
+// [asmjit::Globals]
 // ============================================================================
+
+namespace Globals {
 
 //! Invalid index
 //!
@@ -40,35 +42,58 @@ static const size_t kInvalidIndex = ~static_cast<size_t>(0);
 //! Invalid base address.
 static const uint64_t kNoBaseAddress = ~static_cast<uint64_t>(0);
 
-//! Global constants.
-ASMJIT_ENUM(GlobalDefs) {
+//! Global definitions.
+ASMJIT_ENUM(Defs) {
   //! Invalid instruction.
   kInvalidInst = 0,
   //! Invalid register id.
   kInvalidReg = 0xFF,
-  //! Invalid value or id.
-  kInvalidValue = 0xFFFFFFFF,
 
   //! Host memory allocator overhead.
-  //!
-  //! The overhead is decremented from all zone allocators so the operating
-  //! system doesn't have to allocate one extra virtual page to keep tract of
-  //! the requested memory block.
-  //!
-  //! The number is actually a guess.
-  kMemAllocOverhead = sizeof(intptr_t) * 4,
+  kAllocOverhead = static_cast<int>(sizeof(intptr_t) * 4),
 
-  //! Memory grow threshold.
-  kMemAllocGrowMax = 8192 * 1024
+  //! Aggressive growing strategy threshold.
+  kAllocThreshold = 8192 * 1024
 };
 
+ASMJIT_ENUM(Limits) {
+  //! Count of register kinds that are important to Function API and CodeCompiler.
+  //! The target architecture can define more register kinds for special registers,
+  //! but these will never map to virtual registers and will never be used to pass
+  //! and return function arguments and function return values, respectively.
+  kMaxVRegKinds = 4,
+
+  //! Maximum number of physical registers of all kinds of all supported
+  //! architectures. This is only important for \ref CodeCompiler and its
+  //! \ref RAPass (register allocator pass).
+  //!
+  //! NOTE: The distribution of these registers is architecture specific.
+  kMaxPhysRegs = 64,
+
+  //! Maximum label or symbol length in bytes (take into consideration that a
+  //! single UTF-8 character can take more than single byte to encode it).
+  kMaxLabelLength = 2048
+};
+
+} // Globals namespace
+
 // ============================================================================
-// [asmjit::ptr_cast]
+// [asmjit::ptr_as_func / func_as_ptr]
 // ============================================================================
+
+namespace Internal {
 
 //! Cast designed to cast between function and void* pointers.
 template<typename Dst, typename Src>
-ASMJIT_INLINE Dst ptr_cast(Src p) noexcept { return (Dst)p; }
+static ASMJIT_INLINE Dst ptr_cast(Src p) noexcept { return (Dst)p; }
+
+} // Internal namespace
+
+template<typename Func>
+static ASMJIT_INLINE Func ptr_as_func(void* func) noexcept { return Internal::ptr_cast<Func, void*>(func); }
+
+template<typename Func>
+static ASMJIT_INLINE void* func_as_ptr(Func func) noexcept { return Internal::ptr_cast<void*, Func>(func); }
 
 // ============================================================================
 // [asmjit::ErrorCode]
@@ -97,13 +122,16 @@ ASMJIT_ENUM(ErrorCode) {
   //! not be underestimated.
   kErrorInvalidState,
 
-  //! Incompatible architecture.
+  //! Invalid or incompatible architecture.
   kErrorInvalidArch,
 
   //! The object is not initialized.
   kErrorNotInitialized,
   //! The object is already initialized.
   kErrorAlreadyInitialized,
+
+  //! Built-in feature was disabled at compile time and it's not available.
+  kErrorFeatureNotEnabled,
 
   //! CodeHolder can't have attached more than one \ref Assembler at a time.
   kErrorSlotOccupied,
@@ -143,6 +171,8 @@ ASMJIT_ENUM(ErrorCode) {
   kErrorInvalidInstruction,
   //! Invalid register type.
   kErrorInvalidRegType,
+  //! Invalid register kind.
+  kErrorInvalidRegKind,
   //! Invalid register's physical id.
   kErrorInvalidPhysId,
   //! Invalid register's virtual id.
@@ -189,7 +219,7 @@ ASMJIT_ENUM(ErrorCode) {
   //! AsmJit requires a physical register, but no one is available.
   kErrorNoMorePhysRegs,
   //! A variable has been assigned more than once to a function argument (CodeCompiler).
-  kErrorOverlappingRegArgs,
+  kErrorOverlappedRegs,
   //! Invalid register to hold stack arguments offset.
   kErrorOverlappingStackRegWithRegArg,
 
@@ -224,11 +254,10 @@ static ASMJIT_INLINE Error errored(Error err) noexcept { return err; }
 //! Get a printable version of `asmjit::Error` code.
 ASMJIT_API const char* errorAsString(Error err) noexcept;
 
-//! Called in debug build to output a debugging message caused by assertion
-//! failure or tracing (if enabled by ASMJIT_TRACE).
+//! Called to output debugging message(s).
 ASMJIT_API void debugOutput(const char* str) noexcept;
 
-//! Called in debug build on assertion failure.
+//! Called on assertion failure.
 //!
 //! \param file Source file name where it happened.
 //! \param line Line in the source file.

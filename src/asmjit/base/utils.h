@@ -543,6 +543,33 @@ struct Utils {
     return i;
   }
 
+  static ASMJIT_INLINE const char* findPackedString(const char* p, uint32_t id) noexcept {
+    uint32_t i = 0;
+    while (i < id) {
+      while (p[0])
+        p++;
+      p++;
+      i++;
+    }
+    return p;
+  }
+
+  //! \internal
+  //!
+  //! Compare two instruction names.
+  //!
+  //! `a` is a null terminated instruction name from `???InstDB::nameData[]` table.
+  //! `b` is a non-null terminated instruction name passed to `???Inst::getIdByName()`.
+  static ASMJIT_INLINE int cmpInstName(const char* a, const char* b, size_t len) noexcept {
+    for (size_t i = 0; i < len; i++) {
+      int c = static_cast<int>(static_cast<uint8_t>(a[i])) -
+              static_cast<int>(static_cast<uint8_t>(b[i])) ;
+      if (c != 0) return c;
+    }
+
+    return static_cast<int>(a[len]);
+  }
+
   // --------------------------------------------------------------------------
   // [BSwap]
   // --------------------------------------------------------------------------

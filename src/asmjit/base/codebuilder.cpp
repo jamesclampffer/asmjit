@@ -13,6 +13,15 @@
 
 // [Dependencies]
 #include "../base/codebuilder.h"
+#include "../base/logging.h"
+
+#if defined(ASMJIT_BUILD_X86)
+#include "../x86/x86inst.h"
+#endif // ASMJIT_BUILD_X86
+
+#if defined(ASMJIT_BUILD_ARM)
+#include "../arm/arminst.h"
+#endif // ASMJIT_BUILD_ARM
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
@@ -125,10 +134,11 @@ CBAlign* CodeBuilder::newAlignNode(uint32_t mode, uint32_t alignment) noexcept {
 CBData* CodeBuilder::newDataNode(const void* data, uint32_t size) noexcept {
   if (size > CBData::kInlineBufferSize) {
     void* cloned = _cbDataZone.alloc(size);
-    if (!cloned) return nullptr;
+    if (ASMJIT_UNLIKELY(!cloned))
+      return nullptr;
 
-    if (data) ::memcpy(cloned, data, size);
-    data = cloned;
+    if (data)
+      data = ::memcpy(cloned, data, size);
   }
 
   return newNodeT<CBData>(const_cast<void*>(data), size);
@@ -143,7 +153,9 @@ CBConstPool* CodeBuilder::newConstPool() noexcept {
 
 CBComment* CodeBuilder::newCommentNode(const char* s, size_t len) noexcept {
   if (s) {
-    if (len == kInvalidIndex) len = ::strlen(s);
+    if (len == Globals::kInvalidIndex)
+      len = ::strlen(s);
+
     if (len > 0) {
       s = static_cast<char*>(_cbDataZone.dup(s, len, true));
       if (!s) return nullptr;
@@ -157,9 +169,90 @@ CBComment* CodeBuilder::newCommentNode(const char* s, size_t len) noexcept {
 // [asmjit::CodeBuilder - Code-Emitter]
 // ============================================================================
 
-Label CodeBuilder::newLabel() {
-  uint32_t id = kInvalidValue;
+Error CodeBuilder::_emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) {
+  uint32_t options = getOptions() | getGlobalOptions();
+  const char* inlineComment = getInlineComment();
 
+  uint32_t opCount = (!o3.isNone()) ? 4 :
+                     (!o2.isNone()) ? 3 :
+                     (!o1.isNone()) ? 2 :
+                     (!o0.isNone()) ? 1 : 0;
+
+  // Handle failure and rare cases first.
+  const uint32_t kErrorsAndSpecialCases =
+    kOptionMaybeFailureCase | // CodeEmitter in error state.
+    kOptionStrictValidation | // Strict validation.
+    kOptionOp4              | // Has 4th operand (indexed from zero).
+    kOptionOp5              ; // Has 5th operand (indexed from zero).
+
+  if (options & kErrorsAndSpecialCases) {
+    // Don't do anything if we are in error state.
+    if (_lastError) return _lastError;
+
+    // Count 4th and 5th operands (indexed from zero).
+    if (options & kOptionOp4) opCount = 5;
+    if (options & kOptionOp5) opCount = 6;
+
+#if !defined(ASMJIT_DISABLE_VALIDATION)
+    // Strict validation.
+    if (options & kOptionStrictValidation) {
+      Error err = _validate(instId, o0, o1, o2, o3);
+      if (ASMJIT_UNLIKELY(err != kErrorOk)) {
+        resetOptions();
+        resetInlineComment();
+        return setLastError(err);
+      }
+    }
+#endif // ASMJIT_DISABLE_VALIDATION
+
+    // Clear flags that should not be added to `CBInst`.
+    options &= ~(kOptionMaybeFailureCase |
+                 kOptionStrictValidation);
+  }
+
+  resetOptions();
+  resetInlineComment();
+
+  uint32_t opCapacity = CBInst::capacityOfOpCount(opCount);
+  ASMJIT_ASSERT(opCapacity >= 4);
+
+  CBInst* node = _cbHeap.allocT<CBInst>(CBInst::nodeSizeOfOpCapacity(opCapacity));
+  if (ASMJIT_UNLIKELY(!node))
+    return setLastError(DebugUtils::errored(kErrorNoHeapMemory));
+
+  new(node) CBInst(this, instId, options, opCapacity);
+
+  node->_opCount = static_cast<uint8_t>(opCount);
+  if (options & kOptionOpExtra)
+    node->_opExtra = _opExtra;
+
+  node->setOp(0, o0);
+  node->setOp(1, o1);
+  node->setOp(2, o2);
+  node->setOp(3, o3);
+
+  if (CBInst::kBaseOpCapacity > 4) {
+    // Compile-time (capacity of 5 operands by default in 32-bit mode).
+    node->resetOp(4);
+    if (opCapacity > 5) node->resetOp(5);
+  }
+  else if (opCapacity > 4) {
+    node->resetOp(4);
+    if (opCapacity > 5) node->resetOp(5);
+  }
+
+  if (options & kOptionOp4) node->setOp(4, _op4);
+  if (options & kOptionOp5) node->setOp(5, _op5);
+
+  if (inlineComment)
+    node->setInlineComment(static_cast<char*>(_cbDataZone.dup(inlineComment, ::strlen(inlineComment), true)));
+
+  addNode(node);
+  return kErrorOk;
+}
+
+Label CodeBuilder::newLabel() {
+  uint32_t id = 0;
   if (!_lastError) {
     CBLabel* node = newNodeT<CBLabel>(id);
     if (ASMJIT_UNLIKELY(!node)) {
@@ -173,13 +266,11 @@ Label CodeBuilder::newLabel() {
         id = node->getId();
     }
   }
-
   return Label(id);
 }
 
 Label CodeBuilder::newNamedLabel(const char* name, size_t nameLength, uint32_t type, uint32_t parentId) {
-  uint32_t id = kInvalidValue;
-
+  uint32_t id = 0;
   if (!_lastError) {
     CBLabel* node = newNodeT<CBLabel>(id);
     if (ASMJIT_UNLIKELY(!node)) {
@@ -193,7 +284,6 @@ Label CodeBuilder::newNamedLabel(const char* name, size_t nameLength, uint32_t t
         id = node->getId();
     }
   }
-
   return Label(id);
 }
 
@@ -277,8 +367,8 @@ Error CodeBuilder::comment(const char* s, size_t len) {
 
 CBNode* CodeBuilder::addNode(CBNode* node) noexcept {
   ASMJIT_ASSERT(node);
-  ASMJIT_ASSERT(node->_prev == nullptr);
-  ASMJIT_ASSERT(node->_next == nullptr);
+  ASMJIT_ASSERT(node->getPrev() == nullptr);
+  ASMJIT_ASSERT(node->getNext() == nullptr);
 
   if (!_cursor) {
     if (!_firstNode) {
@@ -286,21 +376,21 @@ CBNode* CodeBuilder::addNode(CBNode* node) noexcept {
       _lastNode = node;
     }
     else {
-      node->_next = _firstNode;
-      _firstNode->_prev = node;
+      node->_setNext(_firstNode);
+      _firstNode->_setPrev(node);
       _firstNode = node;
     }
   }
   else {
     CBNode* prev = _cursor;
-    CBNode* next = _cursor->_next;
+    CBNode* next = _cursor->getNext();
 
-    node->_prev = prev;
-    node->_next = next;
+    node->_setPrev(prev);
+    node->_setNext(next);
 
-    prev->_next = node;
+    prev->_setNext(node);
     if (next)
-      next->_prev = node;
+      next->_setPrev(node);
     else
       _lastNode = node;
   }
@@ -313,18 +403,18 @@ CBNode* CodeBuilder::addAfter(CBNode* node, CBNode* ref) noexcept {
   ASMJIT_ASSERT(node);
   ASMJIT_ASSERT(ref);
 
-  ASMJIT_ASSERT(node->_prev == nullptr);
-  ASMJIT_ASSERT(node->_next == nullptr);
+  ASMJIT_ASSERT(node->getPrev() == nullptr);
+  ASMJIT_ASSERT(node->getNext() == nullptr);
 
   CBNode* prev = ref;
-  CBNode* next = ref->_next;
+  CBNode* next = ref->getNext();
 
-  node->_prev = prev;
-  node->_next = next;
+  node->_setPrev(prev);
+  node->_setNext(next);
 
-  prev->_next = node;
+  prev->_setNext(node);
   if (next)
-    next->_prev = node;
+    next->_setPrev(node);
   else
     _lastNode = node;
 
@@ -333,72 +423,44 @@ CBNode* CodeBuilder::addAfter(CBNode* node, CBNode* ref) noexcept {
 
 CBNode* CodeBuilder::addBefore(CBNode* node, CBNode* ref) noexcept {
   ASMJIT_ASSERT(node != nullptr);
-  ASMJIT_ASSERT(node->_prev == nullptr);
-  ASMJIT_ASSERT(node->_next == nullptr);
+  ASMJIT_ASSERT(node->getPrev() == nullptr);
+  ASMJIT_ASSERT(node->getNext() == nullptr);
   ASMJIT_ASSERT(ref != nullptr);
 
-  CBNode* prev = ref->_prev;
+  CBNode* prev = ref->getPrev();
   CBNode* next = ref;
 
-  node->_prev = prev;
-  node->_next = next;
+  node->_setPrev(prev);
+  node->_setNext(next);
 
-  next->_prev = node;
+  next->_setPrev(node);
   if (prev)
-    prev->_next = node;
+    prev->_setNext(node);
   else
     _firstNode = node;
 
   return node;
 }
 
-static ASMJIT_INLINE void CodeBuilder_nodeRemoved(CodeBuilder* self, CBNode* node_) noexcept {
-  if (node_->isJmpOrJcc()) {
-    CBJump* node = static_cast<CBJump*>(node_);
-    CBLabel* label = node->getTarget();
-
-    if (label) {
-      // Disconnect.
-      CBJump** pPrev = &label->_from;
-      for (;;) {
-        ASMJIT_ASSERT(*pPrev != nullptr);
-
-        CBJump* current = *pPrev;
-        if (!current) break;
-
-        if (current == node) {
-          *pPrev = node->_jumpNext;
-          break;
-        }
-
-        pPrev = &current->_jumpNext;
-      }
-
-      label->subNumRefs();
-    }
-  }
-}
-
 CBNode* CodeBuilder::removeNode(CBNode* node) noexcept {
-  CBNode* prev = node->_prev;
-  CBNode* next = node->_next;
+  CBNode* prev = node->getPrev();
+  CBNode* next = node->getNext();
 
   if (_firstNode == node)
     _firstNode = next;
   else
-    prev->_next = next;
+    prev->_setNext(next);
 
   if (_lastNode == node)
     _lastNode  = prev;
   else
-    next->_prev = prev;
+    next->_setPrev(prev);
 
-  node->_prev = nullptr;
-  node->_next = nullptr;
+  node->_setPrev(nullptr);
+  node->_setNext(nullptr);
 
   if (_cursor == node)
     _cursor = prev;
-  CodeBuilder_nodeRemoved(this, node);
 
   return node;
 }
@@ -409,30 +471,29 @@ void CodeBuilder::removeNodes(CBNode* first, CBNode* last) noexcept {
     return;
   }
 
-  CBNode* prev = first->_prev;
-  CBNode* next = last->_next;
+  CBNode* prev = first->getPrev();
+  CBNode* next = last->getNext();
 
   if (_firstNode == first)
     _firstNode = next;
   else
-    prev->_next = next;
+    prev->_setNext(next);
 
   if (_lastNode == last)
     _lastNode  = prev;
   else
-    next->_prev = prev;
+    next->_setPrev(prev);
 
   CBNode* node = first;
   for (;;) {
     CBNode* next = node->getNext();
     ASMJIT_ASSERT(next != nullptr);
 
-    node->_prev = nullptr;
-    node->_next = nullptr;
+    node->_setPrev(nullptr);
+    node->_setNext(nullptr);
 
     if (_cursor == node)
       _cursor = prev;
-    CodeBuilder_nodeRemoved(this, node);
 
     if (node == last)
       break;
@@ -487,7 +548,7 @@ ASMJIT_FAVOR_SIZE Error CodeBuilder::deletePass(CBPass* pass) noexcept {
       return DebugUtils::errored(kErrorInvalidState);
 
     size_t index = _cbPasses.indexOf(pass);
-    ASMJIT_ASSERT(index != kInvalidIndex);
+    ASMJIT_ASSERT(index != Globals::kInvalidIndex);
 
     pass->_cb = nullptr;
     _cbPasses.removeAt(index);
@@ -498,8 +559,62 @@ ASMJIT_FAVOR_SIZE Error CodeBuilder::deletePass(CBPass* pass) noexcept {
 }
 
 // ============================================================================
-// [asmjit::CodeBuilder - Serialization]
+// [asmjit::CodeBuilder - Validate]
 // ============================================================================
+
+Error CodeBuilder::_validate(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) const noexcept {
+#if !defined(ASMJIT_DISABLE_VALIDATION)
+  Operand_ opArray[6];
+  opArray[0].copyFrom(o0);
+  opArray[1].copyFrom(o1);
+  opArray[2].copyFrom(o2);
+  opArray[3].copyFrom(o3);
+  opArray[4].copyFrom(_op4);
+  opArray[5].copyFrom(_op5);
+
+  uint32_t archType = getArchType();
+  uint32_t options = getGlobalOptions() | getOptions();
+
+  if (!(options & CodeEmitter::kOptionOp4)) opArray[4].reset();
+  if (!(options & CodeEmitter::kOptionOp5)) opArray[5].reset();
+
+#if defined(ASMJIT_BUILD_X86)
+  if (ArchInfo::isX86Family(archType))
+    return X86Inst::validate(archType, instId, options, _opExtra, opArray, 6);
+#endif
+
+#if defined(ASMJIT_BUILD_ARM)
+  if (ArchInfo::isArmFamily(archType))
+    return X86Inst::validate(archType, instId, options, _opExtra, opArray, 6);
+#endif
+
+  return DebugUtils::errored(kErrorInvalidArch);
+#else
+  return DebugUtils::errored(kErrorFeatureNotEnabled);
+#endif // !ASMJIT_DISABLE_VALIDATION
+}
+
+// ============================================================================
+// [asmjit::CodeBuilder - RunPasses / Serialize]
+// ============================================================================
+
+Error CodeBuilder::runPasses() {
+  Error err = _lastError;
+  if (ASMJIT_UNLIKELY(err))
+    return err;
+
+  ZoneVector<CBPass*>& passes = _cbPasses;
+  for (size_t i = 0, len = passes.getLength(); i < len; i++) {
+    CBPass* pass = passes[i];
+
+    _cbPassZone.reset();
+    err = pass->process(&_cbPassZone);
+    if (err) break;
+  }
+
+  _cbPassZone.reset();
+  return err ? setLastError(err) : err;
+}
 
 Error CodeBuilder::serialize(CodeEmitter* dst) {
   Error err = kErrorOk;
@@ -509,74 +624,66 @@ Error CodeBuilder::serialize(CodeEmitter* dst) {
     dst->setInlineComment(node_->getInlineComment());
 
     switch (node_->getType()) {
-      case CBNode::kNodeAlign: {
-        CBAlign* node = static_cast<CBAlign*>(node_);
-        err = dst->align(node->getMode(), node->getAlignment());
+      case CBNode::kNodeInst: {
+OnInst:
+        CBInst* node = node_->as<CBInst>();
+        ASMJIT_ASSERT(node->getOpCapacity() >= 4);
+
+        const Operand* opArray = node->getOpArray();
+        uint32_t opCount = node->getOpCount();
+
+        dst->setOptions(node->getOptions());
+        dst->_opExtra = node->getOpExtra();
+
+        if (opCount > 4) {
+          dst->setOp4(opArray[4]);
+          if (opCount == 6) dst->setOp5(opArray[5]);
+        }
+
+        err = dst->_emit(node->getInstId(), opArray[0], opArray[1], opArray[2], opArray[3]);
         break;
       }
 
       case CBNode::kNodeData: {
-        CBData* node = static_cast<CBData*>(node_);
+        CBData* node = node_->as<CBData>();
         err = dst->embed(node->getData(), node->getSize());
         break;
       }
 
-      case CBNode::kNodeFunc:
+      case CBNode::kNodeAlign: {
+        CBAlign* node = node_->as<CBAlign>();
+        err = dst->align(node->getMode(), node->getAlignment());
+        break;
+      }
+
       case CBNode::kNodeLabel: {
-        CBLabel* node = static_cast<CBLabel*>(node_);
+OnLabel:
+        CBLabel* node = node_->as<CBLabel>();
         err = dst->bind(node->getLabel());
         break;
       }
 
       case CBNode::kNodeLabelData: {
-        CBLabelData* node = static_cast<CBLabelData*>(node_);
+        CBLabelData* node = node_->as<CBLabelData>();
         err = dst->embedLabel(node->getLabel());
         break;
       }
 
       case CBNode::kNodeConstPool: {
-        CBConstPool* node = static_cast<CBConstPool*>(node_);
+        CBConstPool* node = node_->as<CBConstPool>();
         err = dst->embedConstPool(node->getLabel(), node->getConstPool());
         break;
       }
 
-      case CBNode::kNodeInst:
-      case CBNode::kNodeFuncCall: {
-        CBInst* node = static_cast<CBInst*>(node_);
-
-        uint32_t instId = node->getInstId();
-        uint32_t options = node->getOptions();
-
-        const Operand* opArray = node->getOpArray();
-        uint32_t opCount = node->getOpCount();
-
-        const Operand_* o0 = &dst->_none;
-        const Operand_* o1 = &dst->_none;
-        const Operand_* o2 = &dst->_none;
-        const Operand_* o3 = &dst->_none;
-
-        switch (opCount) {
-          case 6: dst->_op5 = opArray[5]; options |= CodeEmitter::kOptionOp5; ASMJIT_FALLTHROUGH;
-          case 5: dst->_op4 = opArray[4]; options |= CodeEmitter::kOptionOp4; ASMJIT_FALLTHROUGH;
-          case 4: o3 = &opArray[3]; ASMJIT_FALLTHROUGH;
-          case 3: o2 = &opArray[2]; ASMJIT_FALLTHROUGH;
-          case 2: o1 = &opArray[1]; ASMJIT_FALLTHROUGH;
-          case 1: o0 = &opArray[0]; ASMJIT_FALLTHROUGH;
-          case 0: break;
-        }
-
-        dst->setOptions(options);
-        err = dst->_emit(instId, *o0, *o1, *o2, *o3);
-        break;
-      }
-
       case CBNode::kNodeComment: {
-        CBComment* node = static_cast<CBComment*>(node_);
+        CBComment* node = node_->as<CBComment>();
         err = dst->comment(node->getInlineComment());
         break;
       }
 
       default:
+        if (node_->actsAsInst()) goto OnInst;
+        if (node_->actsAsLabel()) goto OnLabel;
         break;
     }
 
@@ -586,6 +693,24 @@ Error CodeBuilder::serialize(CodeEmitter* dst) {
 
   return err;
 }
+
+// ============================================================================
+// [asmjit::CodeBuilder - Logging]
+// ============================================================================
+
+#if !defined(ASMJIT_DISABLE_LOGGING)
+Error CodeBuilder::dump(StringBuilder& sb, uint32_t logOptions) const noexcept {
+  CBNode* node = getFirstNode();
+  while (node) {
+    ASMJIT_PROPAGATE(Logging::formatNode(sb, logOptions, this, node));
+    sb.appendChar('\n');
+
+    node = node->getNext();
+  }
+
+  return kErrorOk;
+}
+#endif // !ASMJIT_DISABLE_LOGGING
 
 // ============================================================================
 // [asmjit::CBPass]

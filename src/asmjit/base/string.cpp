@@ -79,8 +79,8 @@ ASMJIT_FAVOR_SIZE char* StringBuilder::prepare(uint32_t op, size_t len) noexcept
     return _data;
   }
   else {
-    // We don't care here, but we can't return a nullptr pointer since it indicates
-    // failure in memory allocation.
+    // We don't care here, but we can't return a null pointer since it indicates
+    // failure of memory allocation.
     if (len == 0)
       return _data + _length;
 
@@ -164,7 +164,7 @@ void StringBuilder::clear() noexcept {
 // ============================================================================
 
 Error StringBuilder::_opString(uint32_t op, const char* str, size_t len) noexcept {
-  if (len == kInvalidIndex)
+  if (len == Globals::kInvalidIndex)
     len = str ? ::strlen(str) : static_cast<size_t>(0);
 
   char* p = prepare(op, len);
@@ -333,7 +333,7 @@ bool StringBuilder::eq(const char* str, size_t len) const noexcept {
   size_t aLength = _length;
   size_t bLength = len;
 
-  if (bLength == kInvalidIndex) {
+  if (bLength == Globals::kInvalidIndex) {
     size_t i;
     for (i = 0; i < aLength; i++)
       if (aData[i] != bData[i] || bData[i] == 0)

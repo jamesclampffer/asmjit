@@ -89,8 +89,7 @@ Error CodeEmitter::onDetach(CodeHolder* code) noexcept {
 // ============================================================================
 
 Label CodeEmitter::getLabelByName(const char* name, size_t nameLength, uint32_t parentId) noexcept {
-  return Label(_code ? _code->getLabelIdByName(name, nameLength, parentId)
-                     : static_cast<uint32_t>(kInvalidValue));
+  return Label(_code ? _code->getLabelIdByName(name, nameLength, parentId) : static_cast<uint32_t>(0));
 }
 
 // ============================================================================
@@ -111,7 +110,7 @@ Error CodeEmitter::setLastError(Error error, const char* message) {
   ASMJIT_ASSERT(_code != nullptr);
 
   // Special case used to reset the last error.
-  if (error == kErrorOk)  {
+  if (error == kErrorOk) {
     _lastError = kErrorOk;
     _globalOptions &= ~kOptionMaybeFailureCase;
     return kErrorOk;
@@ -122,9 +121,6 @@ Error CodeEmitter::setLastError(Error error, const char* message) {
 
   // Logging is skipped if the error is handled by `ErrorHandler`.
   ErrorHandler* handler = _code->_errorHandler;
-  ASMJIT_TLOG("[ERROR] 0x%08u: %s%s\n",
-    static_cast<unsigned int>(error), message, handler ? "" : " (ErrorHandler not attached)");
-
   if (handler && handler->handleError(error, message, this))
     return error;
 

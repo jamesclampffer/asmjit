@@ -51,23 +51,19 @@ public:
 
 class X86Test_AlignBase : public X86Test {
 public:
-  X86Test_AlignBase(uint32_t numArgs, uint32_t numVars, uint32_t alignment, bool naked) :
-    _numArgs(numArgs),
-    _numVars(numVars),
-    _alignment(alignment),
-    _naked(naked) {
-
+  X86Test_AlignBase(uint32_t numArgs, uint32_t alignment, bool naked)
+    : _numArgs(numArgs),
+      _alignment(alignment),
+      _naked(naked) {
     _name.setFormat("[Align] NumArgs=%u NumVars=%u Alignment=%u Naked=%c",
-      numArgs, numVars, alignment, naked ? 'Y' : 'N');
+      numArgs, alignment, naked ? 'Y' : 'N');
   }
 
   static void add(ZoneVector<X86Test*>& tests) {
     for (uint32_t i = 0; i <= 8; i++) {
-      for (uint32_t j = 0; j <= 4; j++) {
-        for (uint32_t a = 16; a <= 32; a += 16) {
-          tests.append(new X86Test_AlignBase(i, j, a, false));
-          tests.append(new X86Test_AlignBase(i, j, a, true));
-        }
+      for (uint32_t a = 16; a <= 32; a += 16) {
+        tests.append(new X86Test_AlignBase(i, a, false));
+        tests.append(new X86Test_AlignBase(i, a, true));
       }
     }
   }
@@ -91,28 +87,6 @@ public:
     X86Gp gpVar = cc.newIntPtr("gpVar");
     X86Gp gpSum = cc.newInt32("gpSum");
     X86Mem stack = cc.newStack(_alignment, _alignment);
-
-    // Alloc, use and spill preserved registers.
-    if (_numVars) {
-      uint32_t gpCount = cc.getGpCount();
-      uint32_t varIndex = 0;
-      uint32_t physId = 0;
-      uint32_t regMask = 0x1;
-      uint32_t preservedMask = cc.getFunc()->getDetail().getPreservedRegs(Reg::kKindGp);
-
-      do {
-        if ((preservedMask & regMask) != 0 && (physId != X86Gp::kIdSp && physId != X86Gp::kIdBp)) {
-          X86Gp tmp = cc.newInt32("gpTmp%u", physId);
-          cc.alloc(tmp, physId);
-          cc.xor_(tmp, tmp);
-          cc.spill(tmp);
-          varIndex++;
-        }
-
-        physId++;
-        regMask <<= 1;
-      } while (varIndex < _numVars && physId < gpCount);
-    }
 
     // Do a sum of arguments to verify a possible relocation when misaligned.
     if (_numArgs) {
@@ -153,39 +127,39 @@ public:
 
     switch (_numArgs) {
       case 0:
-        resultRet = ptr_cast<Func0>(_func)();
+        resultRet = ptr_as_func<Func0>(_func)();
         expectRet = 0;
         break;
       case 1:
-        resultRet = ptr_cast<Func1>(_func)(1);
+        resultRet = ptr_as_func<Func1>(_func)(1);
         expectRet = 1;
         break;
       case 2:
-        resultRet = ptr_cast<Func2>(_func)(1, 2);
+        resultRet = ptr_as_func<Func2>(_func)(1, 2);
         expectRet = 1 + 2;
         break;
       case 3:
-        resultRet = ptr_cast<Func3>(_func)(1, 2, 3);
+        resultRet = ptr_as_func<Func3>(_func)(1, 2, 3);
         expectRet = 1 + 2 + 3;
         break;
       case 4:
-        resultRet = ptr_cast<Func4>(_func)(1, 2, 3, 4);
+        resultRet = ptr_as_func<Func4>(_func)(1, 2, 3, 4);
         expectRet = 1 + 2 + 3 + 4;
         break;
       case 5:
-        resultRet = ptr_cast<Func5>(_func)(1, 2, 3, 4, 5);
+        resultRet = ptr_as_func<Func5>(_func)(1, 2, 3, 4, 5);
         expectRet = 1 + 2 + 3 + 4 + 5;
         break;
       case 6:
-        resultRet = ptr_cast<Func6>(_func)(1, 2, 3, 4, 5, 6);
+        resultRet = ptr_as_func<Func6>(_func)(1, 2, 3, 4, 5, 6);
         expectRet = 1 + 2 + 3 + 4 + 5 + 6;
         break;
       case 7:
-        resultRet = ptr_cast<Func7>(_func)(1, 2, 3, 4, 5, 6, 7);
+        resultRet = ptr_as_func<Func7>(_func)(1, 2, 3, 4, 5, 6, 7);
         expectRet = 1 + 2 + 3 + 4 + 5 + 6 + 7;
         break;
       case 8:
-        resultRet = ptr_cast<Func8>(_func)(1, 2, 3, 4, 5, 6, 7, 8);
+        resultRet = ptr_as_func<Func8>(_func)(1, 2, 3, 4, 5, 6, 7, 8);
         expectRet = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8;
         break;
     }
@@ -197,7 +171,6 @@ public:
   }
 
   uint32_t _numArgs;
-  uint32_t _numVars;
   uint32_t _alignment;
 
   bool _naked;
@@ -224,7 +197,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     func();
     return true;
@@ -266,7 +239,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     func();
     return true;
@@ -302,7 +275,7 @@ public:
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(void);
 
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func();
     int expectRet = 0;
@@ -366,7 +339,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     func();
 
@@ -413,7 +386,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     func();
 
@@ -463,119 +436,10 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func();
     int expectRet = 1 + 2 + 3 + 4;
-
-    result.setFormat("ret=%d", resultRet);
-    expect.setFormat("ret=%d", expectRet);
-
-    return resultRet == expectRet;
-  }
-};
-
-// ============================================================================
-// [X86Test_AllocManual]
-// ============================================================================
-
-class X86Test_AllocManual : public X86Test {
-public:
-  X86Test_AllocManual() : X86Test("[Alloc] Manual alloc/spill") {}
-
-  static void add(ZoneVector<X86Test*>& tests) {
-    tests.append(new X86Test_AllocManual());
-  }
-
-  virtual void compile(X86Compiler& cc) {
-    cc.addFunc(FuncSignature0<int>(CallConv::kIdHost));
-
-    X86Gp v0  = cc.newInt32("v0");
-    X86Gp v1  = cc.newInt32("v1");
-    X86Gp cnt = cc.newInt32("cnt");
-
-    cc.xor_(v0, v0);
-    cc.xor_(v1, v1);
-    cc.spill(v0);
-    cc.spill(v1);
-
-    Label L = cc.newLabel();
-    cc.mov(cnt, 32);
-    cc.bind(L);
-
-    cc.inc(v1);
-    cc.add(v0, v1);
-
-    cc.dec(cnt);
-    cc.jnz(L);
-
-    cc.ret(v0);
-    cc.endFunc();
-  }
-
-  virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
-    typedef int (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
-
-    int resultRet = func();
-    int expectRet =
-      0  +  1 +  2 +  3 +  4 +  5 +  6 +  7 +  8 +  9 +
-      10 + 11 + 12 + 13 + 14 + 15 + 16 + 17 + 18 + 19 +
-      20 + 21 + 22 + 23 + 24 + 25 + 26 + 27 + 28 + 29 +
-      30 + 31 + 32;
-
-    result.setFormat("ret=%d", resultRet);
-    expect.setFormat("ret=%d", expectRet);
-
-    return resultRet == expectRet;
-  }
-};
-
-// ============================================================================
-// [X86Test_AllocUseMem]
-// ============================================================================
-
-class X86Test_AllocUseMem : public X86Test {
-public:
-  X86Test_AllocUseMem() : X86Test("[Alloc] Alloc/use mem") {}
-
-  static void add(ZoneVector<X86Test*>& tests) {
-    tests.append(new X86Test_AllocUseMem());
-  }
-
-  virtual void compile(X86Compiler& cc) {
-    cc.addFunc(FuncSignature2<int, int, int>(CallConv::kIdHost));
-
-    X86Gp iIdx = cc.newInt32("iIdx");
-    X86Gp iEnd = cc.newInt32("iEnd");
-
-    X86Gp aIdx = cc.newInt32("aIdx");
-    X86Gp aEnd = cc.newInt32("aEnd");
-
-    Label L_1 = cc.newLabel();
-
-    cc.setArg(0, aIdx);
-    cc.setArg(1, aEnd);
-
-    cc.mov(iIdx, aIdx);
-    cc.mov(iEnd, aEnd);
-    cc.spill(iEnd);
-
-    cc.bind(L_1);
-    cc.inc(iIdx);
-    cc.cmp(iIdx, iEnd.m());
-    cc.jne(L_1);
-
-    cc.ret(iIdx);
-    cc.endFunc();
-  }
-
-  virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
-    typedef int (*Func)(int, int);
-    Func func = ptr_cast<Func>(_func);
-
-    int resultRet = func(10, 20);
-    int expectRet = 20;
 
     result.setFormat("ret=%d", resultRet);
     expect.setFormat("ret=%d", expectRet);
@@ -647,7 +511,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(int*, int*);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultX;
     int resultY;
@@ -715,7 +579,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(int*);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int i;
     int resultBuf[32];
@@ -775,7 +639,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(int*, int*, int, int);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int v0 = 4;
     int v1 = 4;
@@ -834,7 +698,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(int*, const int*);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int src[2] = { 4, 9 };
     int resultRet[2] = { 0, 0 };
@@ -880,7 +744,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int, int);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int v0 = 2999;
     int v1 = 245;
@@ -926,7 +790,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(int, int, char*);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     char resultBuf[4];
     char expectBuf[4] = { 1, 0, 0, 1 };
@@ -980,7 +844,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(int*, int, int, int);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int v0 = 0x000000FF;
 
@@ -1051,7 +915,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(uint32_t*);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     unsigned int i;
 
@@ -1116,7 +980,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(void*, void*, size_t);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     char dst[20] = { 0 };
     char src[20] = "Hello AsmJit!";
@@ -1167,9 +1031,9 @@ public:
     cc.endFunc();
   }
 
-  virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect)  {
+  virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int, int);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int a = func(0, 1);
     int b = func(1, 0);
@@ -1228,9 +1092,9 @@ public:
     cc.endFunc();
   }
 
-  virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect)  {
+  virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int, int);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int a = func(0, 1);
     int b = func(1, 0);
@@ -1289,9 +1153,9 @@ public:
     cc.endFunc();
   }
 
-  virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect)  {
+  virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int, int);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int a = func(0, 1);
     int b = func(1, 0);
@@ -1355,9 +1219,9 @@ public:
     cc.endFunc();
   }
 
-  virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect)  {
+  virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int, int);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int a = func(0, 1);
     int b = func(1, 0);
@@ -1396,7 +1260,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(char);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func(-13);
     int expectRet = -13;
@@ -1446,7 +1310,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(void*, void*, void*, void*, void*, void*, void*, void*);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     uint8_t resultBuf[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     uint8_t expectBuf[9] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -1507,7 +1371,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(float, float, float, float, float, float, float, float*);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     float resultRet;
     float expectRet = 1.0f + 2.0f + 3.0f + 4.0f + 5.0f + 6.0f + 7.0f;
@@ -1561,7 +1425,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(double, double, double, double, double, double, double, double*);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     double resultRet;
     double expectRet = 1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0 + 7.0;
@@ -1604,7 +1468,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef float (*Func)(float, float);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     float resultRet = func(1.0f, 2.0f);
     float expectRet = 1.0f + 2.0f;
@@ -1645,7 +1509,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef double (*Func)(double, double);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     double resultRet = func(1.0, 2.0);
     double expectRet = 1.0 + 2.0;
@@ -1713,7 +1577,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func();
     int expectRet = 32640;
@@ -1795,7 +1659,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func();
     int expectRet = 0; // Must be zero, stack addresses must be different.
@@ -1834,16 +1698,12 @@ public:
     cc.setArg(1, src);
     cc.setArg(2, cnt);
 
-    cc.alloc(dst);                                  // Allocate all registers now,
-    cc.alloc(src);                                  // because we want to keep them
-    cc.alloc(cnt);                                  // in physical registers only.
-
     cc.test(cnt, cnt);                              // Exit if length is zero.
     cc.jz(L_Exit);
 
     cc.bind(L_Loop);                                // Bind the loop label here.
 
-    X86Gp tmp = cc.newInt32("tmp");              // Copy a single dword (4 bytes).
+    X86Gp tmp = cc.newInt32("tmp");                 // Copy a single dword (4 bytes).
     cc.mov(tmp, x86::dword_ptr(src));
     cc.mov(x86::dword_ptr(dst), tmp);
 
@@ -1859,7 +1719,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(uint32_t*, const uint32_t*, size_t);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     uint32_t i;
 
@@ -1928,7 +1788,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef void (*Func)(void*, const void*, size_t);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     static const uint32_t dstConstData[] = { 0x00000000, 0x10101010, 0x20100804, 0x30200003, 0x40204040, 0x5000004D, 0x60302E2C, 0x706F6E6D, 0x807F4F2F, 0x90349001, 0xA0010203, 0xB03204AB, 0xC023AFBD, 0xD0D0D0C0, 0xE0AABBCC, 0xFFFFFFFF, 0xF8F4F2F1 };
     static const uint32_t srcConstData[] = { 0xE0E0E0E0, 0xA0008080, 0x341F1E1A, 0xFEFEFEFE, 0x80302010, 0x49490A0B, 0x998F7798, 0x00000000, 0x01010101, 0xA0264733, 0xBAB0B1B9, 0xFF000000, 0xDAB0A0C1, 0xE0BACFDA, 0x99887766, 0xFFFFFF80, 0xEE0A5FEC };
@@ -2015,7 +1875,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int, int, int);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func(3, 2, 1);
     int expectRet = 36;
@@ -2065,7 +1925,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func(9);
     int expectRet = (9 * 9) * (9 * 9);
@@ -2146,7 +2006,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func();
     int expectRet = calledFunc(0x03, 0x12, 0xA0, 0x0B, 0x2F, 0x02, 0x0C, 0x12, 0x18, 0x1E);
@@ -2204,7 +2064,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func();
     int expectRet = calledFunc(3, 3, 3, 3, 3, 3, 3, 3, 3, 3);
@@ -2257,7 +2117,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func();
     int expectRet = X86Test_CallManyArgs::calledFunc(0x03, 0x12, 0xA0, 0x0B, 0x2F, 0x02, 0x0C, 0x12, 0x18, 0x1E);
@@ -2323,7 +2183,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func();
     int expectRet = 55;
@@ -2378,7 +2238,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef float (*Func)(float, float);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     float resultRet = func(15.5f, 2.0f);
     float expectRet = calledFunc(15.5f, 2.0f);
@@ -2431,7 +2291,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef double (*Func)(double, double);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     double resultRet = func(15.5, 2.0);
     double expectRet = calledFunc(15.5, 2.0);
@@ -2503,7 +2363,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int, int, int);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int arg1 = 4;
     int arg2 = 8;
@@ -2587,7 +2447,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int*);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int buffer[4] = { 127, 87, 23, 17 };
 
@@ -2639,7 +2499,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func(5);
     int expectRet = 1 * 2 * 3 * 4 * 5;
@@ -2678,9 +2538,6 @@ public:
     cc.setArg(0, a);
     cc.setArg(1, b);
 
-    cc.alloc(a, x86::eax);
-    cc.alloc(b, x86::ebx);
-
     CCFuncCall* call = cc.call(imm_ptr(dummy), FuncSignature2<void, int, int>(CallConv::kIdHost));
     call->setArg(0, a);
     call->setArg(1, b);
@@ -2693,7 +2550,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int, int);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func(44, 199);
     int expectRet = 243;
@@ -2740,7 +2597,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef double (*Func)(const double*);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     double arg = 2;
 
@@ -2794,7 +2651,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef double (*Func)(const double*);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     double arg = 2;
 
@@ -2843,7 +2700,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef double (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     double resultRet = func();
     double expectRet = 3.14;
@@ -2880,14 +2737,12 @@ public:
     ASMJIT_ASSERT(regCount <= ASMJIT_ARRAY_SIZE(vars));
 
     cc.mov(pFn, imm_ptr(calledFunc));
-    cc.spill(pFn);
 
     for (i = 0; i < regCount; i++) {
       if (i == X86Gp::kIdBp || i == X86Gp::kIdSp)
         continue;
 
       vars[i] = cc.newInt32("v%u", static_cast<unsigned int>(i));
-      cc.alloc(vars[i], i);
       cc.mov(vars[i], 1);
     }
 
@@ -2904,7 +2759,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func();
     int expectRet = sizeof(void*) == 4 ? 6 : 14;
@@ -2949,7 +2804,7 @@ public:
 
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(void);
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func();
     int expectRet = 233;
@@ -3032,7 +2887,7 @@ struct X86Test_MiscMultiRet : public X86Test {
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int, int, int);
 
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int a = 44;
     int b = 3;
@@ -3103,7 +2958,7 @@ public:
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (*Func)(int, int);
 
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = func(56, 22);
     int expectRet = 56 + 22;
@@ -3159,7 +3014,7 @@ public:
   virtual bool run(void* _func, StringBuilder& result, StringBuilder& expect) {
     typedef int (ASMJIT_FASTCALL *Func)(int, void*);
 
-    Func func = ptr_cast<Func>(_func);
+    Func func = ptr_as_func<Func>(_func);
 
     int resultRet = 0;
     int expectRet = 1;
@@ -3220,7 +3075,7 @@ X86TestSuite::X86TestSuite() :
   _returnCode(0),
   _binSize(0),
   _verbose(false) {
-
+/*
   // Align.
   ADD_TEST(X86Test_AlignBase);
   ADD_TEST(X86Test_AlignNone);
@@ -3234,8 +3089,6 @@ X86TestSuite::X86TestSuite() :
 
   // Alloc.
   ADD_TEST(X86Test_AllocBase);
-  ADD_TEST(X86Test_AllocManual);
-  ADD_TEST(X86Test_AllocUseMem);
   ADD_TEST(X86Test_AllocMany1);
   ADD_TEST(X86Test_AllocMany2);
   ADD_TEST(X86Test_AllocImul1);
@@ -3258,8 +3111,9 @@ X86TestSuite::X86TestSuite() :
   ADD_TEST(X86Test_AllocStack1);
   ADD_TEST(X86Test_AllocStack2);
   ADD_TEST(X86Test_AllocMemcpy);
+*/
   ADD_TEST(X86Test_AllocAlphaBlend);
-
+/*
   // Call.
   ADD_TEST(X86Test_CallBase);
   ADD_TEST(X86Test_CallFast);
@@ -3283,6 +3137,7 @@ X86TestSuite::X86TestSuite() :
   ADD_TEST(X86Test_MiscMultiRet);
   ADD_TEST(X86Test_MiscMultiFunc);
   ADD_TEST(X86Test_MiscUnfollow);
+*/
 }
 
 X86TestSuite::~X86TestSuite() {
@@ -3302,11 +3157,14 @@ int X86TestSuite::run() {
   FILE* file = stdout;
 
 #if !defined(ASMJIT_DISABLE_LOGGING)
+  uint32_t logOptions = Logger::kOptionBinaryForm |
+                        Logger::kOptionImmExtended;
+
   FileLogger fileLogger(file);
-  fileLogger.addOptions(Logger::kOptionBinaryForm);
+  fileLogger.addOptions(logOptions);
 
   StringLogger stringLogger;
-  stringLogger.addOptions(Logger::kOptionBinaryForm);
+  stringLogger.addOptions(logOptions);
 #endif // ASMJIT_DISABLE_LOGGING
 
   MyErrorHandler errorHandler;
@@ -3333,12 +3191,19 @@ int X86TestSuite::run() {
     X86Test* test = _tests[i];
     test->compile(cc);
 
+    {
+      StringBuilder sb;
+      cc.dump(sb, Logger::kOptionImmExtended);
+      printf("%s", sb.getData());
+    }
     Error err = cc.finalize();
     void* func;
 
     if (err == kErrorOk)
       err = runtime.add(&func, &code);
-    if (_verbose) fflush(file);
+
+    if (_verbose)
+      fflush(file);
 
     if (err == kErrorOk) {
       StringBuilder result;

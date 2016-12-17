@@ -47,13 +47,14 @@ static void dumpCpu(void) {
     { CpuInfo::kArmFeatureV8            , "ARMv8"                 },
     { CpuInfo::kArmFeatureTHUMB         , "THUMB"                 },
     { CpuInfo::kArmFeatureTHUMB2        , "THUMBv2"               },
-    { CpuInfo::kArmFeatureVFP2          , "VFPv2"                 },
-    { CpuInfo::kArmFeatureVFP3          , "VFPv3"                 },
-    { CpuInfo::kArmFeatureVFP4          , "VFPv4"                 },
-    { CpuInfo::kArmFeatureVFP_D32       , "VFP D32"               },
-    { CpuInfo::kArmFeatureNEON          , "NEON"                  },
-    { CpuInfo::kArmFeatureDSP           , "DSP"                   },
-    { CpuInfo::kArmFeatureIDIV          , "IDIV"                  },
+    { CpuInfo::kArmFeatureVFPv2         , "VFPv2"                 },
+    { CpuInfo::kArmFeatureVFPv3         , "VFPv3"                 },
+    { CpuInfo::kArmFeatureVFPv4         , "VFPv4"                 },
+    { CpuInfo::kArmFeatureVFP_D32       , "VFP-D32"               },
+    { CpuInfo::kArmFeatureEDSP          , "EDSP"                  },
+    { CpuInfo::kArmFeatureASIMD         , "ASIMD"                 },
+    { CpuInfo::kArmFeatureIDIVA         , "IDIVA"                 },
+    { CpuInfo::kArmFeatureIDIVT         , "IDIVT"                 },
     { CpuInfo::kArmFeatureAES           , "AES"                   },
     { CpuInfo::kArmFeatureCRC32         , "CRC32"                 },
     { CpuInfo::kArmFeatureSHA1          , "SHA1"                  },
@@ -214,7 +215,7 @@ static void dumpSizeOf(void) {
   DUMP_TYPE(CodeBuilder);
   DUMP_TYPE(CBNode);
   DUMP_TYPE(CBInst);
-  DUMP_TYPE(CBJump);
+  DUMP_TYPE(CBInstEx);
   DUMP_TYPE(CBData);
   DUMP_TYPE(CBAlign);
   DUMP_TYPE(CBLabel);

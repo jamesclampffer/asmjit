@@ -48,9 +48,12 @@ struct Operand_ {
 
   //! Operand id helpers useful for id <-> index translation.
   ASMJIT_ENUM(PackedId) {
-    kPackedIdMin    = 0x00000100U,                //!< Minimum valid packed-id.
-    kPackedIdMax    = 0xFFFFFFFEU,                //!< Maximum valid packed-id.
-    kPackedIdCount  = kPackedIdMax - kPackedIdMin //!< Count of valid packed-ids.
+    //! Minimum valid packed-id.
+    kPackedIdMin    = 0x00000100U,
+    //! Maximum valid packed-id.
+    kPackedIdMax    = 0xFFFFFFFFU,
+    //! Count of valid packed-ids.
+    kPackedIdCount  = kPackedIdMax - kPackedIdMin + 1
   };
 
   // --------------------------------------------------------------------------
@@ -64,7 +67,7 @@ struct Operand_ {
   //! a single uint32_t to contain either physical register id or virtual
   //! register id represented as `packed-id`. This concept is used also for
   //! labels to make the API consistent.
-  static ASMJIT_INLINE bool isPackedId(uint32_t id) noexcept { return id - kPackedIdMin <= kPackedIdCount; }
+  static ASMJIT_INLINE bool isPackedId(uint32_t id) noexcept { return id - kPackedIdMin < kPackedIdCount; }
   //! Convert a real-id into a packed-id that can be stored in Operand.
   static ASMJIT_INLINE uint32_t packId(uint32_t id) noexcept { return id + kPackedIdMin; }
   //! Convert a packed-id back to real-id.
@@ -74,8 +77,8 @@ struct Operand_ {
     return Utils::pack32_4x8(opType, subType, payload, size);
   }
 
-  static ASMJIT_INLINE uint32_t makeRegSignature(uint32_t regType, uint32_t regKind, uint32_t size) noexcept {
-    return Utils::pack32_4x8(kOpReg, regType, regKind, size);
+  static ASMJIT_INLINE uint32_t makeRegSignature(uint32_t regType, uint32_t kind, uint32_t size) noexcept {
+    return Utils::pack32_4x8(kOpReg, regType, kind, size);
   }
 
   // --------------------------------------------------------------------------
@@ -88,7 +91,7 @@ struct Operand_ {
     uint8_t subType;                     //!< Subtype - depends on `op`.
     uint8_t payload;                     //!< Payload - depends on `op`.
     uint8_t size;                        //!< Size of the operand (register, address, immediate).
-    uint32_t id;                         //!< Operand id or `kInvalidValue`.
+    uint32_t id;                         //!< Operand id or `0`.
     uint32_t reserved8_4;                //!< \internal
     uint32_t reserved12_4;               //!< \internal
   };
@@ -97,7 +100,7 @@ struct Operand_ {
   struct RegData {
     uint8_t op;                          //!< Type of the operand (always \ref kOpReg).
     uint8_t regType;                     //!< Register type (also operand sub-type).
-    uint8_t regKind;                     //!< Register kind.
+    uint8_t kind;                        //!< Register kind.
     uint8_t size;                        //!< Size of the register.
     uint32_t id;                         //!< Physical or virtual register id.
     uint32_t reserved8_4;                //!< \internal
@@ -110,7 +113,7 @@ struct Operand_ {
     uint8_t baseIndexType;               //!< Type of BASE and INDEX registers.
     uint8_t flags;                       //!< Architecture dependent flags.
     uint8_t size;                        //!< Size of the memory operand.
-    uint32_t index;                      //!< INDEX register id or `kInvalidValue`.
+    uint32_t index;                      //!< INDEX register id or `0`.
 
     // [BASE + OFF32] vs just [OFF64].
     union {
@@ -133,7 +136,7 @@ struct Operand_ {
     uint8_t reserved_1_1;                //!< Must be zero.
     uint8_t reserved_2_1;                //!< Must be zero.
     uint8_t size;                        //!< Size of the immediate (or 0 to autodetect).
-    uint32_t id;                         //!< Immediate id (always `kInvalidValue`).
+    uint32_t id;                         //!< Immediate id (always `0`).
     UInt64 value;                        //!< Immediate value.
   };
 
@@ -143,7 +146,7 @@ struct Operand_ {
     uint8_t reserved_1_1;                //!< Must be zero.
     uint8_t reserved_2_1;                //!< Must be zero.
     uint8_t size;                        //!< Must be zero.
-    uint32_t id;                         //!< Label id (`kInvalidValue` if not initialized).
+    uint32_t id;                         //!< Label id (`0` if not initialized).
     uint32_t reserved8_4;                //!< \internal
     uint32_t reserved12_4;               //!< \internal
   };
@@ -229,7 +232,7 @@ struct Operand_ {
   ASMJIT_INLINE bool isLabel() const noexcept { return _any.op == kOpLabel; }
 
   //! Get if the operand is a physical register.
-  ASMJIT_INLINE bool isPhysReg() const noexcept { return isReg() && _reg.id < kInvalidReg; }
+  ASMJIT_INLINE bool isPhysReg() const noexcept { return isReg() && _reg.id < Globals::kInvalidReg; }
   //! Get if the operand is a virtual register.
   ASMJIT_INLINE bool isVirtReg() const noexcept { return isReg() && isPackedId(_reg.id); }
 
@@ -254,12 +257,12 @@ struct Operand_ {
   //! Get the operand id.
   //!
   //! The value returned should be interpreted accordingly to the operand type:
-  //!   * None  - Should be `kInvalidValue`.
+  //!   * None  - Should be `0`.
   //!   * Reg   - Physical or virtual register id.
   //!   * Mem   - Multiple meanings - BASE address (register or label id), or
   //!             high value of a 64-bit absolute address.
-  //!   * Imm   - Should be `kInvalidValue`.
-  //!   * Label - Label id if it was created by using `newLabel()` or `kInvalidValue`
+  //!   * Imm   - Should be `0`.
+  //!   * Label - Label id if it was created by using `newLabel()` or `0`
   //!             if the label is invalid or uninitialized.
   ASMJIT_INLINE uint32_t getId() const noexcept { return _any.id; }
 
@@ -302,11 +305,13 @@ struct Operand_ {
   //!
   //! None operand is defined the following way:
   //!   - Its signature is zero (kOpNone, and the rest zero as well).
-  //!   - Its id is `kInvalidValue`.
-  //!   - The reserved8_4 field is set to `kInvalidValue`.
+  //!   - Its id is `0`.
+  //!   - The reserved8_4 field is set to `0`.
   //!   - The reserved12_4 field is set to zero.
   //!
-  //! Reset operand must match the Operand state right after its construction:
+  //! In other words, reset operands have all members set to zero. Reset operand
+  //! must match the Operand state right after its construction. Alternatively,
+  //! if you have an array of operands, you can simply use `memset()`.
   //!
   //! ```
   //! using namespace asmjit;
@@ -320,9 +325,12 @@ struct Operand_ {
   //!
   //! b.reset();
   //! assert(a == b);
+  //!
+  //! memset(&b, 0, sizeof(Operand));
+  //! assert(a == b);
   //! ```
   ASMJIT_INLINE void reset() noexcept {
-    _init_packed_op_b1_b2_sz_id(kOpNone, 0, 0, 0, kInvalidValue);
+    _init_packed_op_b1_b2_sz_id(kOpNone, 0, 0, 0, 0);
     _init_packed_d2_d3(0, 0);
   }
 
@@ -412,10 +420,6 @@ public:
 //! ~~~
 class Label : public Operand {
 public:
-  enum {
-    kMaxNameLength = 2048                //!< Maximum length of label/symbol name.
-  };
-
   //! Type of the Label.
   enum Type {
     kTypeAnonymous = 0,                  //!< Anonymous (unnamed) label.
@@ -457,7 +461,7 @@ public:
   // TODO: I think that if operand is reset it shouldn't say it's a Label, it
   // should be none like all other operands.
   ASMJIT_INLINE void reset() noexcept {
-    _init_packed_op_b1_b2_sz_id(kOpLabel, 0, 0, 0, kInvalidValue);
+    _init_packed_op_b1_b2_sz_id(kOpLabel, 0, 0, 0, 0);
     _init_packed_d2_d3(0, 0);
   }
 
@@ -466,7 +470,9 @@ public:
   // --------------------------------------------------------------------------
 
   //! Get if the label was created by CodeEmitter and has an assigned id.
-  ASMJIT_INLINE bool isValid() const noexcept { return _label.id != kInvalidValue; }
+  ASMJIT_INLINE bool isValid() const noexcept { return _label.id != 0; }
+  //! Set label id.
+  ASMJIT_INLINE void setId(uint32_t id) { _label.id = id; }
 
   // --------------------------------------------------------------------------
   // [Operator Overload]
@@ -496,18 +502,17 @@ struct RegTraits {};
 //! of:
 //!   * `op`      - Operand type, always \ref Operand::kOpReg.
 //!   * `regType` - Register type - platform specific, see \ref X86Reg::Type.
-//!   * `regKind` - Register kind - platform specific, see \ref X86Reg::Kind.
+//!   * `kind`    - Register kind - platform specific, see \ref X86Reg::Kind.
 //!   * `size`    - Size of the register.
 union RegInfo {
   struct {
     uint8_t op;                        //!< Type of the operand (always \ref kOpReg).
     uint8_t regType;                   //!< Register type.
-    uint8_t regKind;                   //!< Register kind.
+    uint8_t kind;                      //!< Register kind.
     uint8_t size;                      //!< Size of the register.
   };
   uint32_t signature;
 };
-
 
 // ============================================================================
 // [asmjit::Reg]
@@ -516,16 +521,38 @@ union RegInfo {
 //! Physical/Virtual register operand.
 class Reg : public Operand {
 public:
+  //! Architecture neutral register types.
+  //!
+  //! These must be reused by any platform that contains that types. All GP
+  //! and VEC registers are also allowed by design to be part of a BASE|INDEX
+  //! of a memory operand.
   ASMJIT_ENUM(RegType) {
     kRegNone      = 0,                   //!< No register - unused, invalid, multiple meanings.
-    _kRegStart    = 2,                   //!< Start of register types (must be honored).
-    kRegRip       = _kRegStart,          //!< Universal id of RIP register (if supported).
+    // (1 is used as a LabelTag)
+
+    kRegGp8Lo     = 2,                   //!< 8-bit low general purpose register (X86).
+    kRegGp8Hi     = 3,                   //!< 8-bit high general purpose register (X86).
+    kRegGp16      = 4,                   //!< 16-bit general purpose register (X86).
+    kRegGp32      = 5,                   //!< 32-bit general purpose register (X86|ARM).
+    kRegGp64      = 6,                   //!< 64-bit general purpose register (X86|ARM).
+
+    kRegVec32     = 7,                   //!< 32-bit view of a vector register (ARM).
+    kRegVec64     = 8,                   //!< 64-bit view of a vector register (ARM).
+    kRegVec128    = 9,                   //!< 128-bit view of a vector register (X86|ARM).
+    kRegVec256    = 10,                  //!< 256-bit view of a vector register (X86).
+    kRegVec512    = 11,                  //!< 512-bit view of a vector register (X86).
+    kRegVec1024   = 12,                  //!< 1024-bit view of a vector register (future).
+    kRegVec2048   = 13,                  //!< 2048-bit view of a vector register (future).
+    kRegIP        = 14,                  //!< Universal id of RIP register (if inaccessible through GP).
+
+    kRegCustom    = 15,                  //!< Start of platform dependent register types (must be honored).
     kRegMax       = 31                   //!< Maximum possible register id of all architectures.
   };
 
-  //! Register kind.
+  //! Architecture neutral register kinds.
   ASMJIT_ENUM(Kind) {
-    kKindGp = 0                          //!< GP register kind, compatible with all architectures.
+    kKindGp       = 0,                   //!< General purpose register (X86|ARM).
+    kKindVec      = 1                    //!< Vector register (X86|ARM).
   };
 
   // --------------------------------------------------------------------------
@@ -555,9 +582,9 @@ public:
   // --------------------------------------------------------------------------
 
   //! Get if the register is valid (either virtual or physical).
-  ASMJIT_INLINE bool isValid() const noexcept { return _reg.id != kInvalidValue; }
+  ASMJIT_INLINE bool isValid() const noexcept { return _signature != 0; }
   //! Get if this is a physical register.
-  ASMJIT_INLINE bool isPhysReg() const noexcept { return _reg.id < kInvalidReg; }
+  ASMJIT_INLINE bool isPhysReg() const noexcept { return _reg.id < Globals::kInvalidReg; }
   //! Get if this is a virtual register (used by \ref CodeCompiler).
   ASMJIT_INLINE bool isVirtReg() const noexcept { return isPackedId(_reg.id); }
 
@@ -586,7 +613,7 @@ public:
   //! Get the register type.
   ASMJIT_INLINE uint32_t getRegType() const noexcept { return _reg.regType; }
   //! Get the register kind.
-  ASMJIT_INLINE uint32_t getRegKind() const noexcept { return _reg.regKind; }
+  ASMJIT_INLINE uint32_t getKind() const noexcept { return _reg.kind; }
 
   //! Clone the register operand.
   ASMJIT_INLINE Reg clone() const noexcept { return Reg(*this); }
@@ -646,8 +673,16 @@ public:                                                                        \
   static ASMJIT_INLINE REG fromSignature(uint32_t signature, uint32_t id) ASMJIT_NOEXCEPT { \
     return REG(Init, signature, id);                                           \
   }                                                                            \
-                                                                               \
-  ASMJIT_INLINE REG& operator=(const REG& other) ASMJIT_NOEXCEPT { copyFrom(other); return *this; } \
+  /* TODO: Depreceted */ \
+  ASMJIT_INLINE REG m() const noexcept { return *this; } \
+  ASMJIT_INLINE REG m8() const noexcept { return *this; } \
+  ASMJIT_INLINE REG m16() const noexcept { return *this; } \
+  ASMJIT_INLINE REG m32() const noexcept { return *this; } \
+  ASMJIT_INLINE REG m64() const noexcept { return *this; } \
+  \
+  ASMJIT_INLINE REG& operator=(const REG& other) ASMJIT_NOEXCEPT {             \
+    copyFrom(other); return *this;                                             \
+  }
 
 #define ASMJIT_DEFINE_FINAL_REG(REG, BASE_REG, TRAITS)                         \
   ASMJIT_DEFINE_ABSTRACT_REG(REG, BASE_REG)                                    \
@@ -768,7 +803,7 @@ public:
 
   //! Reset the memory operand - after reset the memory points to [0].
   ASMJIT_INLINE void reset() noexcept {
-    _init_packed_op_b1_b2_sz_id(kOpMem, 0, 0, 0, kInvalidValue);
+    _init_packed_op_b1_b2_sz_id(kOpMem, 0, 0, 0, 0);
     _init_packed_d2_d3(0, 0);
   }
 
@@ -857,7 +892,7 @@ public:
   //! Reset the memory operand's BASE register / label.
   ASMJIT_INLINE void resetBase() noexcept { _setBase(0, 0); }
   //! Reset the memory operand's INDEX register.
-  ASMJIT_INLINE void resetIndex() noexcept { _setIndex(0, kInvalidValue); }
+  ASMJIT_INLINE void resetIndex() noexcept { _setIndex(0, 0); }
 
   //! Set memory operand size.
   ASMJIT_INLINE void setSize(uint32_t size) noexcept { _mem.size = static_cast<uint8_t>(size); }
@@ -953,13 +988,13 @@ public:
 
   //! Create a new immediate value (initial value is 0).
   Imm() noexcept : Operand(NoInit) {
-    _init_packed_op_b1_b2_sz_id(kOpImm, 0, 0, 0, kInvalidValue);
+    _init_packed_op_b1_b2_sz_id(kOpImm, 0, 0, 0, 0);
     _imm.value.i64 = 0;
   }
 
   //! Create a new signed immediate value, assigning the value to `val`.
   explicit Imm(int64_t val) noexcept : Operand(NoInit) {
-    _init_packed_op_b1_b2_sz_id(kOpImm, 0, 0, 0, kInvalidValue);
+    _init_packed_op_b1_b2_sz_id(kOpImm, 0, 0, 0, 0);
     _imm.value.i64 = val;
   }
 
@@ -1321,7 +1356,6 @@ struct TypeId {
   //!
   //! // The same, but by using TypeId::deabstract() function.
   //! typeId = TypeId::deabstract(typeId, deabstractDelta);
-  //!
   //! ~~~
   static ASMJIT_INLINE uint32_t deabstractDeltaOfSize(uint32_t gpSize) noexcept {
     return gpSize >= 8 ? kI64 - kIntPtr : kI32 - kIntPtr;

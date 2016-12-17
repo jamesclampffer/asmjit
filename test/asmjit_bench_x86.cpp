@@ -67,6 +67,7 @@ static void benchX86(uint32_t archType) {
   Performance perf;
 
   X86Assembler a;
+  X86Builder cb;
   X86Compiler cc;
 
   uint32_t r, i;
@@ -77,7 +78,8 @@ static void benchX86(uint32_t archType) {
   // --------------------------------------------------------------------------
 
   size_t asmOutputSize = 0;
-  size_t cmpOutputSize = 0;
+  size_t cbOutputSize  = 0;
+  size_t ccOutputSize  = 0;
 
   perf.reset();
   for (r = 0; r < kNumRepeats; r++) {
@@ -87,7 +89,7 @@ static void benchX86(uint32_t archType) {
       code.init(CodeInfo(archType));
       code.attach(&a);
 
-      asmtest::generateOpcodes(a);
+      asmtest::generateOpcodes(a.asEmitter());
       asmOutputSize += code.getCodeSize();
 
       code.reset(false); // Detaches `a`.
@@ -102,7 +104,25 @@ static void benchX86(uint32_t archType) {
   // [Bench - CodeBuilder]
   // --------------------------------------------------------------------------
 
-  // TODO:
+  perf.reset();
+  for (r = 0; r < kNumRepeats; r++) {
+    cbOutputSize = 0;
+    perf.start();
+    for (i = 0; i < kNumIterations; i++) {
+      code.init(CodeInfo(archType));
+      code.attach(&cb);
+
+      asmtest::generateOpcodes(cb.asEmitter());
+      cb.finalize();
+      cbOutputSize += code.getCodeSize();
+
+      code.reset(false); // Detaches `cb`.
+    }
+    perf.end();
+  }
+
+  printf("%-12s (%s) | Time: %-6u [ms] | Speed: %7.3f [MB/s]\n",
+    "X86Builder", archName, perf.best, mbps(perf.best, cbOutputSize));
 
   // --------------------------------------------------------------------------
   // [Bench - CodeCompiler]
@@ -110,7 +130,7 @@ static void benchX86(uint32_t archType) {
 
   perf.reset();
   for (r = 0; r < kNumRepeats; r++) {
-    cmpOutputSize = 0;
+    ccOutputSize = 0;
     perf.start();
     for (i = 0; i < kNumIterations; i++) {
       // NOTE: Since we don't have JitRuntime we don't know anything about
@@ -124,7 +144,7 @@ static void benchX86(uint32_t archType) {
 
       asmtest::generateAlphaBlend(cc);
       cc.finalize();
-      cmpOutputSize += code.getCodeSize();
+      ccOutputSize += code.getCodeSize();
 
       code.reset(false); // Detaches `cc`.
     }
@@ -132,7 +152,7 @@ static void benchX86(uint32_t archType) {
   }
 
   printf("%-12s (%s) | Time: %-6u [ms] | Speed: %7.3f [MB/s]\n",
-    "X86Compiler", archName, perf.best, mbps(perf.best, cmpOutputSize));
+    "X86Compiler", archName, perf.best, mbps(perf.best, ccOutputSize));
 }
 #endif
 

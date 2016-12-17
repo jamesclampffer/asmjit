@@ -141,14 +141,13 @@ AsmJit is designed to be easy embeddable in any project. However, it depends on 
 
   * **ASMJIT_DEBUG** - Define to always turn debugging on (regardless of compile-time options detected).
   * **ASMJIT_RELEASE** - Define to always turn debugging off (regardless of compiler-time options detected).
-  * **ASMJIT_TRACE** - Define to enable AsmJit tracing. Tracing is used to catch bugs in AsmJit and it has to be enabled explicitly. When AsmJit is compiled with `ASMJIT_TRACE` it uses `stdout` to log information related to AsmJit execution. This log can be helpful AsmJit developers and users in case something goes wrong..
 
 By default none of these is defined, AsmJit detects build-type based on compile-time macros and supports most IDE and compiler settings out of box.
 
 ### Build Mode:
 
+  * **ASMJIT_EMBED** - Define to embed AsmJit in another project. Embedding means that neither shared nor static library is created and AsmJit's source files and source files of the product that embeds AsmJit are part of the same target. This way of building AsmJit has certain advantages that are beyond this manual. **ASMJIT_EMBED** behaves similarly to **ASMJIT_STATIC** (no API exports).
   * **ASMJIT_STATIC** - Define to build AsmJit as a static library. No symbols are exported in such case.
-  * **ASMJIT_EMBED** - Define to embed AsmJit in another project. Embedding means that neither shared nor static library is created and AsmJit's source files and source files of the product that embeds AsmJit are part of the same target. This way of building AsmJit has certain advantages that are beyond this manual. **ASMJIT_EMBED** behaves identically to **ASMJIT_STATIC** (no API exports).
 
 By default AsmJit build is configured to be built as a shared library, thus note of **ASMJIT_EMBED** and **ASMJIT_STATIC** is defined.
 
@@ -180,44 +179,44 @@ AsmJit library uses one global namespace called `asmjit` that provides the whole
 AsmJit provides two classes that are used together for code generation:
 
   * **CodeHolder** - Provides functionality to hold generated code and stores all necessary information about code sections, labels, symbols, and possible relocations.
-  * **CodeEmitter** - Provides functionality to emit code into `CodeHolder`. `CodeEmitter` is abstract and provides just basic building blocks that are then implemented by `Assembler`, `CodeBuilder`, and `CodeCompiler`.
+  * **CodeEmitter** - Provides functionality to emit code into **CodeHolder**. **CodeEmitter** is abstract and provides just basic building blocks that are then implemented by **Assembler**, **CodeBuilder**, and **CodeCompiler**.
 
 Code emitters:
 
   * **Assembler** - Emitter designed to emit machine code directly.
-  * **CodeBuilder** - Emitter designed to emit code into a representation that can be processed. It stores the whole code in a double linked list consisting of nodes (`CBNode` aka code-builder node). There are nodes that represent instructions (`CBInst`), labels (`CBLabel`), and other building blocks (`CBAlign`, `CBData`, ...). Some nodes are used as markers (`CBSentinel`) and comments (`CBComment`).
-  * **CodeCompiler** - High-level code emitter that uses virtual registers and contains high-level function building features. `CodeCompiler` is based on `CodeBuilder`, but extends its functionality and introduces new node types starting with CC (`CCFunc`, `CCFuncRet`, `CCFuncCall`). `CodeCompiler` is the simplest way to start with AsmJit as it abstracts many details required to generate a function in asm language.
+  * **CodeBuilder** - Emitter designed to emit code into a representation that can be processed. It stores the whole code in a double linked list consisting of nodes (**CBNode** aka code-builder node). There are nodes that represent instructions (**CBInst**), labels (**CBLabel**), and other building blocks (**CBAlign**, **CBData**, ...). Some nodes are used as markers (**CBSentinel**) and comments (**CBComment**).
+  * **CodeCompiler** - High-level code emitter that uses virtual registers and contains high-level function building features. **CodeCompiler** is based on **CodeBuilder**, but extends its functionality and introduces new node types starting with CC (**CCFunc**, **CCFuncExit**, **CCFuncCall**). CodeCompiler is the simplest way to start with AsmJit as it abstracts many details required to generate a function in asm language.
 
 ### Runtime
 
-AsmJit's `Runtime` is designed for execution and/or linking. The `Runtime` itself is abstract and defines only how to `add` and `release` code held by `CodeHolder`. `CodeHolder` holds machine code and relocation entries, but should be seen as a temporary object only - after the code in `CodeHolder` is ready, it should be passed to `Runtime` or relocated manually. Users interested in inspecting the generated machine-code (instead of executing or linking) can keep it in `CodeHodler` and process it manually of course.
+AsmJit's **Runtime** is designed for execution and/or linking. The **Runtime** itself is abstract and defines only how to **add()** and **release()** code held by **CodeHolder**. **CodeHolder** holds machine code and relocation entries, but should be seen as a temporary object only - after the code in **CodeHolder** is ready, it should be passed to **Runtime** or relocated manually. Users interested in inspecting the generated machine-code (instead of executing or linking) can keep it in **CodeHodler** and process it manually of course.
 
-The only `Runtime` implementation provided directly by AsmJit is called `JitRuntime`, which is suitable for storing and executing dynamically generated code. JitRuntime is used in most AsmJit examples as it makes the code management easy. It allows to add and release dynamically generated functions, so it's suitable for JIT code generators that want to keep many functions alive, and release functions which are no longer needed.
+The only **Runtime** implementation provided directly by AsmJit is called **JitRuntime**, which is suitable for storing and executing dynamically generated code. **JitRuntime** is used in most AsmJit examples as it makes the code management easy. It allows to add and release dynamically generated functions, so it's suitable for JIT code generators that want to keep many functions alive, and release functions which are no longer needed.
 
 ### Instructions & Operands
 
-Instructions specify operations performed by the CPU, and operands specify the operation's input(s) and output(s). Each AsmJit's instruction has it's own unique id (`X86Inst::Id` for example) and platform specific code emitters always provide a type safe intrinsic (or multiple overloads) to emit such instruction. There are two ways of emitting an instruction:
+Instructions specify operations performed by the CPU, and operands specify the operation's input(s) and output(s). Each AsmJit's instruction has it's own unique id (**X86Inst::Id** for example) and platform specific code emitters always provide a type safe intrinsic (or multiple overloads) to emit such instruction. There are two ways of emitting an instruction:
 
-  * Using emitter.**instName**(operands...) - A type-safe way provided by platform specific emitters - for example `X86Assembler` provides `mov(X86Gp, X86Gp)`.
+  * Using emitter.**instName**(operands...) - A type-safe way provided by platform specific emitters - for example **X86Assembler** provides `mov(X86Gp, X86Gp)`.
   * Using emitter.emit(**instId**, operands...) - Allows to emit an instruction in a dynamic way - you just need to know instruction's id and provide its operands.
 
-AsmJit's operands all inherit from a base class called `Operand` and then specialize its type to:
+AsmJit's operands all inherit from a base class called **Operand** and then specialize its type to:
 
   * **None** (not used or uninitialized operand).
-  * **Register** (**Reg**) - Describes either physical or virtual register. Physical registers have id that matches the target's machine id directly, whereas virtual registers must be allocated into physical registers by a register allocator pass. Each `Reg` provides:
-    * *Register Type* - Unique id that describes each possible register provided by the target architecture - for example X86 backend provides `X86Reg::RegType`, which defines all variations of general purpose registers (GPB-LO, GPB-HI, GPW, GPD, and GPQ) and all types of other registers like K, MM, BND, XMM, YMM, and ZMM.
-    * *Register Kind* - Groups multiple register types under a single kind - for example all general-purpose registers (of all sizes) on X86 are `X86Reg::kKindGp`, all SIMD registers (XMM, YMM, ZMM) are `X86Reg::kKindVec`, etc.
-    * *Register Size* - Contains the size of the register in bytes. If the size depends on the mode (32-bit vs 64-bit) then generally the higher size is used (for example RIP register has size 8 by default).
-    * *Register ID* - Contains physical or virtual id of the register.
-  * **Memory Address** (**Mem**) - Used to reference a memory location. Each `Mem` provides:
-    * *Base Register* - A base register id (physical or virtual).
-    * *Index Register* - An index register id (physical or virtual).
-    * *Offset* - Displacement or absolute address to be referenced (32-bit if base register is used and 64-bit if base register is not used).
-    * *Flags* that can describe various architecture dependent information (like scale and segment-override on X86).
+  * **Register** (**Reg**) - Describes either physical or virtual register. Physical registers have id that matches the target's machine id directly, whereas virtual registers must be allocated into physical registers by a register allocator pass. Each **Reg** provides:
+    * **Register Type** - Unique id that describes each possible register provided by the target architecture - for example X86 backend provides **X86Reg::RegType**, which defines all variations of general purpose registers (GPB-LO, GPB-HI, GPW, GPD, and GPQ) and all types of other registers like K, MM, BND, XMM, YMM, and ZMM.
+    * **Register Kind** - Groups multiple register types under a single kind - for example all general-purpose registers (of all sizes) on X86 are **X86Reg::kKindGp**, all SIMD registers (XMM, YMM, ZMM) are **X86Reg::kKindVec**, etc.
+    * **Register Size** - Contains the size of the register in bytes. If the size depends on the mode (32-bit vs 64-bit) then generally the higher size is used (for example RIP register has size 8 by default).
+    * **Register ID** - Contains physical or virtual id of the register.
+  * **Memory Address** (**Mem**) - Used to reference a memory location. Each **Mem** provides:
+    * **Base Register** - A base register id (physical or virtual).
+    * **Index Register** - An index register id (physical or virtual).
+    * **Offset** - Displacement or absolute address to be referenced (32-bit if base register is used and 64-bit if base register is not used).
+    * **Flags** that can describe various architecture dependent information (like scale and segment-override on X86).
   * **Immediate Value** (**Imm**) - Immediate values are usually part of instructions (encoded within the instruction itself) or data.
-  * **Label** - used to reference a location in code or data. Labels must be created by the `CodeEmitter` or by `CodeHolder`. Each label has its unique id per `CodeHolder` instance.
+  * **Label** - used to reference a location in code or data. Labels must be created by the **CodeEmitter** or by **CodeHolder**. Each label has its unique id per **CodeHolder** instance.
 
-AsmJit allows to construct operands dynamically, to store them, and to query a complete information about them at run-time. Operands are small (always 16 bytes per **Operand**) and should be always copied if you intend to store them (don't create operands by using `new` keyword, it's not recommended). Operands are safe to be `memcpy()`ed and `memset()`ed if you work with arrays of operands.
+AsmJit allows to construct operands dynamically, to store them, and to query a complete information about them at run-time. Operands are small (always 16 bytes per **Operand**) and should be always copied if you intend to store them (don't create operands by using **new** keyword, it's not recommended). Operands are safe to be **memcpy()ed** and **memset()ed** if you need to work with arrays of operands.
 
 Small example of manipulating and using operands:
 
@@ -563,8 +562,8 @@ int main(int argc, char* argv[]) {
   int inB[4] = { 1, 5, 2, 8 };
   int out[4];
 
-  // This code uses AsmJit's ptr_cast<> to cast between void* and SumIntsFunc.
-  ptr_cast<SumIntsFunc>(p)(result, arr_a, arr_b);
+  // This code uses AsmJit's ptr_as_func<> to cast between void* and SumIntsFunc.
+  ptr_as_func<SumIntsFunc>(p)(result, arr_a, arr_b);
 
   // Prints {5 8 4 9}
   printf("{%d %d %d %d}\n", out[0], out[1], out[2], out[3]);
@@ -669,7 +668,7 @@ Before we go further it's important to introduce instruction options, because th
 
   * Many general-purpose instructions (especially arithmetic ones) on X86 have multiple encodings - in AsmJit this is usually called 'short form' and 'long form'.
   * AsmJit always tries to use 'short form' as it makes the resulting machine-code smaller, which is always good - this decision is used by majority of assemblers out there.
-  * AsmJit allows to override the default decision by using `short_()` and `long()_` instruction options to force short or long form, respectively. The most useful is `long_()` as it basically forces AsmJit to always emit the long form. The `short_()` is not that useful as it's automatic (except jumps to non-bound labels). Note the underscore after each function name as it avoids collision with built-in C++ types.
+  * AsmJit allows to override the default decision by using `short_()` and `long_()` instruction options to force short or long form, respectively. The most useful is `long_()` as it basically forces AsmJit to always emit the long form. The `short_()` is not that useful as it's automatic (except jumps to non-bound labels). Note the underscore after each function name as it avoids collision with built-in C++ types.
 
 To illustrate what short form and long form means in binary let's assume we want to emit `add esp, 16` instruction, which has two possible binary encodings:
 
@@ -747,7 +746,7 @@ AsmJit contains another instruction option that controls (forces) REX prefix - `
   * `4183C410` - `add r12d, 16`    - 32-bit operation in 64-bit mode using R12D requires REX prefix (0x41).
   * `4983C410` - `add r12, 16`     - 64-bit operation in 64-bit mode using R12  requires REX prefix (0x49).
 
-### Using Func-API
+### Generic Function API
 
 So far all examples shown above handled creating function prologs and epilogs manually. While it's possible to do it that way it's much better to automate such process as function calling conventions vary across architectures and also across operating systems.
 
@@ -760,11 +759,11 @@ The following concepts are used to describe and create functions in AsmJit:
 
   * **CallConv** - Describes a calling convention - this class contains instructions to assign registers and stack addresses to function arguments and return value(s), but doesn't specify any function signature. Calling conventions are architecture and OS dependent.
 
-  * **TypeId** - TypeId is an 8-bit value that describes a platform independent type. It provides abstractions for most common types like `int8_t`, `uint32_t`, `uintptr_t`, `float`, `double`, and all possible vector types to match ISAs up to AVX512. TypeId was introduced originally for CodeCompiler, but is also used by FuncSignature.
+  * **TypeId** - TypeId is an 8-bit value that describes a platform independent type. It provides abstractions for most common types like `int8_t`, `uint32_t`, `uintptr_t`, `float`, `double`, and all possible vector types to match ISAs up to AVX512. **TypeId** was introduced originally to be used with **CodeCompiler**, but is now used by **FuncSignature** as well.
 
-  * **FuncSignature** - Describes a function signature, for example `int func(int, int)`. FuncSignature contains a function calling convention id, return value type, and function arguments. The signature itself is platform independent and uses TypeId to describe types of function arguments and its return value(s).
+  * **FuncSignature** - Describes a function signature, for example `int func(int, int)`. **FuncSignature** contains a function calling convention id, return value type, and function arguments. The signature itself is platform independent and uses **TypeId** to describe types of function arguments and its return value(s).
 
-  * **FuncDetail** - Architecture and ABI dependent information that describes CallConv and expanded FuncSignature. Each function argument and return value is represented as **FuncDetail::Value** that contains the original TypeId enriched by additional information that specifies if the value is passed/returned by register (and which register) or by stack. Each value also contains some other metadata that provide additional information required to handle it properly (for example if a vector value is passed indirectly by a pointer as required by WIN64 calling convention, etc...).
+  * **FuncDetail** - Architecture and ABI dependent information that describes **CallConv** and expanded **FuncSignature**. Each function argument and return value is represented as **FuncDetail::Value** that contains the original **TypeId** enriched by additional information that specifies if the value is passed/returned by register (and which register) or by stack. Each value also contains some other metadata that provide additional information required to handle it properly (for example if a vector value is passed indirectly by a pointer as required by WIN64 calling convention, etc...).
 
   * **FuncArgsMapper** - A helper that can be used to define where each function argument is expected to be. It's architecture and ABI dependent mapping from function arguments described by CallConv and FuncDetail into registers specified by the user.
 
@@ -780,7 +779,7 @@ using namespace asmjit;
 typedef void (*SumIntsFunc)(int* dst, const int* a, const int* b);
 
 int main(int argc, char* argv[]) {
-  JitRuntime rt;                          // Create JIT Runtime
+  JitRuntime rt;                          // Create JIT Runtime.
 
   CodeHolder code;                        // Create a CodeHolder.
   code.init(rt.getCodeInfo());            // Initialize it to match `rt`.
@@ -846,59 +845,264 @@ Both **CodeBuilder** and **CodeCompiler** are emitters that emit everything to a
 There is a difference between **CodeBuilder** and **CodeCompiler**:
 
   * **CodeBuilder** (low-level):
-    * Maximum compatibility with *Assembler**, easy to switch from **Assembler** to **CodeBuilder** and vice versa.
+    * Maximum compatibility with **Assembler**, easy to switch from **Assembler** to **CodeBuilder** and vice versa.
     * Doesn't generate machine code directly, allows to serialize to **Assembler** when the whole code is ready to be encoded.
 
   * **CodeCompiler** (high-level):
     * Virtual registers - allows to use unlimited number of virtual registers which are allocated into physical registers by a built-in register allocator.
     * Function nodes - allows to create functions by specifying their signatures and assigning virtual registers to function arguments and return value(s).
-    * Function calls - allows to call other functions withing the generated code by using the same interface for defining function signatures.
+    * Function calls - allows to call other functions within the generated code by using the same interface that is used to create functions.
 
-There are multiple node types used by both:
+There are multiple node types used by both **CodeBuilder** and **CodeCompiler**:
 
-  * Basic Nodes:
+  * Basic nodes:
     * **CBNode** - Base class for all nodes.
     * **CBInst** - Instruction node.
     * **CBAlign** - Alignment directive (.align).
-    * **CBLabel** - Bound label.
+    * **CBLabel** - Label (location where to bound it).
 
-  * Data Nodes:
+  * Data nodes:
     * **CBData** - Data embedded into the code.
     * **CBConstPool** - Constant pool data.
     * **CBLabelData** - Label address embedded as data.
 
-  * Informative Nodes:
+  * Informative nodes:
     * **CBComment** - Contains a comment string, doesn't affect code generation.
     * **CBSentinel** - A marker that can be used to remember certain position, doesn't affect code generation.
 
-  * **CodeCompiler** Nodes:
+  * **CodeCompiler** nodes:
     * **CCFunc** - Start of a function.
-    * **CCFuncRet** - Return from a function.
-    * **CCFuncCall* - Function call.
+    * **CCFuncExit** - Return from a function.
+    * **CCFuncCall** - Function call.
+
+NOTE: All nodes that have **CB** prefix are used by both **CodeBuilder** and **CodeCompiler**. Nodes that have **CC** prefix are exclusive to **CodeCompiler** and are usually lowered to **CBNodes** by a **CodeBuilder** specific pass or treated as one of **CB** nodes; for example **CCFunc** inherits **CBLabel** so it's treated as **CBLabel** by **CodeBuilder** and as **CCFunc** by **CodeCompiler**.
 
 ### Using CodeBuilder
 
+**CodeBuilder** was designed to be used as an **Assembler** replacement in case that post-processing of the generated code is required. The code can be modified during or after code generation. The post processing can be done manually or through **CBPass** (Code-Builder Pass) object. **CodeBuilder** stores the emitted code as a double-linked list, which allows O(1) insertion and removal.
+
+The code representation used by **CodeBuilder** is compatible with everything AsmJit provides. Each instruction is stored as **CBInst**, which contains instruction id, options, and operands. Each instruction emitted will create a new **CBInst** instance and add it to the current cursor in the double-linked list of nodes. Since the instruction stream used by **CodeBuilder** can be manipulated, we can rewrite the **SumInts** example into the following:
+
+```c++
+using namespace asmjit;
+
+typedef void (*SumIntsFunc)(int* dst, const int* a, const int* b);
+
+// Small helper function to print the current content of `cb`.
+static void dumpCode(CodeBuilder& cb, const char* phase) {
+  StringBuilder sb;
+  cb.dump(sb);
+  printf("%s:\n%s\n", phase, sb.getData());
+}
+
+int main(int argc, char* argv[]) {
+  JitRuntime rt;                          // Create JIT Runtime.
+
+  CodeHolder code;                        // Create a CodeHolder.
+  code.init(rt.getCodeInfo());            // Initialize it to match `rt`.
+  X86Builder cb(&code);                   // Create and attach X86Builder to `code`.
+
+  // Decide which registers will be mapped to function arguments. Try changing
+  // registers of `dst`, `src_a`, and `src_b` and see what happens in function's
+  // prolog and epilog.
+  X86Gp dst   = cb.zax();
+  X86Gp src_a = cb.zcx();
+  X86Gp src_b = cb.zdx();
+
+  X86Xmm vec0 = x86::xmm0;
+  X86Xmm vec1 = x86::xmm1;
+
+  // Create and initialize `FuncDetail`.
+  FuncDetail func;
+  func.init(FuncSignature3<void, int*, const int*, const int*>(CallConv::kIdHost));
+
+  // Remember prolog insertion point.
+  CBNode* prologInsertionPoint = cb.getCursor();
+
+  // Emit function body:
+  cb.movdqu(vec0, x86::ptr(src_a));       // Load 4 ints from [src_a] to XMM0.
+  cb.movdqu(vec1, x86::ptr(src_b));       // Load 4 ints from [src_b] to XMM1.
+  cb.paddd(vec0, vec1);                   // Add 4 ints in XMM1 to XMM0.
+  cb.movdqu(x86::ptr(dst), vec0);         // Store the result to [dst].
+
+  // Remember epilog insertion point.
+  CBNode* epilogInsertionPoint = cb.getCursor();
+
+  // Let's see what we have now.
+  dumpCode(cb, "Raw Function");
+
+  // Now, after we emitted the function body, we can insert the prolog, arguments
+  // allocation, and epilog. This is not possible with using pure X86Assembler.
+  FuncFrameInfo ffi;
+  ffi.setDirtyRegs(X86Reg::kKindVec,      // Make XMM0 and XMM1 dirty. VEC kind
+                   Utils::mask(0, 1));    // describes XMM|YMM|ZMM registers.
+
+  FuncArgsMapper args(&func);             // Create function arguments mapper.
+  args.assignAll(dst, src_a, src_b);      // Assign our registers to arguments.
+  args.updateFrameInfo(ffi);              // Reflect our args in FuncFrameInfo.
+
+  FuncFrameLayout layout;                 // Create the FuncFrameLayout, which
+  layout.init(func, ffi);                 // contains metadata of prolog/epilog.
+
+  // Insert function prolog and allocate arguments to registers.
+  cb.setCursor(prologInsertionPoint);
+  FuncUtils::emitProlog(&cb, layout);
+  FuncUtils::allocArgs(&cb, layout, args);
+
+  // Insert function epilog.
+  cb.setCursor(epilogInsertionPoint);
+  FuncUtils::emitEpilog(&cb, layout);
+
+  // Let's see how the function prolog and epilog looks.
+  dumpCode(cb, "Prolog & Epilog");
+
+  // IMPORTANT: CodeBuilder requires `finalize()` to be called to serialize
+  // the code to the Assembler (it automatically creates one if not attached).
+  cb.finalize();
+
+  SumIntsFunc fn;
+  Error err = rt.add(&fn, &code);         // Add the code generated to the runtime.
+  if (err) return 1;                      // Handle a possible error case.
+
+  // Execute the generated function.
+  int inA[4] = { 4, 3, 2, 1 };
+  int inB[4] = { 1, 5, 2, 8 };
+  int out[4];
+  fn(out, inA, inB);
+
+  // Prints {5 8 4 9}
+  printf("{%d %d %d %d}\n", out[0], out[1], out[2], out[3]);
+
+  rt.release(fn);                         // Remove the function from the runtime.
+  return 0;
+}
+```
+
+When the example is executed it should output the following (this one using AMD64-SystemV ABI):
+
+```
+Raw Function:
+movdqu xmm0, [rcx]
+movdqu xmm1, [rdx]
+paddd xmm0, xmm1
+movdqu [rax], xmm0
+
+Prolog & Epilog:
+mov rax, rdi
+mov rcx, rsi
+movdqu xmm0, [rcx]
+movdqu xmm1, [rdx]
+paddd xmm0, xmm1
+movdqu [rax], xmm0
+ret
+
+{5 8 4 9}
+```
+
+The number of use-cases of **X86Builder** is not limited and highly depends on your creativity and experience. The previous example can be easily improved to collect all dirty registers inside the function programmatically and to pass them to `ffi.setDirtyRegs()`:
+
+```c++
+using namespace asmjit;
+
+// NOTE: This function doesn't cover all possible instructions. It ignores
+// instructions that write to implicit registers that are not part of the
+// operand list. It also counts read-only registers. Real implementation
+// would be a bit more complicated, but still relatively easy.
+static void collectDirtyRegs(const CBNode* first, const CBNode* last, uint32_t regMask[X86Reg::kKindCount]) {
+  const CBNode* node = first;
+  while (node) {
+    if (node->actsAsInst()) {
+      const CBInst* inst = node->as<CBInst>();
+      const Operand* opArray = inst->getOpArray();
+
+      for (uint32_t i = 0, opCount = inst->getOpCount(); i < opCount; i++) {
+        const Operand& op = opArray[i];
+        if (op.isReg()) {
+          const X86Reg& reg = op.as<X86Reg>();
+          regMask[reg.getKind()] |= 1U << reg.getId();
+        }
+      }
+    }
+
+    if (node == last) break;
+    node = node->getNext();
+  }
+}
+
+static void setDirtyRegsOfFFI(const X86Builder& cb, FuncFrameInfo& ffi) {
+  uint32_t regMask[X86Reg::kKindCount] = { 0 };
+  collectDirtyRegs(cb.getFirstNode(), cb.getLastNode(), regMask);
+
+  // X86/X64 ABIs only require to save GP/XMM registers:
+  ffi.setDirtyRegs(X86Reg::kKindGp, regMask[X86Reg::kKindGp]);
+  ffi.setDirtyRegs(X86Reg::kKindVec, regMask[X86Reg::kKindVec]);
+}
+```
+
+### Using X86Assembler or X86Builder through X86Emitter
+
+Even when **Assembler** and **CodeBuilder** implement the same interface defined by **CodeEmitter** their platform dependent variants (**X86Assembler** and **X86Builder**, respective) cannot be interchanged or casted to each other by using C++'s `static_cast<>`. The main reason is the inheritance graph of these classes is different and cast-incompatible, as illustrated in the following graph:
+
+```
+                                            +--------------+      +=======================+
+                   +----------------------->|  X86Emitter  |<--+--# X86EmitterImplicitT<> #<--+
+                   |                        +--------------+   |  +=======================+   |
+                   |                           (abstract)      |          (mixin)             |
+                   |   +--------------+     +~~~~~~~~~~~~~~+   |                              |
+                   +-->|  Assembler   |---->| X86Assembler |<--+                              |
+                   |   +--------------+     +~~~~~~~~~~~~~~+   |                              |
+                   |      (abstract)            (final)        |                              |
++===============+  |   +--------------+     +~~~~~~~~~~~~~~+   |                              |
+#  CodeEmitter  #--+-->| CodeBuilder  |--+->|  X86Builder  |<--+                              |
++===============+      +--------------+  |  +~~~~~~~~~~~~~~+                                  |
+   (abstract)             (abstract)     |      (final)                                       |
+                   +---------------------+                                                    |
+                   |                                                                          |
+                   |   +--------------+     +~~~~~~~~~~~~~~+      +=======================+   |
+                   +-->| CodeCompiler |---->| X86Compiler  |<-----# X86EmitterExplicitT<> #---+
+                       +--------------+     +~~~~~~~~~~~~~~+      +=======================+
+                          (abstract)            (final)                   (mixin)
+```
+
+The graph basically shows that it's not possible to cast **X86Assembler** to **X86Builder** and vice versa. However, since both **X86Assembler** and **X86Builder** share the same interface defined by both **CodeEmitter** and **X86EmmiterImplicitT** a class called **X86Emitter** was introduced to make it possible to write a function that can emit to both **X86Assembler** and **X86Builder**. Note that **X86Emitter** cannot be created, it's abstract and has private constructors and destructors; it was only designed to be casted to and used as an interface.
+
+Each X86 emitter implements a member function called **asEmitter()**, which casts the instance to the **X86Emitter**, as illustrated on the next example:
+
+```c++
+using namespace asmjit;
+
+static void emitSomething(X86Emitter* e) {
+  e->mov(x86::eax, x86::ebx);
+}
+
+static void assemble(CodeHolder& code, bool useAsm) {
+  if (useAsm) {
+    X86Assembler a(&code);
+    emitSomething(a.asEmitter());
+  }
+  else {
+    X86Builder cb(&code);
+    emitSomething(cb.asEmitter());
+
+    // IMPORTANT: CodeBuilder requires `finalize()` to be called to serialize
+    // the code to the Assembler (it automatically creates one if not attached).
+    cb.finalize();
+  }
+}
+```
+
+The example above shows how to create a function that can emit code to either **X86Assembler** or **X86Builder** through **X86Emitter**, which provides emitter-neutral functionality. **X86Emitter**, however, doesn't provide any emitter **X86Assembler** or **X86Builder** specific functionality like **setCursor()**.
+
+### Using CodeCompiler
+
+**CodeCompiler** is a high-level code emitter that provides virtual registers and automatically handles function calling conventions. It's still architecture dependent, but makes the code generation much easier by offering a built-in register allocator and function builder. Functions are essential; the first-step to generate some code is to define the signature of the function you want to generate (before generating the body). Function arguments and return value(s) are handled by assigning virtual registers to them. Similarly, function calls are handled the same way.
+
+**CodeCompiler** also makes the use of passes (introduced by **CodeBuilder**) and automatically adds an architecture-dependent register allocator pass to the list of passes when attached to **CodeHolder**.
 
 
 
 
-
-
-
-### TODO
-
-Documentation not updated from here...
-
-
-
-
-
-
-
-
-
-
-
+TODO: DOCUMENTATION NOT FINISHED
 
 
 ### Function Signature

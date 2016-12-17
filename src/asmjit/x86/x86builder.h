@@ -15,7 +15,6 @@
 #include "../base/codebuilder.h"
 #include "../base/simdtypes.h"
 #include "../x86/x86emitter.h"
-#include "../x86/x86misc.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
@@ -68,10 +67,10 @@ public:
   ASMJIT_API virtual Error onAttach(CodeHolder* code) noexcept override;
 
   // --------------------------------------------------------------------------
-  // [Code-Generation]
+  // [Finalize]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error _emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) override;
+  ASMJIT_API virtual Error finalize() override;
 };
 
 //! \}

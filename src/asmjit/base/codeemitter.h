@@ -178,7 +178,11 @@ public:
   //! Create a new label.
   virtual Label newLabel() = 0;
   //! Create a new named label.
-  virtual Label newNamedLabel(const char* name, size_t nameLength = kInvalidIndex, uint32_t type = Label::kTypeGlobal, uint32_t parentId = kInvalidValue) = 0;
+  virtual Label newNamedLabel(
+    const char* name,
+    size_t nameLength = Globals::kInvalidIndex,
+    uint32_t type = Label::kTypeGlobal,
+    uint32_t parentId = 0) = 0;
 
   //! Get a label by name.
   //!
@@ -187,7 +191,10 @@ public:
   //! NOTE: This function doesn't trigger ErrorHandler in case the name is
   //! invalid or no such label exist. You must always check the validity of the
   //! \ref Label returned.
-  ASMJIT_API Label getLabelByName(const char* name, size_t nameLength = kInvalidIndex, uint32_t parentId = kInvalidValue) noexcept;
+  ASMJIT_API Label getLabelByName(
+    const char* name,
+    size_t nameLength = Globals::kInvalidIndex,
+    uint32_t parentId = 0) noexcept;
 
   //! Bind the `label` to the current position of the current section.
   //!
@@ -213,7 +220,7 @@ public:
   virtual Error embedConstPool(const Label& label, const ConstPool& pool) = 0;
 
   //! Emit a comment string `s` with an optional `len` parameter.
-  virtual Error comment(const char* s, size_t len = kInvalidIndex) = 0;
+  virtual Error comment(const char* s, size_t len = Globals::kInvalidIndex) = 0;
 
   // --------------------------------------------------------------------------
   // [Code-Generation Status]

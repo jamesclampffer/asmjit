@@ -80,7 +80,7 @@ Error Assembler::setOffset(size_t offset) {
   if (_lastError) return _lastError;
 
   size_t length = Utils::iMax(_section->getBuffer().getLength(), getOffset());
-  if (offset > length)
+  if (ASMJIT_UNLIKELY(offset > length))
     return setLastError(DebugUtils::errored(kErrorInvalidArgument));
 
   // If the `Assembler` generated any code the `_bufferPtr` may be higher than
@@ -120,7 +120,7 @@ Error Assembler::comment(const char* s, size_t len) {
 // ============================================================================
 
 Label Assembler::newLabel() {
-  uint32_t id = kInvalidValue;
+  uint32_t id = 0;
   if (!_lastError) {
     ASMJIT_ASSERT(_code != nullptr);
     Error err = _code->newLabelId(id);
@@ -130,7 +130,7 @@ Label Assembler::newLabel() {
 }
 
 Label Assembler::newNamedLabel(const char* name, size_t nameLength, uint32_t type, uint32_t parentId) {
-  uint32_t id = kInvalidValue;
+  uint32_t id = 0;
   if (!_lastError) {
     ASMJIT_ASSERT(_code != nullptr);
     Error err = _code->newNamedLabelId(id, name, nameLength, type, parentId);
@@ -158,9 +158,9 @@ Error Assembler::bind(const Label& label) {
 
     size_t binSize = 0;
     if (!_code->_logger->hasOption(Logger::kOptionBinaryForm))
-      binSize = kInvalidIndex;
+      binSize = Globals::kInvalidIndex;
 
-    LogUtil::formatLine(sb, nullptr, binSize, 0, 0, getInlineComment());
+    Logging::formatLine(sb, nullptr, binSize, 0, 0, getInlineComment());
     _code->_logger->log(sb.getData(), sb.getLength());
   }
 #endif // !ASMJIT_DISABLE_LOGGING

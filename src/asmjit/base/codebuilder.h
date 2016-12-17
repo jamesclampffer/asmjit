@@ -36,10 +36,11 @@ class CBComment;
 class CBConstPool;
 class CBData;
 class CBInst;
-class CBJump;
 class CBLabel;
 class CBLabelData;
 class CBSentinel;
+
+class RABlock;
 
 //! \addtogroup asmjit_base
 //! \{
@@ -128,14 +129,19 @@ public:
   // [Code-Emitter]
   // --------------------------------------------------------------------------
 
+  ASMJIT_API virtual Error _emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) override;
   ASMJIT_API virtual Label newLabel() override;
-  ASMJIT_API virtual Label newNamedLabel(const char* name, size_t nameLength = kInvalidIndex, uint32_t type = Label::kTypeGlobal, uint32_t parentId = kInvalidValue) override;
+  ASMJIT_API virtual Label newNamedLabel(
+    const char* name,
+    size_t nameLength = Globals::kInvalidIndex,
+    uint32_t type = Label::kTypeGlobal,
+    uint32_t parentId = 0) override;
   ASMJIT_API virtual Error bind(const Label& label) override;
   ASMJIT_API virtual Error align(uint32_t mode, uint32_t alignment) override;
   ASMJIT_API virtual Error embed(const void* data, uint32_t size) override;
   ASMJIT_API virtual Error embedLabel(const Label& label) override;
   ASMJIT_API virtual Error embedConstPool(const Label& label, const ConstPool& pool) override;
-  ASMJIT_API virtual Error comment(const char* s, size_t len = kInvalidIndex) override;
+  ASMJIT_API virtual Error comment(const char* s, size_t len = Globals::kInvalidIndex) override;
 
   // --------------------------------------------------------------------------
   // [Node-Management]
@@ -188,10 +194,30 @@ public:
   ASMJIT_API Error deletePass(CBPass* pass) noexcept;
 
   // --------------------------------------------------------------------------
-  // [Serialization]
+  // [Validate]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error serialize(CodeEmitter* dst);
+  //! Validate instruction to be emitted, called by `_emit()`.
+  ASMJIT_API Error _validate(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) const noexcept;
+
+  // --------------------------------------------------------------------------
+  // [RunPasses / Serialize]
+  // --------------------------------------------------------------------------
+
+  //! Run all passes in order.
+  ASMJIT_API Error runPasses();
+
+  //! Serialize everything theis `CodeBuilder` or `CodeCompiler` contains to
+  //! another `CodeEmitter`, which is usually an `Assembler` instance.
+  ASMJIT_API Error serialize(CodeEmitter* dst);
+
+  // --------------------------------------------------------------------------
+  // [Logging]
+  // --------------------------------------------------------------------------
+
+#if !defined(ASMJIT_DISABLE_LOGGING)
+  ASMJIT_API Error dump(StringBuilder& sb, uint32_t logOptions = 0) const noexcept;
+#endif // !ASMJIT_DISABLE_LOGGING
 
   // --------------------------------------------------------------------------
   // [Members]
@@ -273,6 +299,17 @@ public:
   ASMJIT_NONCOPYABLE(CBNode)
 
   // --------------------------------------------------------------------------
+  // [Link]
+  // --------------------------------------------------------------------------
+
+  //! Direction, used to index `_link[2]` data.
+  ASMJIT_ENUM(Link) {
+    kLinkPrev      = 0,                  //!< Previous node.
+    kLinkNext      = 1,                  //!< Next node.
+    kLinkCount     = 2
+  };
+
+  // --------------------------------------------------------------------------
   // [Type]
   // --------------------------------------------------------------------------
 
@@ -281,7 +318,7 @@ public:
     kNodeNone       = 0,                 //!< Invalid node (internal, don't use).
 
     // [CodeBuilder]
-    kNodeInst       = 1,                 //!< Node is \ref CBInst or \ref CBJump.
+    kNodeInst       = 1,                 //!< Node is \ref CBInst or \ref CBInstExtended.
     kNodeData       = 2,                 //!< Node is \ref CBData.
     kNodeAlign      = 3,                 //!< Node is \ref CBAlign.
     kNodeLabel      = 4,                 //!< Node is \ref CBLabel.
@@ -292,10 +329,8 @@ public:
 
     // [CodeCompiler]
     kNodeFunc       = 16,                //!< Node is \ref CCFunc (considered as \ref CBLabel by \ref CodeBuilder).
-    kNodeFuncExit   = 17,                //!< Node is \ref CCFuncRet.
+    kNodeFuncRet    = 17,                //!< Node is \ref CCFuncRet.
     kNodeFuncCall   = 18,                //!< Node is \ref CCFuncCall.
-    kNodePushArg    = 19,                //!< Node is \ref CCPushArg.
-    kNodeHint       = 20,                //!< Node is \ref CCHint.
 
     // [UserDefined]
     kNodeUser       = 32                 //!< First id of a user-defined node.
@@ -306,32 +341,15 @@ public:
   // --------------------------------------------------------------------------
 
   ASMJIT_ENUM(Flags) {
-    //! The node has been translated by the CodeCompiler.
-    kFlagIsTranslated = 0x0001,
-    //! If the node can be safely removed (has no effect).
-    kFlagIsRemovable = 0x0004,
-    //! If the node is informative only and can be safely removed.
-    kFlagIsInformative = 0x0008,
+    kFlagIsCode          = 0x0001U,       //!< Node is code that can be executed (instruction, label, align, etc...).
+    kFlagIsData          = 0x0002U,       //!< Node is data that cannot be executed (data, const-pool, etc...).
+    kFlagIsInformative   = 0x0004U,       //!< Node is informative, can be removed and ignored.
+    kFlagIsRemovable     = 0x0008U,       //!< Node can be safely removed if unreachable.
 
-    //! If the `CBInst` is a jump.
-    kFlagIsJmp = 0x0010,
-    //! If the `CBInst` is a conditional jump.
-    kFlagIsJcc = 0x0020,
+    kFlagHasNoEffect     = 0x0010U,       //!< Node does nothing when executed (label, align, explicit nop).
 
-    //! If the `CBInst` is an unconditional jump or conditional jump that is
-    //! likely to be taken.
-    kFlagIsTaken = 0x0040,
-
-    //! If the `CBNode` will return from a function.
-    //!
-    //! This flag is used by both `CBSentinel` and `CCFuncRet`.
-    kFlagIsRet = 0x0080,
-
-    //! Whether the instruction is special.
-    kFlagIsSpecial = 0x0100,
-
-    //! Whether the instruction is an FPU instruction.
-    kFlagIsFp = 0x0200
+    kFlagActsAsInst      = 0x1000U,       //!< Node is an instruction or acts as it.
+    kFlagActsAsLabel     = 0x2000U        //!< Node is a label or acts as it.
   };
 
   // --------------------------------------------------------------------------
@@ -339,13 +357,13 @@ public:
   // --------------------------------------------------------------------------
 
   //! Create a new \ref CBNode - always use \ref CodeBuilder to allocate nodes.
-  ASMJIT_INLINE CBNode(CodeBuilder* cb, uint32_t type) noexcept {
-    _prev = nullptr;
-    _next = nullptr;
+  ASMJIT_INLINE CBNode(CodeBuilder* cb, uint32_t type, uint32_t flags = 0) noexcept {
+    _link[kLinkPrev] = nullptr;
+    _link[kLinkNext] = nullptr;
     _type = static_cast<uint8_t>(type);
-    _opCount = 0;
-    _flags = static_cast<uint16_t>(cb->_nodeFlags);
-    _flowId = cb->_nodeFlowId;
+    _reserved = 0;
+    _flags = static_cast<uint16_t>(flags | cb->_nodeFlags);
+    _position = cb->_nodeFlowId;
     _inlineComment = nullptr;
     _passData = nullptr;
   }
@@ -356,55 +374,65 @@ public:
   // [Accessors]
   // --------------------------------------------------------------------------
 
-  //! Get previous node in the compiler stream.
-  ASMJIT_INLINE CBNode* getPrev() const noexcept { return _prev; }
-  //! Get next node in the compiler stream.
-  ASMJIT_INLINE CBNode* getNext() const noexcept { return _next; }
+  ASMJIT_INLINE CBNode* getLink(size_t link) const noexcept {
+    ASMJIT_ASSERT(link < kLinkCount);
+    return _link[link];
+  }
+
+  //! Get previous node.
+  ASMJIT_INLINE CBNode* getPrev() const noexcept { return _link[kLinkPrev]; }
+  //! Get next node.
+  ASMJIT_INLINE CBNode* getNext() const noexcept { return _link[kLinkNext]; }
+
+  //! Set previous node (internal, use public CodeBuilder API to manage nodes).
+  ASMJIT_INLINE void _setPrev(CBNode* node) noexcept { _link[kLinkPrev] = node; }
+  //! Set next node (internal, use public CodeBuilder API to do manage nodes).
+  ASMJIT_INLINE void _setNext(CBNode* node) noexcept { _link[kLinkNext] = node; }
 
   //! Get the node type, see \ref Type.
   ASMJIT_INLINE uint32_t getType() const noexcept { return _type; }
+
   //! Get the node flags.
   ASMJIT_INLINE uint32_t getFlags() const noexcept { return _flags; }
-
   //! Get whether the instruction has flag `flag`.
   ASMJIT_INLINE bool hasFlag(uint32_t flag) const noexcept { return (static_cast<uint32_t>(_flags) & flag) != 0; }
   //! Set node flags to `flags`.
   ASMJIT_INLINE void setFlags(uint32_t flags) noexcept { _flags = static_cast<uint16_t>(flags); }
   //! Add instruction `flags`.
-  ASMJIT_INLINE void orFlags(uint32_t flags) noexcept { _flags |= static_cast<uint16_t>(flags); }
+  ASMJIT_INLINE void addFlags(uint32_t flags) noexcept { _flags |= static_cast<uint16_t>(flags); }
   //! And instruction `flags`.
-  ASMJIT_INLINE void andFlags(uint32_t flags) noexcept { _flags &= static_cast<uint16_t>(flags); }
-  //! Clear instruction `flags`.
-  ASMJIT_INLINE void andNotFlags(uint32_t flags) noexcept { _flags &= ~static_cast<uint16_t>(flags); }
+  ASMJIT_INLINE void clearFlags(uint32_t flags) noexcept { _flags &= ~static_cast<uint16_t>(flags); }
 
-  //! Get whether the node has been translated.
-  ASMJIT_INLINE bool isTranslated() const noexcept { return hasFlag(kFlagIsTranslated); }
-
-  //! Get whether the node is removable if it's in unreachable code block.
-  ASMJIT_INLINE bool isRemovable() const noexcept { return hasFlag(kFlagIsRemovable); }
-  //! Get whether the node is informative only (comment, hint).
+  //! Get if the node is code that can be executed.
+  ASMJIT_INLINE bool isCode() const noexcept { return hasFlag(kFlagIsCode); }
+  //! Get if the node is data that cannot be executed.
+  ASMJIT_INLINE bool isData() const noexcept { return hasFlag(kFlagIsData); }
+  //! Get if the node is informative only (is never encoded like comment, etc...).
   ASMJIT_INLINE bool isInformative() const noexcept { return hasFlag(kFlagIsInformative); }
+  //! Get if the node is removable if it's in an unreachable code block.
+  ASMJIT_INLINE bool isRemovable() const noexcept { return hasFlag(kFlagIsRemovable); }
 
-  //! Whether the node is `CBLabel`.
-  ASMJIT_INLINE bool isLabel() const noexcept { return _type == kNodeLabel; }
-  //! Whether the `CBInst` node is an unconditional jump.
-  ASMJIT_INLINE bool isJmp() const noexcept { return hasFlag(kFlagIsJmp); }
-  //! Whether the `CBInst` node is a conditional jump.
-  ASMJIT_INLINE bool isJcc() const noexcept { return hasFlag(kFlagIsJcc); }
-  //! Whether the `CBInst` node is a conditional/unconditional jump.
-  ASMJIT_INLINE bool isJmpOrJcc() const noexcept { return hasFlag(kFlagIsJmp | kFlagIsJcc); }
-  //! Whether the `CBInst` node is a return.
-  ASMJIT_INLINE bool isRet() const noexcept { return hasFlag(kFlagIsRet); }
+  //! The node has no effect when executed (label, .align, nop, ...).
+  ASMJIT_INLINE bool hasNoEffect() const noexcept { return hasFlag(kFlagHasNoEffect); }
 
-  //! Get whether the node is `CBInst` and the instruction is special.
-  ASMJIT_INLINE bool isSpecial() const noexcept { return hasFlag(kFlagIsSpecial); }
-  //! Get whether the node is `CBInst` and the instruction uses x87-FPU.
-  ASMJIT_INLINE bool isFp() const noexcept { return hasFlag(kFlagIsFp); }
+  //! Get if the node acts as `CBInst`.
+  //!
+  //! Returns true if the node is `CBInst` or if the node is of a different type
+  //! that inherits `CBInst`.
+  ASMJIT_INLINE bool actsAsInst() const noexcept { return hasFlag(kFlagActsAsInst); }
 
-  //! Get flow index.
-  ASMJIT_INLINE uint32_t getFlowId() const noexcept { return _flowId; }
-  //! Set flow index.
-  ASMJIT_INLINE void setFlowId(uint32_t flowId) noexcept { _flowId = flowId; }
+  //! Get if the node acts as `CBLabel`.
+  //!
+  //! Returns true if the node is `CBLabel` or if the node is of a different type
+  //! that inherits `CBLabel`.
+  ASMJIT_INLINE bool actsAsLabel() const noexcept { return hasFlag(kFlagActsAsLabel); }
+
+  //! Get if the node has a position.
+  ASMJIT_INLINE bool hasPosition() const noexcept { return _position != 0; }
+  //! Get node position.
+  ASMJIT_INLINE uint32_t getPosition() const noexcept { return _position; }
+  //! Set node position.
+  ASMJIT_INLINE void setPosition(uint32_t position) noexcept { _position = position; }
 
   //! Get if the node has an inline comment.
   ASMJIT_INLINE bool hasInlineComment() const noexcept { return _inlineComment != nullptr; }
@@ -426,17 +454,23 @@ public:
   //! Reset work-data to null.
   ASMJIT_INLINE void resetPassData() noexcept { _passData = nullptr; }
 
+  //! Cast this node to `T*`.
+  template<typename T>
+  ASMJIT_INLINE T* as() noexcept { return static_cast<T*>(this); }
+  //! Cast this node to `const T*`.
+  template<typename T>
+  ASMJIT_INLINE const T* as() const noexcept { return static_cast<const T*>(this); }
+
   // --------------------------------------------------------------------------
   // [Members]
   // --------------------------------------------------------------------------
 
-  CBNode* _prev;                         //!< Previous node.
-  CBNode* _next;                         //!< Next node.
+  CBNode* _link[2];                      //!< Links (previous and next nodes).
 
   uint8_t _type;                         //!< Node type, see \ref NodeType.
-  uint8_t _opCount;                      //!< Count of operands or zero.
+  uint8_t _reserved;                     //!< \internal
   uint16_t _flags;                       //!< Flags, different meaning for every type of the node.
-  uint32_t _flowId;                      //!< Flow index.
+  uint32_t _position;                    //!< Node position in code (should be unique).
 
   const char* _inlineComment;            //!< Inline comment or null if not used.
   void* _passData;                       //!< Data used exclusively by the current `CBPass`.
@@ -453,27 +487,49 @@ class CBInst : public CBNode {
 public:
   ASMJIT_NONCOPYABLE(CBInst)
 
+  enum {
+    //! Count of embedded operands per `CBInst` that are always allocated as
+    //! a part of the instruction. Minimum embedded operands is 4, but in 32-bit
+    //! more pointers are smaller and we can embed 5. The rest (up to 6 operands)
+    //! is always stored in `CBInstEx`.
+    kBaseOpCapacity = static_cast<int>((128 - sizeof(CBNode) - 8 - sizeof(Operand)) / sizeof(Operand)),
+    kExtendedOpCapacity = 6
+  };
+
+  static ASMJIT_INLINE uint32_t capacityOfOpCount(uint32_t opCount) noexcept {
+    return opCount <= kBaseOpCapacity ? kBaseOpCapacity : kExtendedOpCapacity;
+  }
+
+  static ASMJIT_INLINE size_t nodeSizeOfOpCapacity(uint32_t opCapacity) noexcept {
+    size_t base = sizeof(CBInst) - kBaseOpCapacity * sizeof(Operand);
+    return base + opCapacity * sizeof(Operand);
+  }
+
   // --------------------------------------------------------------------------
   // [Construction / Destruction]
   // --------------------------------------------------------------------------
 
   //! Create a new `CBInst` instance.
-  ASMJIT_INLINE CBInst(CodeBuilder* cb, uint32_t instId, uint32_t options, Operand* opArray, uint32_t opCount) noexcept
-    : CBNode(cb, kNodeInst) {
-
-    orFlags(kFlagIsRemovable);
-    _instId = static_cast<uint16_t>(instId);
-    _reserved = 0;
-    _options = options;
-
-    _opCount = static_cast<uint8_t>(opCount);
-    _opArray = opArray;
-
-    _updateMemOp();
-  }
+  ASMJIT_INLINE CBInst(CodeBuilder* cb, uint32_t instId, uint32_t options, uint32_t opCapacity = kBaseOpCapacity) noexcept
+    : CBNode(cb, kNodeInst, kFlagIsCode | kFlagIsRemovable | kFlagActsAsInst),
+      _instId(static_cast<uint16_t>(instId)),
+      _opCapacity(static_cast<uint8_t>(opCapacity)),
+      _opCount(0),
+      _options(options) {}
 
   //! Destroy the `CBInst` instance (NEVER CALLED).
   ASMJIT_INLINE ~CBInst() noexcept {}
+
+  // --------------------------------------------------------------------------
+  // [Init]
+  // --------------------------------------------------------------------------
+
+  //! Reset all built-in operands.
+  ASMJIT_INLINE void _resetOps() noexcept {
+    _opExtra.reset();
+    for (uint32_t i = 0; i < _opCapacity; i++)
+      _opArray[i].reset();
+  }
 
   // --------------------------------------------------------------------------
   // [Accessors]
@@ -489,138 +545,138 @@ public:
   //! failures in debug builds.
   ASMJIT_INLINE void setInstId(uint32_t instId) noexcept { _instId = static_cast<uint16_t>(instId); }
 
-  //! Whether the instruction is either a jump or a conditional jump likely to
-  //! be taken.
-  ASMJIT_INLINE bool isTaken() const noexcept { return hasFlag(kFlagIsTaken); }
-
-  //! Get emit options.
+  //! Get instruction options.
   ASMJIT_INLINE uint32_t getOptions() const noexcept { return _options; }
-  //! Set emit options.
+  //! Get if the instruction has `option` set.
+  ASMJIT_INLINE bool hasOption(uint32_t option) const noexcept { return (_options & option) != 0; }
+
+  //! Set instruction options.
   ASMJIT_INLINE void setOptions(uint32_t options) noexcept { _options = options; }
-  //! Add emit options.
+  //! Add instruction options.
   ASMJIT_INLINE void addOptions(uint32_t options) noexcept { _options |= options; }
-  //! Mask emit options.
-  ASMJIT_INLINE void andOptions(uint32_t options) noexcept { _options &= options; }
-  //! Clear emit options.
-  ASMJIT_INLINE void delOptions(uint32_t options) noexcept { _options &= ~options; }
+  //! Clear instruction options.
+  ASMJIT_INLINE void clearOptions(uint32_t options) noexcept { _options &= ~options; }
 
-  //! Get op-mask operand (used to represent AVX-512 op-mask selector).
-  ASMJIT_INLINE Operand& getOpExtra() noexcept { return _opExtra; }
-  //! \overload
-  ASMJIT_INLINE const Operand& getOpExtra() const noexcept { return _opExtra; }
-  //1 Set op-mask operand.
-  ASMJIT_INLINE void setOpExtra(const Operand& opExtra) noexcept { _opExtra = opExtra; }
+  ASMJIT_INLINE bool hasOp4() const noexcept { return hasOption(CodeEmitter::kOptionOp4); }
+  ASMJIT_INLINE bool hasOp5() const noexcept { return hasOption(CodeEmitter::kOptionOp5); }
+  ASMJIT_INLINE bool hasOpExtra() const noexcept { return hasOption(CodeEmitter::kOptionOpExtra); }
 
+  //! Get operands capacity.
+  ASMJIT_INLINE uint32_t getOpCapacity() const noexcept { return _opCapacity; }
   //! Get operands count.
   ASMJIT_INLINE uint32_t getOpCount() const noexcept { return _opCount; }
-  //! Get operands list.
-  ASMJIT_INLINE Operand* getOpArray() noexcept { return _opArray; }
-  //! \overload
-  ASMJIT_INLINE const Operand* getOpArray() const noexcept { return _opArray; }
-
-  //! Get whether the instruction contains a memory operand.
-  ASMJIT_INLINE bool hasMemOp() const noexcept { return _memOpIndex != 0xFF; }
-  //! Get memory operand.
-  //!
-  //! NOTE: Can only be called if the instruction has such operand,
-  //! see `hasMemOp()`.
-  ASMJIT_INLINE Mem* getMemOp() const noexcept {
-    ASMJIT_ASSERT(hasMemOp());
-    return static_cast<Mem*>(&_opArray[_memOpIndex]);
-  }
-  //! \overload
-  template<typename T>
-  ASMJIT_INLINE T* getMemOp() const noexcept {
-    ASMJIT_ASSERT(hasMemOp());
-    return static_cast<T*>(&_opArray[_memOpIndex]);
+  //! Set operands count.
+  ASMJIT_INLINE void setOpCount(int32_t opCount) noexcept {
+    ASMJIT_ASSERT(opCount < _opCapacity);
+    _opCount = static_cast<uint8_t>(opCount);
   }
 
-  //! Set memory operand index, `0xFF` means no memory operand.
-  ASMJIT_INLINE void setMemOpIndex(uint32_t index) noexcept { _memOpIndex = static_cast<uint8_t>(index); }
-  //! Reset memory operand index to `0xFF` (no operand).
-  ASMJIT_INLINE void resetMemOpIndex() noexcept { _memOpIndex = 0xFF; }
+  //! Get operands array.
+  ASMJIT_INLINE Operand* getOpArray() noexcept { return (Operand*)_opArray; }
+  //! Get operands array (const).
+  ASMJIT_INLINE const Operand* getOpArray() const noexcept { return (const Operand*)_opArray; }
+
+  ASMJIT_INLINE Operand& getOp(uint32_t index) noexcept {
+    ASMJIT_ASSERT(index < _opCapacity);
+    return static_cast<Operand&>(_opArray[index]);
+  }
+
+  ASMJIT_INLINE const Operand& getOp(uint32_t index) const noexcept {
+    ASMJIT_ASSERT(index < _opCapacity);
+    return static_cast<const Operand&>(_opArray[index]);
+  }
+
+  ASMJIT_INLINE void setOp(uint32_t index, const Operand_& op) noexcept {
+    ASMJIT_ASSERT(index < _opCapacity);
+    _opArray[index].copyFrom(op);
+  }
+
+  ASMJIT_INLINE void resetOp(uint32_t index) noexcept {
+    ASMJIT_ASSERT(index < _opCapacity);
+    _opArray[index].reset();
+  }
+
+  //! Get extra operand (used to represent REP register or AVX-512 op-mask selector).
+  ASMJIT_INLINE Operand& getOpExtra() noexcept { return static_cast<Operand&>(_opExtra); }
+  //! \overload
+  ASMJIT_INLINE const Operand& getOpExtra() const noexcept { return static_cast<const Operand&>(_opExtra); }
+  //1 Set op-mask operand.
+  ASMJIT_INLINE void setOpExtra(const Operand& opExtra) noexcept { _opExtra.copyFrom(opExtra); }
 
   // --------------------------------------------------------------------------
-  // [Utils]
+  // [Utilities]
   // --------------------------------------------------------------------------
 
-  ASMJIT_INLINE void _updateMemOp() noexcept {
-    Operand* opArray = getOpArray();
-    uint32_t opCount = getOpCount();
-
-    uint32_t i;
-    for (i = 0; i < opCount; i++)
-      if (opArray[i].isMem())
-        goto Update;
-    i = 0xFF;
-
-Update:
-    setMemOpIndex(i);
+  ASMJIT_INLINE bool hasOpType(uint32_t opType) const noexcept {
+    for (uint32_t i = 0; i < _opCount; i++)
+      if (_opArray[i].getOp() == opType)
+        return true;
+    return false;
   }
+
+  ASMJIT_INLINE bool hasRegOp() const noexcept { return hasOpType(Operand::kOpReg); }
+  ASMJIT_INLINE bool hasMemOp() const noexcept { return hasOpType(Operand::kOpMem); }
+  ASMJIT_INLINE bool hasImmOp() const noexcept { return hasOpType(Operand::kOpImm); }
+  ASMJIT_INLINE bool hasLabelOp() const noexcept { return hasOpType(Operand::kOpLabel); }
+
+  ASMJIT_INLINE uint32_t indexOfOpType(uint32_t opType) const noexcept {
+    uint32_t i = 0;
+    while (i < _opCount) {
+      if (_opArray[i].getOp() == opType)
+        break;
+      i++;
+    }
+    return i;
+  }
+
+  ASMJIT_INLINE uint32_t indexOfMemOp() const noexcept { return indexOfOpType(Operand::kOpMem); }
+  ASMJIT_INLINE uint32_t indexOfImmOp() const noexcept { return indexOfOpType(Operand::kOpImm); }
+  ASMJIT_INLINE uint32_t indexOfLabelOp() const noexcept { return indexOfOpType(Operand::kOpLabel); }
 
   // --------------------------------------------------------------------------
   // [Members]
   // --------------------------------------------------------------------------
 
   uint16_t _instId;                      //!< Instruction id (architecture dependent).
-  uint8_t _memOpIndex;                   //!< \internal
-  uint8_t _reserved;                     //!< \internal
+  uint8_t _opCapacity;                   //!< Operands capacity.
+  uint8_t _opCount;                      //!< Count of operands.
   uint32_t _options;                     //!< Instruction options.
-  Operand _opExtra;                      //!< Extra operand (op-mask {k} on AVX-512).
-  Operand* _opArray;                     //!< Instruction operands.
+  Operand_ _opExtra;                     //!< Extra operand.
+  Operand_ _opArray[kBaseOpCapacity];    //!< First 4 or 5 operands (indexed from 0).
 };
 
 // ============================================================================
 // [asmjit::CBInstEx]
 // ============================================================================
 
-struct CBInstEx : public CBInst {
-  Operand _op4;
-  Operand _op5;
-  Operand _opExtra;
-};
-
-// ============================================================================
-// [asmjit::CBJump]
-// ============================================================================
-
-//! Asm jump (conditional or direct).
-//!
-//! Extension of `CBInst` node, which stores more information about the jump.
-class CBJump : public CBInst {
+class CBInstEx : public CBInst {
 public:
-  ASMJIT_NONCOPYABLE(CBJump)
+  ASMJIT_NONCOPYABLE(CBInstEx)
 
   // --------------------------------------------------------------------------
   // [Construction / Destruction]
   // --------------------------------------------------------------------------
 
-  ASMJIT_INLINE CBJump(CodeBuilder* cb, uint32_t instId, uint32_t options, Operand* opArray, uint32_t opCount) noexcept
-    : CBInst(cb, instId, options, opArray, opCount),
-      _target(nullptr),
-      _jumpNext(nullptr) {}
-  ASMJIT_INLINE ~CBJump() noexcept {}
+  //! Create a new `CBInstEx` instance.
+  ASMJIT_INLINE CBInstEx(CodeBuilder* cb, uint32_t instId, uint32_t options, uint32_t opCapacity = 6) noexcept
+    : CBInst(cb, instId, options, opCapacity) {}
 
-  // --------------------------------------------------------------------------
-  // [Accessors]
-  // --------------------------------------------------------------------------
-
-  ASMJIT_INLINE CBLabel* getTarget() const noexcept { return _target; }
-  ASMJIT_INLINE CBJump* getJumpNext() const noexcept { return _jumpNext; }
+  //! Destroy the `CBInstEx` instance (NEVER CALLED).
+  ASMJIT_INLINE ~CBInstEx() noexcept {}
 
   // --------------------------------------------------------------------------
   // [Members]
   // --------------------------------------------------------------------------
 
-  CBLabel* _target;                     //!< Target node.
-  CBJump* _jumpNext;                    //!< Next jump to the same target in a single linked-list.
+  //! Continued `_opArray` to hold up to 6 operands.
+  Operand_ _opContinued[kExtendedOpCapacity - kBaseOpCapacity];
 };
 
 // ============================================================================
 // [asmjit::CBData]
 // ============================================================================
 
-//! Asm data (CodeBuilder).
+//! Data (CodeBuilder).
 //!
 //! Wraps `.data` directive. The node contains data that will be placed at the
 //! node's position in the assembler stream. The data is considered to be RAW;
@@ -635,7 +691,9 @@ public:
   // --------------------------------------------------------------------------
 
   //! Create a new `CBData` instance.
-  ASMJIT_INLINE CBData(CodeBuilder* cb, void* data, uint32_t size) noexcept : CBNode(cb, kNodeData) {
+  ASMJIT_INLINE CBData(CodeBuilder* cb, void* data, uint32_t size) noexcept
+    : CBNode(cb, kNodeData, kFlagIsData) {
+
     if (size <= kInlineBufferSize) {
       if (data) ::memcpy(_buf, data, size);
     }
@@ -689,7 +747,7 @@ public:
 
   //! Create a new `CBAlign` instance.
   ASMJIT_INLINE CBAlign(CodeBuilder* cb, uint32_t mode, uint32_t alignment) noexcept
-    : CBNode(cb, kNodeAlign),
+    : CBNode(cb, kNodeAlign, kFlagIsCode | kFlagHasNoEffect),
       _mode(mode),
       _alignment(alignment) {}
   //! Destroy the `CBAlign` instance (NEVER CALLED).
@@ -731,11 +789,10 @@ public:
   // --------------------------------------------------------------------------
 
   //! Create a new `CBLabel` instance.
-  ASMJIT_INLINE CBLabel(CodeBuilder* cb, uint32_t id = kInvalidValue) noexcept
-    : CBNode(cb, kNodeLabel),
+  ASMJIT_INLINE CBLabel(CodeBuilder* cb, uint32_t id = 0) noexcept
+    : CBNode(cb, kNodeLabel, kFlagHasNoEffect | kFlagActsAsLabel),
       _id(id),
-      _numRefs(0),
-      _from(nullptr) {}
+      _block(nullptr) {}
   //! Destroy the `CBLabel` instance (NEVER CALLED).
   ASMJIT_INLINE ~CBLabel() noexcept {}
 
@@ -748,26 +805,16 @@ public:
   //! Get the label as `Label` operand.
   ASMJIT_INLINE Label getLabel() const noexcept { return Label(_id); }
 
-  //! Get first jmp instruction.
-  ASMJIT_INLINE CBJump* getFrom() const noexcept { return _from; }
-
-  //! Get number of jumps to this target.
-  ASMJIT_INLINE uint32_t getNumRefs() const noexcept { return _numRefs; }
-  //! Set number of jumps to this target.
-  ASMJIT_INLINE void setNumRefs(uint32_t i) noexcept { _numRefs = i; }
-
-  //! Add number of jumps to this target.
-  ASMJIT_INLINE void addNumRefs(uint32_t i = 1) noexcept { _numRefs += i; }
-  //! Subtract number of jumps to this target.
-  ASMJIT_INLINE void subNumRefs(uint32_t i = 1) noexcept { _numRefs -= i; }
+  ASMJIT_INLINE bool hasBlock() const noexcept { return _block != nullptr; }
+  ASMJIT_INLINE RABlock* getBlock() const noexcept { return _block; }
+  ASMJIT_INLINE void setBlock(RABlock* block) noexcept { _block = block; }
 
   // --------------------------------------------------------------------------
   // [Members]
   // --------------------------------------------------------------------------
 
-  uint32_t _id;                          //!< Label id.
-  uint32_t _numRefs;                     //!< Count of jumps here.
-  CBJump* _from;                         //!< Linked-list of nodes that can jump here.
+  uint32_t _id;
+  RABlock* _block;
 };
 
 // ============================================================================
@@ -783,8 +830,8 @@ public:
   // --------------------------------------------------------------------------
 
   //! Create a new `CBLabelData` instance.
-  ASMJIT_INLINE CBLabelData(CodeBuilder* cb, uint32_t id = kInvalidValue) noexcept
-    : CBNode(cb, kNodeLabelData),
+  ASMJIT_INLINE CBLabelData(CodeBuilder* cb, uint32_t id = 0) noexcept
+    : CBNode(cb, kNodeLabelData, kFlagIsData),
       _id(id) {}
 
   //! Destroy the `CBLabelData` instance (NEVER CALLED).
@@ -819,9 +866,14 @@ public:
   // --------------------------------------------------------------------------
 
   //! Create a new `CBConstPool` instance.
-  ASMJIT_INLINE CBConstPool(CodeBuilder* cb, uint32_t id = kInvalidValue) noexcept
+  ASMJIT_INLINE CBConstPool(CodeBuilder* cb, uint32_t id = 0) noexcept
     : CBLabel(cb, id),
-      _constPool(&cb->_cbBaseZone) { _type = kNodeConstPool; }
+      _constPool(&cb->_cbBaseZone) {
+
+    _type = kNodeConstPool;
+    addFlags(kFlagIsData);
+    clearFlags(kFlagIsCode | kFlagHasNoEffect);
+  }
 
   //! Destroy the `CBConstPool` instance (NEVER CALLED).
   ASMJIT_INLINE ~CBConstPool() noexcept {}
@@ -866,8 +918,8 @@ public:
   // --------------------------------------------------------------------------
 
   //! Create a new `CBComment` instance.
-  ASMJIT_INLINE CBComment(CodeBuilder* cb, const char* comment) noexcept : CBNode(cb, kNodeComment) {
-    orFlags(kFlagIsRemovable | kFlagIsInformative);
+  ASMJIT_INLINE CBComment(CodeBuilder* cb, const char* comment) noexcept
+    : CBNode(cb, kNodeComment, kFlagIsInformative | kFlagHasNoEffect | kFlagIsRemovable) {
     _inlineComment = comment;
   }
 
@@ -892,7 +944,9 @@ public:
   // --------------------------------------------------------------------------
 
   //! Create a new `CBSentinel` instance.
-  ASMJIT_INLINE CBSentinel(CodeBuilder* cb) noexcept : CBNode(cb, kNodeSentinel) {}
+  ASMJIT_INLINE CBSentinel(CodeBuilder* cb) noexcept
+    : CBNode(cb, kNodeSentinel, kFlagIsInformative | kFlagHasNoEffect) {}
+
   //! Destroy the `CBSentinel` instance (NEVER CALLED).
   ASMJIT_INLINE ~CBSentinel() noexcept {}
 };

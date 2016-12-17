@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
 #endif // ASMJIT_DISABLE_LOGGING
 
     X86Assembler a(&code);
-    asmtest::generateOpcodes(a, info.useRex1, info.useRex2);
+    asmtest::generateOpcodes(a.asEmitter(), info.useRex1, info.useRex2);
 
     // If this is the host architecture the code generated can be executed
     // for debugging purposes (the first instruction is ret anyway).
