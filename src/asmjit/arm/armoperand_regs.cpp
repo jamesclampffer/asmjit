@@ -30,18 +30,17 @@ namespace asmjit {
 //   uint8_t kind;
 //   uint8_t size;
 // }
-#define ASMJIT_ARM_INV_SIGNATURE(TYPE) {{  \
-  uint8_t(Operand::kOpNone),               \
-  uint8_t(0),                              \
-  uint8_t(0),                              \
-  uint8_t(0)                               \
-}}
-
-#define ASMJIT_ARM_REG_SIGNATURE(TYPE) {{  \
-  uint8_t(Operand::kOpReg),                \
-  uint8_t(TYPE),                           \
-  uint8_t(ArmRegTraits<TYPE>::kKind),      \
-  uint8_t(ArmRegTraits<TYPE>::kSize)       \
+#define ASMJIT_ARM_REG_SIGNATURE(TYPE) {{        \
+  uint8_t(                                       \
+    ArmRegTraits<TYPE>::kValid                   \
+      ? Operand::kOpReg                          \
+      : Operand::kOpNone),                       \
+  uint8_t(                                       \
+    ArmRegTraits<TYPE>::kValid                   \
+      ? TYPE                                     \
+      : 0),                                      \
+  uint8_t(ArmRegTraits<TYPE>::kKind),            \
+  uint8_t(ArmRegTraits<TYPE>::kSize)             \
 }}
 
 // Register Operand {
@@ -89,49 +88,41 @@ const ArmOpData armOpData = {
   {
     // RegType[].
     {
-      ASMJIT_ARM_INV_SIGNATURE(0),  // #00 (NONE).
-      ASMJIT_ARM_INV_SIGNATURE(1),  // #01 (LABEL).
-      ASMJIT_ARM_INV_SIGNATURE(2),  // #02.
-      ASMJIT_ARM_REG_SIGNATURE(3),  // #03 (GPW).
-      ASMJIT_ARM_REG_SIGNATURE(4),  // #04 (GPX).
-      ASMJIT_ARM_INV_SIGNATURE(5),  // #05.
-      ASMJIT_ARM_INV_SIGNATURE(6),  // #06.
-      ASMJIT_ARM_INV_SIGNATURE(7),  // #07.
-      ASMJIT_ARM_INV_SIGNATURE(8),  // #08.
-      ASMJIT_ARM_INV_SIGNATURE(9),  // #09.
-      ASMJIT_ARM_INV_SIGNATURE(10), // #10.
-      ASMJIT_ARM_INV_SIGNATURE(11), // #11.
-      ASMJIT_ARM_INV_SIGNATURE(12), // #12.
-      ASMJIT_ARM_INV_SIGNATURE(13), // #13.
-      ASMJIT_ARM_INV_SIGNATURE(14), // #14.
-      ASMJIT_ARM_INV_SIGNATURE(15), // #15.
-      ASMJIT_ARM_INV_SIGNATURE(16), // #16.
-      ASMJIT_ARM_INV_SIGNATURE(17), // #17.
-      ASMJIT_ARM_INV_SIGNATURE(18), // #18.
-      ASMJIT_ARM_INV_SIGNATURE(19)  // #19.
+      ASMJIT_ARM_REG_SIGNATURE(0 ), ASMJIT_ARM_REG_SIGNATURE(1 ),
+      ASMJIT_ARM_REG_SIGNATURE(2 ), ASMJIT_ARM_REG_SIGNATURE(3 ),
+      ASMJIT_ARM_REG_SIGNATURE(4 ), ASMJIT_ARM_REG_SIGNATURE(5 ),
+      ASMJIT_ARM_REG_SIGNATURE(6 ), ASMJIT_ARM_REG_SIGNATURE(7 ),
+      ASMJIT_ARM_REG_SIGNATURE(8 ), ASMJIT_ARM_REG_SIGNATURE(9 ),
+      ASMJIT_ARM_REG_SIGNATURE(10), ASMJIT_ARM_REG_SIGNATURE(11),
+      ASMJIT_ARM_REG_SIGNATURE(12), ASMJIT_ARM_REG_SIGNATURE(13),
+      ASMJIT_ARM_REG_SIGNATURE(14), ASMJIT_ARM_REG_SIGNATURE(15),
+      ASMJIT_ARM_REG_SIGNATURE(16), ASMJIT_ARM_REG_SIGNATURE(17),
+      ASMJIT_ARM_REG_SIGNATURE(18), ASMJIT_ARM_REG_SIGNATURE(19),
+      ASMJIT_ARM_REG_SIGNATURE(20), ASMJIT_ARM_REG_SIGNATURE(21),
+      ASMJIT_ARM_REG_SIGNATURE(22), ASMJIT_ARM_REG_SIGNATURE(23),
+      ASMJIT_ARM_REG_SIGNATURE(24), ASMJIT_ARM_REG_SIGNATURE(25),
+      ASMJIT_ARM_REG_SIGNATURE(26), ASMJIT_ARM_REG_SIGNATURE(27),
+      ASMJIT_ARM_REG_SIGNATURE(28), ASMJIT_ARM_REG_SIGNATURE(29),
+      ASMJIT_ARM_REG_SIGNATURE(30), ASMJIT_ARM_REG_SIGNATURE(31)
     },
     // RegTypeToTypeId[].
     {
-      ArmRegTraits< 0>::kTypeId,
-      ArmRegTraits< 1>::kTypeId,
-      ArmRegTraits< 2>::kTypeId,
-      ArmRegTraits< 3>::kTypeId,
-      ArmRegTraits< 4>::kTypeId,
-      ArmRegTraits< 5>::kTypeId,
-      ArmRegTraits< 6>::kTypeId,
-      ArmRegTraits< 7>::kTypeId,
-      ArmRegTraits< 8>::kTypeId,
-      ArmRegTraits< 9>::kTypeId,
-      ArmRegTraits<10>::kTypeId,
-      ArmRegTraits<11>::kTypeId,
-      ArmRegTraits<12>::kTypeId,
-      ArmRegTraits<13>::kTypeId,
-      ArmRegTraits<14>::kTypeId,
-      ArmRegTraits<15>::kTypeId,
-      ArmRegTraits<16>::kTypeId,
-      ArmRegTraits<17>::kTypeId,
-      ArmRegTraits<18>::kTypeId,
-      ArmRegTraits<19>::kTypeId
+      X86RegTraits< 0>::kTypeId, X86RegTraits< 1>::kTypeId,
+      X86RegTraits< 2>::kTypeId, X86RegTraits< 3>::kTypeId,
+      X86RegTraits< 4>::kTypeId, X86RegTraits< 5>::kTypeId,
+      X86RegTraits< 6>::kTypeId, X86RegTraits< 7>::kTypeId,
+      X86RegTraits< 8>::kTypeId, X86RegTraits< 9>::kTypeId,
+      X86RegTraits<10>::kTypeId, X86RegTraits<11>::kTypeId,
+      X86RegTraits<12>::kTypeId, X86RegTraits<13>::kTypeId,
+      X86RegTraits<14>::kTypeId, X86RegTraits<15>::kTypeId,
+      X86RegTraits<16>::kTypeId, X86RegTraits<17>::kTypeId,
+      X86RegTraits<18>::kTypeId, X86RegTraits<19>::kTypeId,
+      X86RegTraits<20>::kTypeId, X86RegTraits<21>::kTypeId,
+      X86RegTraits<22>::kTypeId, X86RegTraits<23>::kTypeId,
+      X86RegTraits<24>::kTypeId, X86RegTraits<25>::kTypeId,
+      X86RegTraits<26>::kTypeId, X86RegTraits<27>::kTypeId,
+      X86RegTraits<28>::kTypeId, X86RegTraits<29>::kTypeId,
+      X86RegTraits<30>::kTypeId, X86RegTraits<31>::kTypeId
     }
   },
 
@@ -148,9 +139,7 @@ const ArmOpData armOpData = {
 #undef ASMJIT_ARM_REG_08
 #undef ASMJIT_ARM_REG_04
 #undef ASMJIT_ARM_REG_01
-
 #undef ASMJIT_ARM_REG_SIGNATURE
-#undef ASMJIT_ARM_INV_SIGNATURE
 
 } // asmjit namespace
 

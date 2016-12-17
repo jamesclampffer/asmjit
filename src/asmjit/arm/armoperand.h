@@ -44,7 +44,15 @@ typedef ArmGpW ArmGpR;
 //! Register traits (ARM/AArch64).
 template<uint32_t RegType>
 struct ArmRegTraits {
-  enum { kTypeId = TypeId::kVoid }; // Everything is void by default.
+  enum {
+    kValid     = 0,                      // RegType is not valid by default.
+    kTypeId    = TypeId::kVoid,          // Everything is void by default.
+
+    kType      = 0,                      // Zero type by default.
+    kKind      = 0,                      // Zero kind by default.
+    kSize      = 0,                      // No size by default.
+    kSignature = 0                       // No signature by default.
+  };
 };
 
 // ============================================================================
@@ -193,11 +201,12 @@ struct ArmRegTraits< TYPE > {                                         \
   typedef REG Reg;                                                    \
                                                                       \
   enum {                                                              \
+    kValid     = 1,                                                   \
+    kTypeId    = TYPE_ID,                                             \
+                                                                      \
     kType      = TYPE,                                                \
     kKind      = KIND,                                                \
     kSize      = SIZE,                                                \
-                                                                      \
-    kTypeId    = TYPE_ID,                                             \
     kSignature = ASMJIT_PACK32_4x8(Operand::kOpReg, TYPE, KIND, SIZE) \
   };                                                                  \
 }

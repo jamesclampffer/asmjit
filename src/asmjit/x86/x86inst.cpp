@@ -3599,24 +3599,27 @@ static const X86Inst::OSignature _x86InstOSignatureData[] = {
 
 static const uint32_t _x86OpFlagFromRegType[X86Reg::kRegCount] = {
   X86Inst::kOpNone,  // #00 None.
-  X86Inst::kOpNone,  // #01 Reserved.
-  X86Inst::kOpNone,  // #02 RIP.
-  X86Inst::kOpSeg,   // #03 SEG.
-  X86Inst::kOpGpbLo, // #04 GPB-LO.
-  X86Inst::kOpGpbHi, // #05 GPB-HI.
-  X86Inst::kOpGpw,   // #06 GPW.
-  X86Inst::kOpGpd,   // #07 GPD.
-  X86Inst::kOpGpq,   // #08 GPQ.
-  X86Inst::kOpFp,    // #09 FP.
-  X86Inst::kOpMm,    // #10 MM.
-  X86Inst::kOpK,     // #11 K.
-  X86Inst::kOpXmm,   // #12 XMM.
-  X86Inst::kOpYmm,   // #13 YMM.
-  X86Inst::kOpZmm,   // #14 ZMM.
-  X86Inst::kOpNone,  // #15 FUTURE.
-  X86Inst::kOpBnd,   // #16 BND.
-  X86Inst::kOpCr,    // #17 CR.
-  X86Inst::kOpDr     // #18 DR.
+  X86Inst::kOpNone,  // #01 Reserved (LabelTag).
+  X86Inst::kOpGpbLo, // #02 GPB-LO.
+  X86Inst::kOpGpbHi, // #03 GPB-HI.
+  X86Inst::kOpGpw,   // #04 GPW.
+  X86Inst::kOpGpd,   // #05 GPD.
+  X86Inst::kOpGpq,   // #06 GPQ.
+  X86Inst::kOpNone,  // #07 Reserved (VEC32).
+  X86Inst::kOpNone,  // #08 Reserved (VEC64).
+  X86Inst::kOpXmm,   // #09 XMM.
+  X86Inst::kOpYmm,   // #10 YMM.
+  X86Inst::kOpZmm,   // #11 ZMM.
+  X86Inst::kOpNone,  // #12 Reserved (VEC1024).
+  X86Inst::kOpNone,  // #13 Reserved (VEC2048).
+  X86Inst::kOpNone,  // #14 RIP.
+  X86Inst::kOpSeg,   // #15 SEG.
+  X86Inst::kOpFp,    // #16 FP.
+  X86Inst::kOpMm,    // #17 MM.
+  X86Inst::kOpK,     // #18 K.
+  X86Inst::kOpBnd,   // #20 BND.
+  X86Inst::kOpCr,    // #21 CR.
+  X86Inst::kOpDr     // #22 DR.
 };
 
 struct X86ValidationData {
@@ -3629,24 +3632,27 @@ struct X86ValidationData {
 static const X86ValidationData _x86ValidationData = {
   {
     0x00000000U,       // #00 None.
-    0x00000000U,       // #01 Reserved.
-    0x00000001U,       // #02 RIP.
-    0x0000007EU,       // #03 SEG (ES|CS|SS|DS|FS|GS).
-    0x0000000FU,       // #04 GPB-LO.
-    0x0000000FU,       // #05 GPB-HI.
-    0x000000FFU,       // #06 GPW.
-    0x000000FFU,       // #07 GPD.
-    0x000000FFU,       // #08 GPQ.
-    0x000000FFU,       // #09 FP.
-    0x000000FFU,       // #10 MM.
-    0x000000FFU,       // #11 K.
-    0x000000FFU,       // #12 XMM.
-    0x000000FFU,       // #13 YMM.
-    0x000000FFU,       // #14 ZMM.
-    0x00000000U,       // #15 FUTURE.
-    0x0000000FU,       // #16 BND
-    0x000000FFU,       // #17 CR.
-    0x000000FFU        // #18 DR
+    0x00000000U,       // #01 Reserved (LabelTag).
+    0x0000000FU,       // #02 GPB-LO.
+    0x0000000FU,       // #03 GPB-HI.
+    0x000000FFU,       // #04 GPW.
+    0x000000FFU,       // #05 GPD.
+    0x000000FFU,       // #06 GPQ.
+    0x00000000U,       // #07 Reserved (VEC32).
+    0x00000000U,       // #08 Reserved (VEC64).
+    0x000000FFU,       // #09 XMM.
+    0x000000FFU,       // #10 YMM.
+    0x000000FFU,       // #11 ZMM.
+    0x00000000U,       // #12 Reserved (VEC1024).
+    0x00000000U,       // #13 Reserved (VEC2048).
+    0x00000001U,       // #14 RIP.
+    0x0000007EU,       // #15 SEG (ES|CS|SS|DS|FS|GS).
+    0x000000FFU,       // #16 FP.
+    0x000000FFU,       // #17 MM.
+    0x000000FFU,       // #18 K.
+    0x0000000FU,       // #19 BND
+    0x000000FFU,       // #20 CR.
+    0x000000FFU        // #21 DR.
   },
 
   // AllowedMemBaseRegs:
@@ -3658,24 +3664,27 @@ static const X86ValidationData _x86ValidationData = {
 static const X86ValidationData _x64ValidationData = {
   {
     0x00000000U,       // #00 None.
-    0x00000000U,       // #01 Reserved.
-    0x00000001U,       // #02 RIP.
-    0x0000007EU,       // #03 SEG (FS|GS) (ES|CS|SS|DS defined, but ignored).
-    0x0000FFFFU,       // #04 GPB-LO.
-    0x0000000FU,       // #05 GPB-HI.
-    0x0000FFFFU,       // #06 GPW.
-    0x0000FFFFU,       // #07 GPD.
-    0x0000FFFFU,       // #08 GPQ.
-    0x000000FFU,       // #09 FP.
-    0x000000FFU,       // #10 MM.
-    0x000000FFU,       // #11 K.
-    0xFFFFFFFFU,       // #12 XMM (16 base regs, 32 regs only with EVEX encoding).
-    0xFFFFFFFFU,       // #13 YMM (16 base regs, 32 regs only with EVEX encoding).
-    0xFFFFFFFFU,       // #14 ZMM (16 base regs, 32 regs only with EVEX encoding).
-    0x00000000U,       // #15 FUTURE.
-    0x0000000FU,       // #16 BND.
-    0x0000FFFFU,       // #17 CR.
-    0x0000FFFFU        // #18 DR.
+    0x00000000U,       // #01 Reserved (LabelTag).
+    0x0000FFFFU,       // #02 GPB-LO.
+    0x0000000FU,       // #03 GPB-HI.
+    0x0000FFFFU,       // #04 GPW.
+    0x0000FFFFU,       // #05 GPD.
+    0x0000FFFFU,       // #06 GPQ.
+    0x00000000U,       // #07 Reserved (VEC32).
+    0x00000000U,       // #08 Reserved (VEC64).
+    0xFFFFFFFFU,       // #09 XMM (16 base regs, 32 regs only with EVEX encoding).
+    0xFFFFFFFFU,       // #10 YMM (16 base regs, 32 regs only with EVEX encoding).
+    0xFFFFFFFFU,       // #11 ZMM (16 base regs, 32 regs only with EVEX encoding).
+    0x00000000U,       // #12 Reserved (VEC1024).
+    0x00000000U,       // #13 Reserved (VEC2048).
+    0x00000001U,       // #14 RIP.
+    0x0000007EU,       // #15 SEG (FS|GS) (ES|CS|SS|DS defined, but ignored).
+    0x000000FFU,       // #16 FP.
+    0x000000FFU,       // #17 MM.
+    0x000000FFU,       // #18 K.
+    0x0000000FU,       // #19 BND.
+    0x0000FFFFU,       // #20 CR.
+    0x0000FFFFU        // #21 DR.
   },
 
   // AllowedMemBaseRegs:
