@@ -298,7 +298,7 @@ VirtReg* CodeCompiler::newVirtReg(uint32_t typeId, uint32_t signature, const cha
 
   // The following are only used by `RAPass`.
   vreg->_state = VirtReg::kStateNone;
-  vreg->_physId = Globals::kInvalidReg;
+  vreg->_physId = Globals::kInvalidRegId;
 
   _vRegArray.appendUnsafe(vreg);
   return vreg;

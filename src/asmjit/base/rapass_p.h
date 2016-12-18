@@ -604,9 +604,9 @@ struct RATiedReg {
   // --------------------------------------------------------------------------
 
   //! Get whether the variable has to be allocated in a specific input register.
-  ASMJIT_INLINE uint32_t hasRPhysId() const noexcept { return rPhysId != Globals::kInvalidReg; }
+  ASMJIT_INLINE uint32_t hasRPhysId() const noexcept { return rPhysId != Globals::kInvalidRegId; }
   //! Get whether the variable has to be allocated in a specific output register.
-  ASMJIT_INLINE uint32_t hasWPhysId() const noexcept { return wPhysId != Globals::kInvalidReg; }
+  ASMJIT_INLINE uint32_t hasWPhysId() const noexcept { return wPhysId != Globals::kInvalidRegId; }
 
   //! Set the input register index.
   ASMJIT_INLINE void setRPhysId(uint32_t index) noexcept { rPhysId = static_cast<uint8_t>(index); }
@@ -645,7 +645,7 @@ struct RATiedReg {
     struct {
       //! How many times the variable is referenced by the instruction / node.
       uint8_t refCount;
-      //! Input register index or `Globals::kInvalidReg` if it's not given.
+      //! Input register index or `Globals::kInvalidRegId` if it's not given.
       //!
       //! Even if the input register index is not given (i.e. it may by any
       //! register), register allocator should assign an index that will be
@@ -653,9 +653,9 @@ struct RATiedReg {
       //! in situations where one variable has to be allocated in multiple
       //! registers to determine the register which will be persistent.
       uint8_t rPhysId;
-      //! Output register index or `Globals::kInvalidReg` if it's not given.
+      //! Output register index or `Globals::kInvalidRegId` if it's not given.
       //!
-      //! Typically `Globals::kInvalidReg` if variable is only used on input.
+      //! Typically `Globals::kInvalidRegId` if variable is only used on input.
       uint8_t wPhysId;
       //! \internal
       uint8_t reserved;
@@ -841,10 +841,10 @@ struct RAState {
 //! \internal
 //!
 //! Register allocation pass (abstract) used by \ref CodeCompiler.
-class RAPass : public CBPass {
+class RAPass : public Pass {
 public:
   ASMJIT_NONCOPYABLE(RAPass)
-  typedef CBPass Base;
+  typedef Pass Base;
 
   enum Limits {
     kMaxVRegKinds = Globals::kMaxVRegKinds
@@ -852,7 +852,7 @@ public:
 
   // Shortcuts...
   enum {
-    kAnyReg = Globals::kInvalidReg
+    kAnyReg = Globals::kInvalidRegId
   };
 
   // --------------------------------------------------------------------------
@@ -939,7 +939,7 @@ public:
   //!     `Z` has to go through `X`.
   //!   - A node `Z` post-dominates a node `X` if any path from `X` to the end
   //!     of the graph has to go through `Z`.
-  Error constructDomTree() noexcept;
+  Error constructDOM() noexcept;
 
   // --------------------------------------------------------------------------
   // [Local Registers]
@@ -1046,7 +1046,7 @@ class RATiedBuilder {
 public:
   ASMJIT_NONCOPYABLE(RATiedBuilder)
 
-  enum { kAnyReg = Globals::kInvalidReg };
+  enum { kAnyReg = Globals::kInvalidRegId };
 
   ASMJIT_INLINE RATiedBuilder(RAPass* pass) noexcept {
     reset(pass);

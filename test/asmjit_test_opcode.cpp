@@ -26,11 +26,11 @@ struct OpcodeDumpInfo {
 
 static const char* archTypeToString(uint32_t archType) {
   switch (archType) {
-    case ArchInfo::kTypeNone : return "None";
-    case ArchInfo::kTypeX86  : return "X86";
-    case ArchInfo::kTypeX64  : return "X64";
-    case ArchInfo::kTypeArm32: return "ARM32";
-    case ArchInfo::kTypeArm64: return "ARM64";
+    case ArchInfo::kTypeNone: return "None";
+    case ArchInfo::kTypeX86 : return "X86";
+    case ArchInfo::kTypeX64 : return "X64";
+    case ArchInfo::kTypeA32 : return "A32";
+    case ArchInfo::kTypeA64 : return "A64";
 
     default:
       return "<unknown>";

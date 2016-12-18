@@ -65,19 +65,19 @@ struct OSUtils {
     kVMExecutable = 0x00000002U          //!< Virtual memory is executable.
   };
 
-  static ASMJIT_API VMemInfo getVirtualMemoryInfo() noexcept;
+  ASMJIT_API static VMemInfo getVirtualMemoryInfo() noexcept;
 
   //! Allocate virtual memory.
-  static ASMJIT_API void* allocVirtualMemory(size_t size, size_t* allocated, uint32_t flags) noexcept;
+  ASMJIT_API static void* allocVirtualMemory(size_t size, size_t* allocated, uint32_t flags) noexcept;
   //! Release virtual memory previously allocated by \ref allocVirtualMemory().
-  static ASMJIT_API Error releaseVirtualMemory(void* p, size_t size) noexcept;
+  ASMJIT_API static Error releaseVirtualMemory(void* p, size_t size) noexcept;
 
 #if ASMJIT_OS_WINDOWS
   //! Allocate virtual memory of `hProcess` (Windows).
-  static ASMJIT_API void* allocProcessMemory(HANDLE hProcess, size_t size, size_t* allocated, uint32_t flags) noexcept;
+  ASMJIT_API static void* allocProcessMemory(HANDLE hProcess, size_t size, size_t* allocated, uint32_t flags) noexcept;
 
   //! Release virtual memory of `hProcess` (Windows).
-  static ASMJIT_API Error releaseProcessMemory(HANDLE hProcess, void* p, size_t size) noexcept;
+  ASMJIT_API static Error releaseProcessMemory(HANDLE hProcess, void* p, size_t size) noexcept;
 #endif // ASMJIT_OS_WINDOWS
 
   // --------------------------------------------------------------------------
@@ -85,7 +85,7 @@ struct OSUtils {
   // --------------------------------------------------------------------------
 
   //! Get the current CPU tick count, used for benchmarking (1ms resolution).
-  static ASMJIT_API uint32_t getTickCount() noexcept;
+  ASMJIT_API static uint32_t getTickCount() noexcept;
 };
 
 // ============================================================================

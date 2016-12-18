@@ -559,7 +559,7 @@ struct ArmInst {
   // [Get]
   // --------------------------------------------------------------------------
 
-  //! Get if the `instId` is defined (counts also kInvalidInst, which is zero).
+  //! Get if the `instId` is defined (counts also kInvalidInstId, which is zero).
   static ASMJIT_INLINE bool isDefinedId(uint32_t instId) noexcept { return instId < _kIdCount; }
 
   //! Get instruction information based on the instruction `instId`.
@@ -577,8 +577,8 @@ struct ArmInst {
   //!
   //! NOTE: Instruction name MUST BE in lowercase, otherwise there will be no
   //! match. If there is an exact match the instruction id is returned, otherwise
-  //! `kInvalidInst` (zero) is returned instead. The given `name` doesn't have to
-  //! be null-terminated if `len` is provided.
+  //! `kInvalidInstId` (zero) is returned instead. The given `name` doesn't have
+  //! to be null-terminated if `len` is provided.
   ASMJIT_API static uint32_t getIdByName(const char* name, size_t len = Globals::kInvalidIndex) noexcept;
 
   //! Get an instruction name from a given instruction id `instId`.

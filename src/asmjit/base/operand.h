@@ -232,7 +232,7 @@ struct Operand_ {
   ASMJIT_INLINE bool isLabel() const noexcept { return _any.op == kOpLabel; }
 
   //! Get if the operand is a physical register.
-  ASMJIT_INLINE bool isPhysReg() const noexcept { return isReg() && _reg.id < Globals::kInvalidReg; }
+  ASMJIT_INLINE bool isPhysReg() const noexcept { return isReg() && _reg.id < Globals::kInvalidRegId; }
   //! Get if the operand is a virtual register.
   ASMJIT_INLINE bool isVirtReg() const noexcept { return isReg() && isPackedId(_reg.id); }
 
@@ -482,19 +482,84 @@ public:
 };
 
 // ============================================================================
-// [asmjit::RegTraits]
+// [asmjit::Reg]
 // ============================================================================
 
-//! Allows to resolve a signature of `RegT` register at compile-time.
-//!
-//! Must be provided by an architecture-specific implementation, ambiguous
-//! registers like `Reg`, `X86Gp` and `X86Vec` are not resolved by design.
-template<typename RegT>
-struct RegTraits {};
+#define ASMJIT_DEFINE_REG_TRAITS(TRAITS_T, REG_T, TYPE, KIND, SIZE, COUNT, TYPE_ID) \
+template<>                                                                    \
+struct TRAITS_T < TYPE > {                                                    \
+  typedef REG_T Reg;                                                          \
+                                                                              \
+  enum {                                                                      \
+    kValid     = 1,                                                           \
+    kCount     = COUNT,                                                       \
+    kTypeId    = TYPE_ID,                                                     \
+                                                                              \
+    kType      = TYPE,                                                        \
+    kKind      = KIND,                                                        \
+    kSize      = SIZE,                                                        \
+    kSignature = ASMJIT_PACK32_4x8(Operand::kOpReg, TYPE, KIND, SIZE)         \
+  };                                                                          \
+}                                                                             \
 
-// ============================================================================
-// [asmjit::RegInfo]
-// ============================================================================
+#define ASMJIT_DEFINE_ABSTRACT_REG(REG_T, BASE_T)                             \
+public:                                                                       \
+  /*! Default constructor doesn't setup anything, it's like `Operand()`. */   \
+  ASMJIT_INLINE REG_T() ASMJIT_NOEXCEPT                                       \
+    : BASE_T() {}                                                             \
+                                                                              \
+  /*! Copy the `other` REG_T register operand. */                             \
+  ASMJIT_INLINE REG_T(const REG_T& other) ASMJIT_NOEXCEPT                     \
+    : BASE_T(other) {}                                                        \
+                                                                              \
+  /*! Copy the `other` REG_T register operand having its id set to `id` */    \
+  ASMJIT_INLINE REG_T(const Reg& other, uint32_t id) ASMJIT_NOEXCEPT          \
+    : BASE_T(other, id) {}                                                    \
+                                                                              \
+  /*! Create a REG_T register operand based on `signature` and `id`. */       \
+  ASMJIT_INLINE REG_T(const _Init& init, uint32_t signature, uint32_t id) ASMJIT_NOEXCEPT \
+    : BASE_T(init, signature, id) {}                                          \
+                                                                              \
+  /*! Create a completely uninitialized REG_T register operand (garbage). */  \
+  explicit ASMJIT_INLINE REG_T(const _NoInit&) ASMJIT_NOEXCEPT                \
+    : BASE_T(NoInit) {}                                                       \
+                                                                              \
+  /*! Clone the register operand. */                                          \
+  ASMJIT_INLINE REG_T clone() const ASMJIT_NOEXCEPT { return REG_T(*this); }  \
+                                                                              \
+  /*! Create a new register from register type and id. */                     \
+  static ASMJIT_INLINE REG_T fromTypeAndId(uint32_t regType, uint32_t id) ASMJIT_NOEXCEPT { \
+    return REG_T(Init, signatureOf(regType), id);                             \
+  }                                                                           \
+                                                                              \
+  /*! Create a new register from signature and id. */                         \
+  static ASMJIT_INLINE REG_T fromSignature(uint32_t signature, uint32_t id) ASMJIT_NOEXCEPT { \
+    return REG_T(Init, signature, id);                                        \
+  }                                                                           \
+  /* TODO: Depreceted */                                                      \
+  ASMJIT_INLINE REG_T m() const noexcept { return *this; }                    \
+  ASMJIT_INLINE REG_T m8() const noexcept { return *this; }                   \
+  ASMJIT_INLINE REG_T m16() const noexcept { return *this; }                  \
+  ASMJIT_INLINE REG_T m32() const noexcept { return *this; }                  \
+  ASMJIT_INLINE REG_T m64() const noexcept { return *this; }                  \
+                                                                              \
+  ASMJIT_INLINE REG_T& operator=(const REG_T& other) ASMJIT_NOEXCEPT {        \
+    copyFrom(other); return *this;                                            \
+  }
+
+#define ASMJIT_DEFINE_FINAL_REG(REG_T, BASE_T, TRAITS_T)                      \
+  ASMJIT_DEFINE_ABSTRACT_REG(REG_T, BASE_T)                                   \
+                                                                              \
+  /*! Create a REG_T register with `id`. */                                   \
+  explicit ASMJIT_INLINE REG_T(uint32_t id) ASMJIT_NOEXCEPT                   \
+    : BASE_T(Init, kSignature, id) {}                                         \
+                                                                              \
+  enum {                                                                      \
+    kThisType  = TRAITS_T::kType,                                             \
+    kThisKind  = TRAITS_T::kKind,                                             \
+    kThisSize  = TRAITS_T::kSize,                                             \
+    kSignature = TRAITS_T::kSignature                                         \
+  };
 
 //! Structure that contains information about a physical register.
 //!
@@ -514,10 +579,6 @@ union RegInfo {
   uint32_t signature;
 };
 
-// ============================================================================
-// [asmjit::Reg]
-// ============================================================================
-
 //! Physical/Virtual register operand.
 class Reg : public Operand {
 public:
@@ -529,13 +590,11 @@ public:
   ASMJIT_ENUM(RegType) {
     kRegNone      = 0,                   //!< No register - unused, invalid, multiple meanings.
     // (1 is used as a LabelTag)
-
     kRegGp8Lo     = 2,                   //!< 8-bit low general purpose register (X86).
     kRegGp8Hi     = 3,                   //!< 8-bit high general purpose register (X86).
     kRegGp16      = 4,                   //!< 16-bit general purpose register (X86).
     kRegGp32      = 5,                   //!< 32-bit general purpose register (X86|ARM).
     kRegGp64      = 6,                   //!< 64-bit general purpose register (X86|ARM).
-
     kRegVec32     = 7,                   //!< 32-bit view of a vector register (ARM).
     kRegVec64     = 8,                   //!< 64-bit view of a vector register (ARM).
     kRegVec128    = 9,                   //!< 128-bit view of a vector register (X86|ARM).
@@ -543,8 +602,7 @@ public:
     kRegVec512    = 11,                  //!< 512-bit view of a vector register (X86).
     kRegVec1024   = 12,                  //!< 1024-bit view of a vector register (future).
     kRegVec2048   = 13,                  //!< 2048-bit view of a vector register (future).
-    kRegIP        = 14,                  //!< Universal id of RIP register (if inaccessible through GP).
-
+    kRegIP        = 14,                  //!< Universal id of IP/PC register (if separate).
     kRegCustom    = 15,                  //!< Start of platform dependent register types (must be honored).
     kRegMax       = 31                   //!< Maximum possible register id of all architectures.
   };
@@ -553,8 +611,7 @@ public:
   ASMJIT_ENUM(Kind) {
     kKindGp       = 0,                   //!< General purpose register (X86|ARM).
     kKindVec      = 1,                   //!< Vector register (X86|ARM).
-
-    kKindMax      = 31                   //!< Maximum possible register kind of all architectures.
+    kKindMax      = 15                   //!< Maximum possible register kind of all architectures.
   };
 
   // --------------------------------------------------------------------------
@@ -586,7 +643,7 @@ public:
   //! Get if the register is valid (either virtual or physical).
   ASMJIT_INLINE bool isValid() const noexcept { return _signature != 0; }
   //! Get if this is a physical register.
-  ASMJIT_INLINE bool isPhysReg() const noexcept { return _reg.id < Globals::kInvalidReg; }
+  ASMJIT_INLINE bool isPhysReg() const noexcept { return _reg.id < Globals::kInvalidRegId; }
   //! Get if this is a virtual register (used by \ref CodeCompiler).
   ASMJIT_INLINE bool isVirtReg() const noexcept { return isPackedId(_reg.id); }
 
@@ -608,9 +665,9 @@ public:
   //! false. However. no such case is known at the moment.
   ASMJIT_INLINE bool isSame(const Reg& other) const noexcept { return _packed[0] == _packed[1]; }
 
-  //! Set a 32-bit operand signature based on traits of `T`.
-  template<typename T>
-  ASMJIT_INLINE void setSignatureT() noexcept { _signature = RegTraits<T>::kSignature; }
+  //! Set a 32-bit operand signature based on traits of `RegT`.
+  template<typename RegT>
+  ASMJIT_INLINE void setSignatureT() noexcept { _signature = RegT::kSignature; }
 
   //! Get the register type.
   ASMJIT_INLINE uint32_t getRegType() const noexcept { return _reg.regType; }
@@ -624,7 +681,7 @@ public:
   //!
   //! NOTE: Improper use of `cloneAs()` can lead to hard-to-debug errors.
   template<typename RegT>
-  ASMJIT_INLINE RegT cloneAs() const noexcept { return RegT(Init, RegTraits<RegT>::kSignature, getId()); }
+  ASMJIT_INLINE RegT cloneAs() const noexcept { return RegT(Init, RegT::kSignature, getId()); }
 
   //! Cast this register to `other` by also changing its signature.
   //!
@@ -640,65 +697,6 @@ public:
     _signature = signature;
     _reg.id = id;
   }
-
-#define ASMJIT_DEFINE_ABSTRACT_REG(REG, BASE_REG)                              \
-public:                                                                        \
-  /*! Default constructor doesn't setup anything, it's like `Operand()`. */    \
-  ASMJIT_INLINE REG() ASMJIT_NOEXCEPT                                          \
-    : BASE_REG() {}                                                            \
-                                                                               \
-  /*! Copy the `other` REG register operand. */                                \
-  ASMJIT_INLINE REG(const REG& other) ASMJIT_NOEXCEPT                          \
-    : BASE_REG(other) {}                                                       \
-                                                                               \
-  /*! Copy the `other` REG register operand having its id set to `id` */       \
-  ASMJIT_INLINE REG(const Reg& other, uint32_t id) ASMJIT_NOEXCEPT             \
-    : BASE_REG(other, id) {}                                                   \
-                                                                               \
-  /*! Create a REG register operand based on `signature` and `id`. */          \
-  ASMJIT_INLINE REG(const _Init& init, uint32_t signature, uint32_t id) ASMJIT_NOEXCEPT \
-    : BASE_REG(init, signature, id) {}                                         \
-                                                                               \
-  /*! Create a completely uninitialized REG register operand (garbage). */     \
-  explicit ASMJIT_INLINE REG(const _NoInit&) ASMJIT_NOEXCEPT                   \
-    : BASE_REG(NoInit) {}                                                      \
-                                                                               \
-  /*! Clone the register operand. */                                           \
-  ASMJIT_INLINE REG clone() const ASMJIT_NOEXCEPT { return REG(*this); }       \
-                                                                               \
-  /*! Create a new register from register type and id. */                      \
-  static ASMJIT_INLINE REG fromTypeAndId(uint32_t regType, uint32_t id) ASMJIT_NOEXCEPT { \
-    return REG(Init, signatureOf(regType), id);                                \
-  }                                                                            \
-                                                                               \
-  /*! Create a new register from signature and id. */                          \
-  static ASMJIT_INLINE REG fromSignature(uint32_t signature, uint32_t id) ASMJIT_NOEXCEPT { \
-    return REG(Init, signature, id);                                           \
-  }                                                                            \
-  /* TODO: Depreceted */ \
-  ASMJIT_INLINE REG m() const noexcept { return *this; } \
-  ASMJIT_INLINE REG m8() const noexcept { return *this; } \
-  ASMJIT_INLINE REG m16() const noexcept { return *this; } \
-  ASMJIT_INLINE REG m32() const noexcept { return *this; } \
-  ASMJIT_INLINE REG m64() const noexcept { return *this; } \
-  \
-  ASMJIT_INLINE REG& operator=(const REG& other) ASMJIT_NOEXCEPT {             \
-    copyFrom(other); return *this;                                             \
-  }
-
-#define ASMJIT_DEFINE_FINAL_REG(REG, BASE_REG, TRAITS)                         \
-  ASMJIT_DEFINE_ABSTRACT_REG(REG, BASE_REG)                                    \
-                                                                               \
-  /*! Create a REG register with `id`. */                                      \
-  explicit ASMJIT_INLINE REG(uint32_t id) ASMJIT_NOEXCEPT                      \
-    : BASE_REG(Init, kSignature, id) {}                                        \
-                                                                               \
-  enum {                                                                       \
-    kThisType  = TRAITS::kType,                                                \
-    kThisKind  = TRAITS::kKind,                                                \
-    kThisSize  = TRAITS::kSize,                                                \
-    kSignature = TRAITS::kSignature                                            \
-  };
 };
 
 // ============================================================================

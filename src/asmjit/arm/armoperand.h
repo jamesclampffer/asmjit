@@ -38,24 +38,6 @@ typedef ArmGpW ArmGpR;
 //! \{
 
 // ============================================================================
-// [asmjit::ArmRegTraits<>]
-// ============================================================================
-
-//! Register traits (ARM/AArch64).
-template<uint32_t RegType>
-struct ArmRegTraits {
-  enum {
-    kValid     = 0,                      // RegType is not valid by default.
-    kTypeId    = TypeId::kVoid,          // Everything is void by default.
-
-    kType      = 0,                      // Zero type by default.
-    kKind      = 0,                      // Zero kind by default.
-    kSize      = 0,                      // No size by default.
-    kSignature = 0                       // No signature by default.
-  };
-};
-
-// ============================================================================
 // [asmjit::ArmMem]
 // ============================================================================
 
@@ -102,6 +84,20 @@ public:
 // ============================================================================
 // [asmjit::ArmReg]
 // ============================================================================
+
+//! Register traits (ARM/AArch64).
+template<uint32_t RegType>
+struct ArmRegTraits {
+  enum {
+    kValid     = 0,                      // RegType is not valid by default.
+    kTypeId    = TypeId::kVoid,          // Everything is void by default.
+
+    kType      = 0,                      // Zero type by default.
+    kKind      = 0,                      // Zero kind by default.
+    kSize      = 0,                      // No size by default.
+    kSignature = 0                       // No signature by default.
+  };
+};
 
 //! Register (ARM/AArch64).
 class ArmReg : public Reg {
@@ -195,31 +191,11 @@ public:
   static ASMJIT_INLINE bool isVecV(const Operand_& op, uint32_t id) noexcept { return isVecV(op) & (op.getId() == id); }
 };
 
-#define ASMJIT_DEFINE_ARM_REG_TRAITS(REG, TYPE, KIND, SIZE, TYPE_ID)  \
-template<>                                                            \
-struct ArmRegTraits< TYPE > {                                         \
-  typedef REG Reg;                                                    \
-                                                                      \
-  enum {                                                              \
-    kValid     = 1,                                                   \
-    kTypeId    = TYPE_ID,                                             \
-                                                                      \
-    kType      = TYPE,                                                \
-    kKind      = KIND,                                                \
-    kSize      = SIZE,                                                \
-    kSignature = ASMJIT_PACK32_4x8(Operand::kOpReg, TYPE, KIND, SIZE) \
-  };                                                                  \
-}
-ASMJIT_DEFINE_ARM_REG_TRAITS(ArmGpW , ArmReg::kRegGpW         , ArmReg::kKindGp , 4 , TypeId::kI32   );
-ASMJIT_DEFINE_ARM_REG_TRAITS(ArmGpX , ArmReg::kRegGpX         , ArmReg::kKindGp , 8 , TypeId::kI64   );
-ASMJIT_DEFINE_ARM_REG_TRAITS(ArmVecS, ArmReg::kRegVecS        , ArmReg::kKindVec, 4 , TypeId::kF32x1 );
-ASMJIT_DEFINE_ARM_REG_TRAITS(ArmVecD, ArmReg::kRegVecD        , ArmReg::kKindVec, 8 , TypeId::kF64x2 );
-ASMJIT_DEFINE_ARM_REG_TRAITS(ArmVecV, ArmReg::kRegVecV        , ArmReg::kKindVec, 16, TypeId::kI32x4 );
-#undef ASMJIT_DEFINE_ARM_REG_TRAITS
-
-// ============================================================================
-// [asmjit::Arm...]
-// ============================================================================
+ASMJIT_DEFINE_REG_TRAITS(ArmRegTraits, ArmGpW , ArmReg::kRegGpW , ArmReg::kKindGp , 4 , 32, TypeId::kI32  );
+ASMJIT_DEFINE_REG_TRAITS(ArmRegTraits, ArmGpX , ArmReg::kRegGpX , ArmReg::kKindGp , 8 , 32, TypeId::kI64  );
+ASMJIT_DEFINE_REG_TRAITS(ArmRegTraits, ArmVecS, ArmReg::kRegVecS, ArmReg::kKindVec, 4 , 32, TypeId::kF32x1);
+ASMJIT_DEFINE_REG_TRAITS(ArmRegTraits, ArmVecD, ArmReg::kRegVecD, ArmReg::kKindVec, 8 , 32, TypeId::kF64x2);
+ASMJIT_DEFINE_REG_TRAITS(ArmRegTraits, ArmVecV, ArmReg::kRegVecV, ArmReg::kKindVec, 16, 32, TypeId::kI32x4);
 
 //! General purpose register (ARM/AArch64).
 class ArmGp : public ArmReg {

@@ -13,6 +13,7 @@
 #if defined(ASMJIT_BUILD_ARM)
 
 // [Dependencies]
+#include "../base/misc_p.h"
 #include "../arm/armoperand.h"
 
 // [Api-Begin]
@@ -23,25 +24,6 @@ namespace asmjit {
 // ============================================================================
 // [asmjit::ArmOpData]
 // ============================================================================
-
-// Register Signature {
-//   uint8_t opType;
-//   uint8_t regType;
-//   uint8_t kind;
-//   uint8_t size;
-// }
-#define ASMJIT_ARM_REG_SIGNATURE(TYPE) {{        \
-  uint8_t(                                       \
-    ArmRegTraits<TYPE>::kValid                   \
-      ? Operand::kOpReg                          \
-      : Operand::kOpNone),                       \
-  uint8_t(                                       \
-    ArmRegTraits<TYPE>::kValid                   \
-      ? TYPE                                     \
-      : 0),                                      \
-  uint8_t(ArmRegTraits<TYPE>::kKind),            \
-  uint8_t(ArmRegTraits<TYPE>::kSize)             \
-}}
 
 // Register Operand {
 //   uint8_t opType;
@@ -86,43 +68,43 @@ const ArmOpData armOpData = {
   // --------------------------------------------------------------------------
 
   {
-    // RegType[].
+    // RegInfo[] {
+    //   uint8_t opType;
+    //   uint8_t regType;
+    //   uint8_t kind;
+    //   uint8_t size;
+    // }
     {
-      ASMJIT_ARM_REG_SIGNATURE(0 ), ASMJIT_ARM_REG_SIGNATURE(1 ),
-      ASMJIT_ARM_REG_SIGNATURE(2 ), ASMJIT_ARM_REG_SIGNATURE(3 ),
-      ASMJIT_ARM_REG_SIGNATURE(4 ), ASMJIT_ARM_REG_SIGNATURE(5 ),
-      ASMJIT_ARM_REG_SIGNATURE(6 ), ASMJIT_ARM_REG_SIGNATURE(7 ),
-      ASMJIT_ARM_REG_SIGNATURE(8 ), ASMJIT_ARM_REG_SIGNATURE(9 ),
-      ASMJIT_ARM_REG_SIGNATURE(10), ASMJIT_ARM_REG_SIGNATURE(11),
-      ASMJIT_ARM_REG_SIGNATURE(12), ASMJIT_ARM_REG_SIGNATURE(13),
-      ASMJIT_ARM_REG_SIGNATURE(14), ASMJIT_ARM_REG_SIGNATURE(15),
-      ASMJIT_ARM_REG_SIGNATURE(16), ASMJIT_ARM_REG_SIGNATURE(17),
-      ASMJIT_ARM_REG_SIGNATURE(18), ASMJIT_ARM_REG_SIGNATURE(19),
-      ASMJIT_ARM_REG_SIGNATURE(20), ASMJIT_ARM_REG_SIGNATURE(21),
-      ASMJIT_ARM_REG_SIGNATURE(22), ASMJIT_ARM_REG_SIGNATURE(23),
-      ASMJIT_ARM_REG_SIGNATURE(24), ASMJIT_ARM_REG_SIGNATURE(25),
-      ASMJIT_ARM_REG_SIGNATURE(26), ASMJIT_ARM_REG_SIGNATURE(27),
-      ASMJIT_ARM_REG_SIGNATURE(28), ASMJIT_ARM_REG_SIGNATURE(29),
-      ASMJIT_ARM_REG_SIGNATURE(30), ASMJIT_ARM_REG_SIGNATURE(31)
+#define ASMJIT_ARM_REG_SIGNATURE(TYPE)        \
+      {{                                      \
+          uint8_t(ArmRegTraits<TYPE>::kValid  \
+            ? Operand::kOpReg                 \
+            : Operand::kOpNone),              \
+          uint8_t(ArmRegTraits<TYPE>::kValid  \
+            ? TYPE                            \
+            : 0),                             \
+          uint8_t(ArmRegTraits<TYPE>::kKind), \
+          uint8_t(ArmRegTraits<TYPE>::kSize)  \
+      }}
+      ASMJIT_TABLE_16(ASMJIT_ARM_REG_SIGNATURE,  0),
+      ASMJIT_TABLE_16(ASMJIT_ARM_REG_SIGNATURE, 16)
+#undef ASMJIT_ARM_REG_SIGNATURE
     },
-    // RegTypeToTypeId[].
+
+    // RegCount[]
     {
-      X86RegTraits< 0>::kTypeId, X86RegTraits< 1>::kTypeId,
-      X86RegTraits< 2>::kTypeId, X86RegTraits< 3>::kTypeId,
-      X86RegTraits< 4>::kTypeId, X86RegTraits< 5>::kTypeId,
-      X86RegTraits< 6>::kTypeId, X86RegTraits< 7>::kTypeId,
-      X86RegTraits< 8>::kTypeId, X86RegTraits< 9>::kTypeId,
-      X86RegTraits<10>::kTypeId, X86RegTraits<11>::kTypeId,
-      X86RegTraits<12>::kTypeId, X86RegTraits<13>::kTypeId,
-      X86RegTraits<14>::kTypeId, X86RegTraits<15>::kTypeId,
-      X86RegTraits<16>::kTypeId, X86RegTraits<17>::kTypeId,
-      X86RegTraits<18>::kTypeId, X86RegTraits<19>::kTypeId,
-      X86RegTraits<20>::kTypeId, X86RegTraits<21>::kTypeId,
-      X86RegTraits<22>::kTypeId, X86RegTraits<23>::kTypeId,
-      X86RegTraits<24>::kTypeId, X86RegTraits<25>::kTypeId,
-      X86RegTraits<26>::kTypeId, X86RegTraits<27>::kTypeId,
-      X86RegTraits<28>::kTypeId, X86RegTraits<29>::kTypeId,
-      X86RegTraits<30>::kTypeId, X86RegTraits<31>::kTypeId
+#define ASMJIT_ARM_REG_COUNT(TYPE) ArmRegTraits<TYPE>::kCount
+      ASMJIT_TABLE_16(ASMJIT_ARM_REG_COUNT,  0),
+      ASMJIT_TABLE_16(ASMJIT_ARM_REG_COUNT, 16)
+#undef ASMJIT_ARM_REG_COUNT
+    },
+
+    // RegTypeToTypeId[]
+    {
+#define ASMJIT_ARM_REG_TYPE_ID(TYPE) ArmRegTraits<TYPE>::kTypeId
+      ASMJIT_TABLE_16(ASMJIT_ARM_REG_TYPE_ID,  0),
+      ASMJIT_TABLE_16(ASMJIT_ARM_REG_TYPE_ID, 16)
+#undef ASMJIT_ARM_REG_TYPE_ID
     }
   },
 

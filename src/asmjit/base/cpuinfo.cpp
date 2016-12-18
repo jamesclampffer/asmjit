@@ -44,13 +44,13 @@ namespace asmjit {
 
 #if ASMJIT_ARCH_ARM32
 static ASMJIT_INLINE void armPopulateBaselineA32Features(CpuInfo* cpuInfo) noexcept {
-  cpuInfo->_archInfo.init(ArchInfo::kTypeArm32);
+  cpuInfo->_archInfo.init(ArchInfo::kTypeA32);
 }
 #endif // ASMJIT_ARCH_ARM32
 
 #if ASMJIT_ARCH_ARM64
 static ASMJIT_INLINE void armPopulateBaselineA64Features(CpuInfo* cpuInfo) noexcept {
-  cpuInfo->_archInfo.init(ArchInfo::kTypeArm64);
+  cpuInfo->_archInfo.init(ArchInfo::kTypeA64);
 
   // Thumb (including all variations) is supported on A64 (but not accessible from A64).
   cpuInfo->addFeature(CpuInfo::kArmFeatureTHUMB);

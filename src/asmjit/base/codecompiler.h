@@ -110,12 +110,12 @@ struct VirtReg {
   ASMJIT_INLINE uint32_t getPhysId() const noexcept { return _physId; }
   //! Set register index.
   ASMJIT_INLINE void setPhysId(uint32_t physId) {
-    ASMJIT_ASSERT(physId <= Globals::kInvalidReg);
+    ASMJIT_ASSERT(physId <= Globals::kInvalidRegId);
     _physId = static_cast<uint8_t>(physId);
   }
   //! Reset register index.
   ASMJIT_INLINE void resetPhysId() {
-    _physId = static_cast<uint8_t>(Globals::kInvalidReg);
+    _physId = static_cast<uint8_t>(Globals::kInvalidRegId);
   }
 
   //! Get home registers mask.
@@ -212,8 +212,7 @@ public:
       _end(nullptr),
       _args(nullptr),
       _isFinished(false) {
-
-    _type = kNodeFunc;
+    setType(kNodeFunc);
   }
 
   //! Destroy the `CCFunc` instance (NEVER CALLED).
@@ -348,8 +347,7 @@ public:
     : CBInst(cb, instId, options, kBaseOpCapacity),
       _funcDetail(),
       _args(nullptr) {
-
-    _type = kNodeFuncCall;
+    setType(kNodeFuncCall);
     _resetOps();
     _ret[0].reset();
     _ret[1].reset();

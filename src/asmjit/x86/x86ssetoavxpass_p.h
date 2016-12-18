@@ -26,7 +26,7 @@ namespace asmjit {
 // [asmjit::X86SseToAvxPass]
 // ============================================================================
 
-class X86SseToAvxPass : public CBPass {
+class X86SseToAvxPass : public Pass {
   ASMJIT_NONCOPYABLE(X86SseToAvxPass)
 public:
   X86SseToAvxPass() noexcept;

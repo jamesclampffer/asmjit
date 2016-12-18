@@ -850,7 +850,7 @@ struct FuncFrameInfo {
 
   ASMJIT_INLINE void reset() noexcept {
     ::memset(this, 0, sizeof(*this));
-    _stackArgsRegId = Globals::kInvalidReg;
+    _stackArgsRegId = Globals::kInvalidRegId;
   }
 
   // --------------------------------------------------------------------------
@@ -974,7 +974,9 @@ struct FuncFrameInfo {
     _callFrameAlignment = static_cast<uint8_t>(Utils::iMax<uint32_t>(_callFrameAlignment, value));
   }
 
-  ASMJIT_INLINE bool hasStackArgsRegId() const noexcept { return _stackArgsRegId != Globals::kInvalidReg; }
+  ASMJIT_INLINE bool hasStackArgsRegId() const noexcept {
+    return _stackArgsRegId != Globals::kInvalidRegId;
+  }
   ASMJIT_INLINE uint32_t getStackArgsRegId() const noexcept { return _stackArgsRegId; }
   ASMJIT_INLINE void setStackArgsRegId(uint32_t regId) { _stackArgsRegId = regId; }
 
@@ -1238,9 +1240,9 @@ public:
 // ============================================================================
 
 struct FuncUtils {
-  static ASMJIT_API Error emitProlog(CodeEmitter* emitter, const FuncFrameLayout& layout);
-  static ASMJIT_API Error emitEpilog(CodeEmitter* emitter, const FuncFrameLayout& layout);
-  static ASMJIT_API Error allocArgs(CodeEmitter* emitter, const FuncFrameLayout& layout, const FuncArgsMapper& args);
+  ASMJIT_API static Error emitProlog(CodeEmitter* emitter, const FuncFrameLayout& layout);
+  ASMJIT_API static Error emitEpilog(CodeEmitter* emitter, const FuncFrameLayout& layout);
+  ASMJIT_API static Error allocArgs(CodeEmitter* emitter, const FuncFrameLayout& layout, const FuncArgsMapper& args);
 };
 
 //! \}

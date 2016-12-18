@@ -229,7 +229,7 @@ public:
 //! The advantage of ZoneHeap is that it can allocate small chunks of memory
 //! really fast, and these chunks, when released, will be reused by consecutive
 //! calls to `alloc()`. Also, since ZoneHeap uses \ref Zone, you can turn any
-//! \ref Zone into a \ref ZoneHeap, and use it in your \ref CBPass when necessary.
+//! \ref Zone into a \ref ZoneHeap, and use it in your \ref Pass when necessary.
 //!
 //! ZoneHeap is used by AsmJit containers to make containers having only
 //! few elements fast (and lightweight) and to allow them to grow and use

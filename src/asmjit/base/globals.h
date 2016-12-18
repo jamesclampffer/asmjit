@@ -44,14 +44,13 @@ static const uint64_t kNoBaseAddress = ~static_cast<uint64_t>(0);
 
 //! Global definitions.
 ASMJIT_ENUM(Defs) {
-  //! Invalid instruction.
-  kInvalidInst = 0,
+  //! Invalid instruction id.
+  kInvalidInstId = 0,
   //! Invalid register id.
-  kInvalidReg = 0xFF,
+  kInvalidRegId = 0xFF,
 
   //! Host memory allocator overhead.
   kAllocOverhead = static_cast<int>(sizeof(intptr_t) * 4),
-
   //! Aggressive growing strategy threshold.
   kAllocThreshold = 8192 * 1024
 };

@@ -79,10 +79,12 @@ Error CodeBuilder::onDetach(CodeHolder* code) noexcept {
 // ============================================================================
 
 Error CodeBuilder::getCBLabel(CBLabel** pOut, uint32_t id) noexcept {
-  if (_lastError) return _lastError;
-  ASMJIT_ASSERT(_code != nullptr);
+  if (_lastError)
+    return _lastError;
 
+  ASMJIT_ASSERT(_code != nullptr);
   size_t index = Operand::unpackId(id);
+
   if (ASMJIT_UNLIKELY(index >= _code->getLabelsCount()))
     return DebugUtils::errored(kErrorInvalidLabel);
 
@@ -102,7 +104,9 @@ Error CodeBuilder::getCBLabel(CBLabel** pOut, uint32_t id) noexcept {
 }
 
 Error CodeBuilder::registerLabelNode(CBLabel* node) noexcept {
-  if (_lastError) return _lastError;
+  if (_lastError)
+    return _lastError;
+
   ASMJIT_ASSERT(_code != nullptr);
 
   // Don't call setLastError() from here, we are noexcept and we are called
@@ -187,7 +191,8 @@ Error CodeBuilder::_emit(uint32_t instId, const Operand_& o0, const Operand_& o1
 
   if (options & kErrorsAndSpecialCases) {
     // Don't do anything if we are in error state.
-    if (_lastError) return _lastError;
+    if (_lastError)
+      return _lastError;
 
     // Count 4th and 5th operands (indexed from zero).
     if (options & kOptionOp4) opCount = 5;
@@ -222,7 +227,7 @@ Error CodeBuilder::_emit(uint32_t instId, const Operand_& o0, const Operand_& o1
 
   new(node) CBInst(this, instId, options, opCapacity);
 
-  node->_opCount = static_cast<uint8_t>(opCount);
+  node->setOpCount(opCount);
   if (options & kOptionOpExtra)
     node->_opExtra = _opExtra;
 
@@ -288,7 +293,8 @@ Label CodeBuilder::newNamedLabel(const char* name, size_t nameLength, uint32_t t
 }
 
 Error CodeBuilder::bind(const Label& label) {
-  if (_lastError) return _lastError;
+  if (_lastError)
+    return _lastError;
 
   CBLabel* node;
   Error err = getCBLabel(&node, label);
@@ -300,7 +306,8 @@ Error CodeBuilder::bind(const Label& label) {
 }
 
 Error CodeBuilder::align(uint32_t mode, uint32_t alignment) {
-  if (_lastError) return _lastError;
+  if (_lastError)
+    return _lastError;
 
   CBAlign* node = newAlignNode(mode, alignment);
   if (ASMJIT_UNLIKELY(!node))
@@ -311,7 +318,8 @@ Error CodeBuilder::align(uint32_t mode, uint32_t alignment) {
 }
 
 Error CodeBuilder::embed(const void* data, uint32_t size) {
-  if (_lastError) return _lastError;
+  if (_lastError)
+    return _lastError;
 
   CBData* node = newDataNode(data, size);
   if (ASMJIT_UNLIKELY(!node))
@@ -322,7 +330,8 @@ Error CodeBuilder::embed(const void* data, uint32_t size) {
 }
 
 Error CodeBuilder::embedLabel(const Label& label) {
-  if (_lastError) return _lastError;
+  if (_lastError)
+    return _lastError;
 
   CBLabelData* node = newNodeT<CBLabelData>(label.getId());
   if (ASMJIT_UNLIKELY(!node))
@@ -333,7 +342,8 @@ Error CodeBuilder::embedLabel(const Label& label) {
 }
 
 Error CodeBuilder::embedConstPool(const Label& label, const ConstPool& pool) {
-  if (_lastError) return _lastError;
+  if (_lastError)
+    return _lastError;
 
   if (!isLabelValid(label))
     return setLastError(DebugUtils::errored(kErrorInvalidLabel));
@@ -351,7 +361,8 @@ Error CodeBuilder::embedConstPool(const Label& label, const ConstPool& pool) {
 }
 
 Error CodeBuilder::comment(const char* s, size_t len) {
-  if (_lastError) return _lastError;
+  if (_lastError)
+    return _lastError;
 
   CBComment* node = newCommentNode(s, len);
   if (ASMJIT_UNLIKELY(!node))
@@ -511,9 +522,9 @@ CBNode* CodeBuilder::setCursor(CBNode* node) noexcept {
 // [asmjit::CodeBuilder - Passes]
 // ============================================================================
 
-ASMJIT_FAVOR_SIZE CBPass* CodeBuilder::getPassByName(const char* name) const noexcept {
+ASMJIT_FAVOR_SIZE Pass* CodeBuilder::getPassByName(const char* name) const noexcept {
   for (size_t i = 0, len = _cbPasses.getLength(); i < len; i++) {
-    CBPass* pass = _cbPasses[i];
+    Pass* pass = _cbPasses[i];
     if (::strcmp(pass->getName(), name) == 0)
       return pass;
   }
@@ -521,7 +532,7 @@ ASMJIT_FAVOR_SIZE CBPass* CodeBuilder::getPassByName(const char* name) const noe
   return nullptr;
 }
 
-ASMJIT_FAVOR_SIZE Error CodeBuilder::addPass(CBPass* pass) noexcept {
+ASMJIT_FAVOR_SIZE Error CodeBuilder::addPass(Pass* pass) noexcept {
   if (ASMJIT_UNLIKELY(pass == nullptr)) {
     // Since this is directly called by `addPassT()` we treat `null` argument
     // as out-of-memory condition. Otherwise it would be API misuse.
@@ -539,7 +550,7 @@ ASMJIT_FAVOR_SIZE Error CodeBuilder::addPass(CBPass* pass) noexcept {
   return kErrorOk;
 }
 
-ASMJIT_FAVOR_SIZE Error CodeBuilder::deletePass(CBPass* pass) noexcept {
+ASMJIT_FAVOR_SIZE Error CodeBuilder::deletePass(Pass* pass) noexcept {
   if (ASMJIT_UNLIKELY(pass == nullptr))
     return DebugUtils::errored(kErrorInvalidArgument);
 
@@ -554,7 +565,7 @@ ASMJIT_FAVOR_SIZE Error CodeBuilder::deletePass(CBPass* pass) noexcept {
     _cbPasses.removeAt(index);
   }
 
-  pass->~CBPass();
+  pass->~Pass();
   return kErrorOk;
 }
 
@@ -603,9 +614,9 @@ Error CodeBuilder::runPasses() {
   if (ASMJIT_UNLIKELY(err))
     return err;
 
-  ZoneVector<CBPass*>& passes = _cbPasses;
+  ZoneVector<Pass*>& passes = _cbPasses;
   for (size_t i = 0, len = passes.getLength(); i < len; i++) {
-    CBPass* pass = passes[i];
+    Pass* pass = passes[i];
 
     _cbPassZone.reset();
     err = pass->process(&_cbPassZone);
@@ -713,13 +724,13 @@ Error CodeBuilder::dump(StringBuilder& sb, uint32_t logOptions) const noexcept {
 #endif // !ASMJIT_DISABLE_LOGGING
 
 // ============================================================================
-// [asmjit::CBPass]
+// [asmjit::Pass]
 // ============================================================================
 
-CBPass::CBPass(const char* name) noexcept
+Pass::Pass(const char* name) noexcept
   : _cb(nullptr),
     _name(name) {}
-CBPass::~CBPass() noexcept {}
+Pass::~Pass() noexcept {}
 
 } // asmjit namespace
 

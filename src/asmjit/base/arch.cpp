@@ -31,8 +31,8 @@ static const uint32_t archInfoTable[] = {
   ASMJIT_PACK32_4x8(ArchInfo::kTypeX86   , ArchInfo::kSubTypeNone, 4,  8),
   ASMJIT_PACK32_4x8(ArchInfo::kTypeX64   , ArchInfo::kSubTypeNone, 8, 16),
   ASMJIT_PACK32_4x8(ArchInfo::kTypeX32   , ArchInfo::kSubTypeNone, 8, 16),
-  ASMJIT_PACK32_4x8(ArchInfo::kTypeArm32 , ArchInfo::kSubTypeNone, 4, 16),
-  ASMJIT_PACK32_4x8(ArchInfo::kTypeArm64 , ArchInfo::kSubTypeNone, 8, 32)
+  ASMJIT_PACK32_4x8(ArchInfo::kTypeA32   , ArchInfo::kSubTypeNone, 4, 16),
+  ASMJIT_PACK32_4x8(ArchInfo::kTypeA64   , ArchInfo::kSubTypeNone, 8, 32)
 };
 
 ASMJIT_FAVOR_SIZE void ArchInfo::init(uint32_t type, uint32_t subType) noexcept {

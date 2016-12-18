@@ -49,24 +49,6 @@ class X86DReg;
 //! \{
 
 // ============================================================================
-// [asmjit::X86RegTraits<>]
-// ============================================================================
-
-//! Register traits (X86/X64).
-template<uint32_t RegType>
-struct X86RegTraits {
-  enum {
-    kValid     = 0,                      // RegType is not valid by default.
-    kTypeId    = TypeId::kVoid,          // Everything is void by default.
-
-    kType      = 0,                      // Zero type by default.
-    kKind      = 0,                      // Zero kind by default.
-    kSize      = 0,                      // No size by default.
-    kSignature = 0                       // No signature by default.
-  };
-};
-
-// ============================================================================
 // [asmjit::X86Mem]
 // ============================================================================
 
@@ -203,6 +185,26 @@ public:
 // [asmjit::X86Reg]
 // ============================================================================
 
+//! Register traits (X86/X64).
+//!
+//! Register traits contains information about a particular register type. It's
+//! used by asmjit to setup register information on-the-fly and to populate
+//! tables that contain register information (this way it's possible to change
+//! register types and kinds without having to reorder these tables).
+template<uint32_t RegType>
+struct X86RegTraits {
+  enum {
+    kValid     = 0,                      //!< RegType is not valid by default.
+    kCount     = 0,                      //!< Count of registers (0 if none).
+    kTypeId    = TypeId::kVoid,          //!< Everything is void by default.
+
+    kType      = 0,                      //!< Zero type by default.
+    kKind      = 0,                      //!< Zero kind by default.
+    kSize      = 0,                      //!< No size by default.
+    kSignature = 0                       //!< No signature by default.
+  };
+};
+
 //! Register (X86/X64).
 class X86Reg : public Reg {
 public:
@@ -239,13 +241,12 @@ public:
     kKindK        = 3,                   //!< K register kind.
 
     // These are not managed by CodeCompiler nor used by Func-API:
-
     kKindFp       = 4,                   //!< FPU (x87) register kind.
     kKindCr       = 5,                   //!< Control register kind.
     kKindDr       = 6,                   //!< Debug register kind.
     kKindBnd      = 7,                   //!< Bound register kind.
     kKindSeg      = 8,                   //!< Segment register kind.
-    kKindRip      = 9,                   //!< Instrucion pointer (IP) / program counter (PC).
+    kKindRip      = 9,                   //!< Instrucion pointer (IP).
     kKindCount                           //!< Count of all register kinds.
   };
 
@@ -383,42 +384,22 @@ public:
   static ASMJIT_INLINE bool isDr(const Operand_& op, uint32_t id) noexcept { return isDr(op) & (op.getId() == id); }
 };
 
-#define ASMJIT_X86_DEFINE_REG_TRAITS(REG, TYPE, KIND, SIZE, TYPE_ID)  \
-template<>                                                            \
-struct X86RegTraits< TYPE > {                                         \
-  typedef REG Reg;                                                    \
-                                                                      \
-  enum {                                                              \
-    kValid     = 1,                                                   \
-    kTypeId    = TYPE_ID,                                             \
-                                                                      \
-    kType      = TYPE,                                                \
-    kKind      = KIND,                                                \
-    kSize      = SIZE,                                                \
-    kSignature = ASMJIT_PACK32_4x8(Operand::kOpReg, TYPE, KIND, SIZE) \
-  };                                                                  \
-}
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Rip , X86Reg::kRegRip         , X86Reg::kKindRip, 0 , TypeId::kVoid  );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Seg , X86Reg::kRegSeg         , X86Reg::kKindSeg, 2 , TypeId::kVoid  );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Gp  , X86Reg::kRegGpbLo       , X86Reg::kKindGp , 1 , TypeId::kI8    );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Gp  , X86Reg::kRegGpbHi       , X86Reg::kKindGp , 1 , TypeId::kI8    );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Gp  , X86Reg::kRegGpw         , X86Reg::kKindGp , 2 , TypeId::kI16   );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Gp  , X86Reg::kRegGpd         , X86Reg::kKindGp , 4 , TypeId::kI32   );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Gp  , X86Reg::kRegGpq         , X86Reg::kKindGp , 8 , TypeId::kI64   );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Fp  , X86Reg::kRegFp          , X86Reg::kKindFp , 10, TypeId::kVoid  );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Mm  , X86Reg::kRegMm          , X86Reg::kKindMm , 8 , TypeId::kMmx64 );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86KReg, X86Reg::kRegK           , X86Reg::kKindK  , 8 , TypeId::kVoid  );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Xmm , X86Reg::kRegXmm         , X86Reg::kKindVec, 16, TypeId::kI32x4 );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Ymm , X86Reg::kRegYmm         , X86Reg::kKindVec, 32, TypeId::kI32x8 );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Zmm , X86Reg::kRegZmm         , X86Reg::kKindVec, 64, TypeId::kI32x16);
-ASMJIT_X86_DEFINE_REG_TRAITS(X86Bnd , X86Reg::kRegBnd         , X86Reg::kKindBnd, 16, TypeId::kVoid  );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86CReg, X86Reg::kRegCr          , X86Reg::kKindCr , 0 , TypeId::kVoid  );
-ASMJIT_X86_DEFINE_REG_TRAITS(X86DReg, X86Reg::kRegDr          , X86Reg::kKindDr , 0 , TypeId::kVoid  );
-#undef ASMJIT_X86_DEFINE_REG_TRAITS
-
-// ============================================================================
-// [asmjit::X86...]
-// ============================================================================
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Gp  , X86Reg::kRegGpbLo, X86Reg::kKindGp , 1 , 16, TypeId::kI8    );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Gp  , X86Reg::kRegGpbHi, X86Reg::kKindGp , 1 , 4 , TypeId::kI8    );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Gp  , X86Reg::kRegGpw  , X86Reg::kKindGp , 2 , 16, TypeId::kI16   );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Gp  , X86Reg::kRegGpd  , X86Reg::kKindGp , 4 , 16, TypeId::kI32   );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Gp  , X86Reg::kRegGpq  , X86Reg::kKindGp , 8 , 16, TypeId::kI64   );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Xmm , X86Reg::kRegXmm  , X86Reg::kKindVec, 16, 32, TypeId::kI32x4 );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Ymm , X86Reg::kRegYmm  , X86Reg::kKindVec, 32, 32, TypeId::kI32x8 );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Zmm , X86Reg::kRegZmm  , X86Reg::kKindVec, 64, 32, TypeId::kI32x16);
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Rip , X86Reg::kRegRip  , X86Reg::kKindRip, 0 , 1 , TypeId::kVoid  );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Seg , X86Reg::kRegSeg  , X86Reg::kKindSeg, 2 , 7 , TypeId::kVoid  );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Fp  , X86Reg::kRegFp   , X86Reg::kKindFp , 10, 8 , TypeId::kVoid  );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Mm  , X86Reg::kRegMm   , X86Reg::kKindMm , 8 , 8 , TypeId::kMmx64 );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86KReg, X86Reg::kRegK    , X86Reg::kKindK  , 8 , 8 , TypeId::kVoid  );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86Bnd , X86Reg::kRegBnd  , X86Reg::kKindBnd, 16, 4 , TypeId::kVoid  );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86CReg, X86Reg::kRegCr   , X86Reg::kKindCr , 0 , 16, TypeId::kVoid  );
+ASMJIT_DEFINE_REG_TRAITS(X86RegTraits, X86DReg, X86Reg::kRegDr   , X86Reg::kKindDr , 0 , 16, TypeId::kVoid  );
 
 //! General purpose register (X86/X64).
 class X86Gp : public X86Reg {

@@ -263,7 +263,7 @@ public:
   // --------------------------------------------------------------------------
 
   //! Get the host CPU information.
-  static ASMJIT_API const CpuInfo& getHost() noexcept;
+  ASMJIT_API static const CpuInfo& getHost() noexcept;
 
   // --------------------------------------------------------------------------
   // [Members]

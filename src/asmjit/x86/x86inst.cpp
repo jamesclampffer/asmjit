@@ -2823,21 +2823,21 @@ static const InstNameAZ X86InstNameAZ[26] = {
 
 uint32_t X86Inst::getIdByName(const char* name, size_t len) noexcept {
   if (ASMJIT_UNLIKELY(!name))
-    return Globals::kInvalidInst;
+    return Globals::kInvalidInstId;
 
   if (len == Globals::kInvalidIndex)
     len = ::strlen(name);
 
   if (ASMJIT_UNLIKELY(len == 0 || len > kX86InstMaxLength))
-    return Globals::kInvalidInst;
+    return Globals::kInvalidInstId;
 
   uint32_t prefix = static_cast<uint32_t>(name[0]) - 'a';
   if (ASMJIT_UNLIKELY(prefix > 'z' - 'a'))
-    return Globals::kInvalidInst;
+    return Globals::kInvalidInstId;
 
   uint32_t index = X86InstNameAZ[prefix].start;
   if (ASMJIT_UNLIKELY(!index))
-    return Globals::kInvalidInst;
+    return Globals::kInvalidInstId;
 
   const char* nameData = X86InstDB::nameData;
   const X86Inst* instData = X86InstDB::instData;
@@ -2861,7 +2861,7 @@ uint32_t X86Inst::getIdByName(const char* name, size_t len) noexcept {
     return static_cast<uint32_t>((size_t)(cur - instData));
   }
 
-  return Globals::kInvalidInst;
+  return Globals::kInvalidInstId;
 }
 
 const char* X86Inst::getNameById(uint32_t id) noexcept {
@@ -4068,19 +4068,17 @@ Next:
   inst##e, inst##ne, inst##be, inst##a , \
   inst##s, inst##ns, inst##pe, inst##po, \
   inst##l, inst##ge, inst##le, inst##g , \
-  Globals::kInvalidInst,                 \
-  Globals::kInvalidInst,                 \
-  Globals::kInvalidInst,                 \
-  Globals::kInvalidInst                  \
+  Globals::kInvalidInstId,               \
+  Globals::kInvalidInstId,               \
+  Globals::kInvalidInstId,               \
+  Globals::kInvalidInstId                \
 }
 
 const X86Inst::MiscData X86InstDB::miscData = {
-  // CondToJcc[]:
   CC_TO_INST(X86Inst::kIdJ),
-  // CondToSetcc[]:
   CC_TO_INST(X86Inst::kIdSet),
-  // CondToCmovcc[]:
   CC_TO_INST(X86Inst::kIdCmov),
+
   // ReversedCond[]:
   {
     X86Inst::kCondO, X86Inst::kCondNO, X86Inst::kCondA , X86Inst::kCondBE, // O|NO|B |AE
@@ -4136,19 +4134,19 @@ UNIT(x86_inst_names) {
         X86Inst::getInst(b).getName(), b);
   }
 
-  // Everything else should return `kInvalidInst`.
+  // Everything else should return `kInvalidInstId`.
   INFO("Trying to look-up instructions that don't exist");
-  EXPECT(X86Inst::getIdByName(nullptr) == Globals::kInvalidInst,
-    "Should return kInvalidInst for null input");
+  EXPECT(X86Inst::getIdByName(nullptr) == Globals::kInvalidInstId,
+    "Should return kInvalidInstId for null input");
 
-  EXPECT(X86Inst::getIdByName("") == Globals::kInvalidInst,
-    "Should return kInvalidInst for empty string");
+  EXPECT(X86Inst::getIdByName("") == Globals::kInvalidInstId,
+    "Should return kInvalidInstId for empty string");
 
-  EXPECT(X86Inst::getIdByName("_") == Globals::kInvalidInst,
-    "Should return kInvalidInst for unknown instruction");
+  EXPECT(X86Inst::getIdByName("_") == Globals::kInvalidInstId,
+    "Should return kInvalidInstId for unknown instruction");
 
-  EXPECT(X86Inst::getIdByName("123xyz") == Globals::kInvalidInst,
-    "Should return kInvalidInst for unknown instruction");
+  EXPECT(X86Inst::getIdByName("123xyz") == Globals::kInvalidInstId,
+    "Should return kInvalidInstId for unknown instruction");
 }
 #endif // ASMJIT_TEST && !ASMJIT_DISABLE_TEXT
 

@@ -26,7 +26,7 @@ namespace asmjit {
 // ============================================================================
 
 X86SseToAvxPass::X86SseToAvxPass() noexcept
-  : CBPass("SseToAvx"),
+  : Pass("SseToAvx"),
     _translated(false) {}
 
 // ============================================================================

@@ -14,6 +14,7 @@
 // [Dependencies]
 #include "../base/cpuinfo.h"
 #include "../base/logging.h"
+#include "../base/misc_p.h"
 #include "../base/runtime.h"
 #include "../base/utils.h"
 #include "../base/vmem.h"
@@ -140,11 +141,6 @@ static const uint8_t x86OpCodePopSeg[8]  = { 0x00, 0x07, 0x00, 0x17, 0x1F, 0xA1,
 // [asmjit::X86MemInfo | X86VEXPrefix | X86LLByRegType | X86CDisp8Table]
 // ============================================================================
 
-#define TABLE(DEF, I) DEF((I*16) +  0), DEF((I*16) +  1), DEF((I*16) +  2), DEF((I*16) +  3), \
-                      DEF((I*16) +  4), DEF((I*16) +  5), DEF((I*16) +  6), DEF((I*16) +  7), \
-                      DEF((I*16) +  8), DEF((I*16) +  9), DEF((I*16) + 10), DEF((I*16) + 11), \
-                      DEF((I*16) + 12), DEF((I*16) + 13), DEF((I*16) + 14), DEF((I*16) + 15)
-
 //! \internal
 //!
 //! Memory operand's info bits.
@@ -197,14 +193,14 @@ enum X86MemInfo_Enum {
 //           REX.B and REX.X are possibly masked out, but REX.R and REX.W are
 //           kept as is.
 static const uint8_t x86MemInfo[256] = {
-  TABLE(X86MemInfo_T, 0), TABLE(X86MemInfo_T, 1),
-  TABLE(X86MemInfo_T, 2), TABLE(X86MemInfo_T, 3),
-  TABLE(X86MemInfo_T, 4), TABLE(X86MemInfo_T, 5),
-  TABLE(X86MemInfo_T, 6), TABLE(X86MemInfo_T, 7),
-  TABLE(X86MemInfo_T, 8), TABLE(X86MemInfo_T, 9),
-  TABLE(X86MemInfo_T,10), TABLE(X86MemInfo_T,11),
-  TABLE(X86MemInfo_T,12), TABLE(X86MemInfo_T,13),
-  TABLE(X86MemInfo_T,14), TABLE(X86MemInfo_T,15)
+  ASMJIT_TABLE_16(X86MemInfo_T,   0), ASMJIT_TABLE_16(X86MemInfo_T,  16),
+  ASMJIT_TABLE_16(X86MemInfo_T,  32), ASMJIT_TABLE_16(X86MemInfo_T,  48),
+  ASMJIT_TABLE_16(X86MemInfo_T,  64), ASMJIT_TABLE_16(X86MemInfo_T,  80),
+  ASMJIT_TABLE_16(X86MemInfo_T,  96), ASMJIT_TABLE_16(X86MemInfo_T, 112),
+  ASMJIT_TABLE_16(X86MemInfo_T, 128), ASMJIT_TABLE_16(X86MemInfo_T, 144),
+  ASMJIT_TABLE_16(X86MemInfo_T, 160), ASMJIT_TABLE_16(X86MemInfo_T, 176),
+  ASMJIT_TABLE_16(X86MemInfo_T, 192), ASMJIT_TABLE_16(X86MemInfo_T, 208),
+  ASMJIT_TABLE_16(X86MemInfo_T, 224), ASMJIT_TABLE_16(X86MemInfo_T, 240)
 };
 #undef X86MemInfo_T
 #undef I
@@ -222,7 +218,7 @@ static const uint8_t x86MemInfo[256] = {
 // [_OPCODE_|WvvvvLpp|RXBmmmmm|VEX3_XOP]
 #define X86VEXPrefix_T(X) \
   ( (((X) & 0x08) ? kX86ByteXop3 : kX86ByteVex3) | (0xF << 19) | (0x7 << 13) )
-static const uint32_t x86VEXPrefix[16] = { TABLE(X86VEXPrefix_T, 0) };
+static const uint32_t x86VEXPrefix[16] = { ASMJIT_TABLE_16(X86VEXPrefix_T, 0) };
 #undef X86VEXPrefix_T
 
 // Table that contains LL opcode field addressed by a register size / 16. It's
@@ -231,7 +227,7 @@ static const uint32_t x86VEXPrefix[16] = { TABLE(X86VEXPrefix_T, 0) };
 #define X86LLBySizeDiv16_T(X)                      \
   (((X) & (64 >> 4)) ? X86Inst::kOpCode_LL_512 :   \
    ((X) & (32 >> 4)) ? X86Inst::kOpCode_LL_256 : 0 )
-static const uint32_t x86LLBySizeDiv16[16] = { TABLE(X86LLBySizeDiv16_T, 0) };
+static const uint32_t x86LLBySizeDiv16[16] = { ASMJIT_TABLE_16(X86LLBySizeDiv16_T, 0) };
 #undef X86LLBySizeDiv16_T
 
 // Table that contains LL opcode field addressed by a register size / 16. It's
@@ -240,7 +236,7 @@ static const uint32_t x86LLBySizeDiv16[16] = { TABLE(X86LLBySizeDiv16_T, 0) };
 #define X86LLByRegType_T(X)                             \
   ((X) == X86Reg::kRegZmm ? X86Inst::kOpCode_LL_512 :   \
    (X) == X86Reg::kRegYmm ? X86Inst::kOpCode_LL_256 : 0 )
-static const uint32_t x86LLByRegType[16] = { TABLE(X86LLByRegType_T, 0) };
+static const uint32_t x86LLByRegType[16] = { ASMJIT_TABLE_16(X86LLByRegType_T, 0) };
 #undef X86LLByRegType_T
 
 // Table that contains a scale (shift left) based on 'TTWLL' field and
@@ -256,8 +252,8 @@ static const uint32_t x86LLByRegType[16] = { TABLE(X86LLByRegType_T, 0) };
     TT(X) == X86Inst::kOpCode_CDTT_T1W  ? ((LL(X)==0) ? W(X) : (LL(X)==1) ? 1+W(X) : 2+W(X)) :   \
     TT(X) == X86Inst::kOpCode_CDTT_DUP  ? ((LL(X)==0) ? 0    : (LL(X)==1) ? 2      : 3     ) : 0 ) << X86Inst::kOpCode_CDSHL_Shift)
 static const uint32_t x86CDisp8SHL[32] = {
-  TABLE(X86CDisp8SHL_T, 0),
-  TABLE(X86CDisp8SHL_T, 1)
+  ASMJIT_TABLE_16(X86CDisp8SHL_T,  0),
+  ASMJIT_TABLE_16(X86CDisp8SHL_T, 16)
 };
 #undef X86CDisp8SHL_T
 #undef W
@@ -286,15 +282,13 @@ static const uint8_t x86Mod16BaseTable[8] = {
    (IS_BASE_INDEX(X, Bp, Si) || IS_BASE_INDEX(X, Si, Bp)) ? 0x02 : \
    (IS_BASE_INDEX(X, Bp, Di) || IS_BASE_INDEX(X, Di, Bp)) ? 0x03 : 0xFF)
 static const uint8_t x86Mod16BaseIndexTable[64] = {
-  TABLE(X86Mod16BaseIndexTable, 0),
-  TABLE(X86Mod16BaseIndexTable, 1),
-  TABLE(X86Mod16BaseIndexTable, 2),
-  TABLE(X86Mod16BaseIndexTable, 3)
+  ASMJIT_TABLE_16(X86Mod16BaseIndexTable, 0),
+  ASMJIT_TABLE_16(X86Mod16BaseIndexTable, 1),
+  ASMJIT_TABLE_16(X86Mod16BaseIndexTable, 2),
+  ASMJIT_TABLE_16(X86Mod16BaseIndexTable, 3)
 };
 #undef X86Mod16BaseIndexTable
 #undef IS_BASE_INDEX
-
-#undef TABLE
 
 // ============================================================================
 // [asmjit::X86Assembler - Helpers]
@@ -339,12 +333,6 @@ static ASMJIT_INLINE uint32_t x86OpCodeLBySize(uint32_t size) noexcept {
 }
 
 static ASMJIT_INLINE uint32_t x86ExtractLLMM(uint32_t opCode, uint32_t options) noexcept {
-  uint32_t x = opCode & (X86Inst::kOpCode_LL_Mask | X86Inst::kOpCode_MM_Mask);
-  uint32_t y = options & X86Inst::kOptionVex3;
-  return (x | y) >> X86Inst::kOpCode_MM_Shift;
-}
-
-static ASMJIT_INLINE uint32_t x86ExtractLLPPMM(uint32_t opCode, uint32_t options) noexcept {
   uint32_t x = opCode & (X86Inst::kOpCode_LL_Mask | X86Inst::kOpCode_MM_Mask);
   uint32_t y = options & X86Inst::kOptionVex3;
   return (x | y) >> X86Inst::kOpCode_MM_Shift;

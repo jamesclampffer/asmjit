@@ -45,7 +45,7 @@ static ASMJIT_INLINE const OpRWData* OpRWData_get(
   uint32_t instId, const X86Inst& instData, const Operand* opArray, uint32_t opCount) noexcept {
 
   enum {
-    Any = Globals::kInvalidReg,
+    Any = Globals::kInvalidRegId,
     Zax = X86Gp::kIdAx,
     Zbx = X86Gp::kIdBx,
     Zcx = X86Gp::kIdCx,
@@ -809,7 +809,7 @@ Error X86RAPass::constructCFG() noexcept {
         tiedIndex.add(_kind); \
         if (tied->inRegs) \
           tied->allocableRegs = tied->inRegs; \
-        else if (tied->outPhysId != Globals::kInvalidReg) \
+        else if (tied->outPhysId != Globals::kInvalidRegId) \
           tied->allocableRegs = Utils::mask(tied->outPhysId); \
         else \
           tied->allocableRegs &= ~inRegs.get(_kind); \
@@ -940,13 +940,13 @@ _NextGroup:
                 else
                   c = X86Reg::kKindVec;
 
-                if (inReg != Globals::kInvalidReg) {
+                if (inReg != Globals::kInvalidRegId) {
                   uint32_t mask = Utils::mask(inReg);
                   inRegs.or_(c, mask);
                   tied->inRegs |= mask;
                 }
 
-                if (outReg != Globals::kInvalidReg) {
+                if (outReg != Globals::kInvalidRegId) {
                   uint32_t mask = Utils::mask(outReg);
                   outRegs.or_(c, mask);
                   tied->setOutPhysId(outReg);
@@ -1026,7 +1026,7 @@ _NextGroup:
               X86Mem* m = static_cast<X86Mem*>(op);
               node->setMemOpIndex(i);
 
-              uint32_t specBase = special ? uint32_t(special[i].inReg) : uint32_t(Globals::kInvalidReg);
+              uint32_t specBase = special ? uint32_t(special[i].inReg) : uint32_t(Globals::kInvalidRegId);
 
               if (m->hasBaseReg()) {
                 uint32_t id = m->getBaseId();
@@ -1070,7 +1070,7 @@ _NextGroup:
                       tied->flags |= combinedFlags;
                     }
                     else {
-                      if (specBase != Globals::kInvalidReg) {
+                      if (specBase != Globals::kInvalidRegId) {
                         uint32_t mask = Utils::mask(specBase);
                         inRegs.or_(vreg->getKind(), mask);
                         outRegs.or_(vreg->getKind(), mask);
@@ -1267,7 +1267,7 @@ _NextGroup:
 
         // If saReg is not needed, clear it also from FuncFrameInfo.
         if (!saReg.isValid())
-          func->getFrameInfo().setStackArgsRegId(Globals::kInvalidReg);
+          func->getFrameInfo().setStackArgsRegId(Globals::kInvalidRegId);
 
         RA_FINALIZE(node_);
         next = node_->getNext();

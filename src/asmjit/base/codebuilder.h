@@ -28,9 +28,10 @@ namespace asmjit {
 // [Forward Declarations]
 // ============================================================================
 
-class CBNode;
-class CBPass;
+class Pass;
+class RABlock;
 
+class CBNode;
 class CBAlign;
 class CBComment;
 class CBConstPool;
@@ -39,8 +40,6 @@ class CBInst;
 class CBLabel;
 class CBLabelData;
 class CBSentinel;
-
-class RABlock;
 
 //! \addtogroup asmjit_base
 //! \{
@@ -74,8 +73,8 @@ public:
   // [Accessors]
   // --------------------------------------------------------------------------
 
-  //! Get a vector of CBPass objects that will be executed by `process()`.
-  ASMJIT_INLINE const ZoneVector<CBPass*>& getPasses() const noexcept { return _cbPasses; }
+  //! Get a vector of Pass objects that will be executed by `process()`.
+  ASMJIT_INLINE const ZoneVector<Pass*>& getPasses() const noexcept { return _cbPasses; }
 
   //! Get a vector of CBLabel nodes.
   //!
@@ -186,12 +185,12 @@ public:
   template<typename T, typename P0, typename P1>
   ASMJIT_INLINE Error addPassT(P0 p0, P1 p1) noexcept { return addPass(newPassT<P0, P1>(p0, p1)); }
 
-  //! Get a `CBPass` by name.
-  ASMJIT_API CBPass* getPassByName(const char* name) const noexcept;
+  //! Get a `Pass` by name.
+  ASMJIT_API Pass* getPassByName(const char* name) const noexcept;
   //! Add `pass` to the list of passes.
-  ASMJIT_API Error addPass(CBPass* pass) noexcept;
+  ASMJIT_API Error addPass(Pass* pass) noexcept;
   //! Remove `pass` from the list of passes and delete it.
-  ASMJIT_API Error deletePass(CBPass* pass) noexcept;
+  ASMJIT_API Error deletePass(Pass* pass) noexcept;
 
   // --------------------------------------------------------------------------
   // [Validate]
@@ -223,12 +222,12 @@ public:
   // [Members]
   // --------------------------------------------------------------------------
 
-  Zone _cbBaseZone;                      //!< Base zone used to allocate nodes and `CBPass`.
+  Zone _cbBaseZone;                      //!< Base zone used to allocate nodes and `Pass`.
   Zone _cbDataZone;                      //!< Data zone used to allocate data and names.
-  Zone _cbPassZone;                      //!< Zone passed to `CBPass::process()`.
+  Zone _cbPassZone;                      //!< Zone passed to `Pass::process()`.
   ZoneHeap _cbHeap;                      //!< ZoneHeap that uses `_cbBaseZone`.
 
-  ZoneVector<CBPass*> _cbPasses;         //!< Array of `CBPass` objects.
+  ZoneVector<Pass*> _cbPasses;         //!< Array of `Pass` objects.
   ZoneVector<CBLabel*> _cbLabels;        //!< Maps label indexes to `CBLabel` nodes.
 
   CBNode* _firstNode;                    //!< First node of the current section.
@@ -240,20 +239,21 @@ public:
 };
 
 // ============================================================================
-// [asmjit::CBPass]
+// [asmjit::Pass]
 // ============================================================================
 
-//! `CodeBuilder` pass used to  code transformations, analysis, and lowering.
-class ASMJIT_VIRTAPI CBPass {
+//! `CodeBuilder` pass is used to implement code transformations, analysis,
+//! and lowering.
+class ASMJIT_VIRTAPI Pass {
 public:
-  ASMJIT_NONCOPYABLE(CBPass);
+  ASMJIT_NONCOPYABLE(Pass);
 
   // --------------------------------------------------------------------------
   // [Construction / Destruction]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API CBPass(const char* name) noexcept;
-  ASMJIT_API virtual ~CBPass() noexcept;
+  ASMJIT_API Pass(const char* name) noexcept;
+  ASMJIT_API virtual ~Pass() noexcept;
 
   // --------------------------------------------------------------------------
   // [Interface]
@@ -298,20 +298,12 @@ class CBNode {
 public:
   ASMJIT_NONCOPYABLE(CBNode)
 
-  // --------------------------------------------------------------------------
-  // [Link]
-  // --------------------------------------------------------------------------
-
-  //! Direction, used to index `_link[2]` data.
-  ASMJIT_ENUM(Link) {
-    kLinkPrev      = 0,                  //!< Previous node.
-    kLinkNext      = 1,                  //!< Next node.
-    kLinkCount     = 2
+  //! Type of link, used to index `_link[2]` data.
+  ASMJIT_ENUM(LinkType) {
+    kLinkPrev       = 0,                 //!< Previous node in a double-linked list.
+    kLinkNext       = 1,                 //!< Next node in a double-linked list.
+    kLinkCount      = 2                  //!< Count of node links (must be 2 as it's a double-linked list)
   };
-
-  // --------------------------------------------------------------------------
-  // [Type]
-  // --------------------------------------------------------------------------
 
   //! Type of \ref CBNode.
   ASMJIT_ENUM(NodeType) {
@@ -336,20 +328,17 @@ public:
     kNodeUser       = 32                 //!< First id of a user-defined node.
   };
 
-  // --------------------------------------------------------------------------
-  // [Flags]
-  // --------------------------------------------------------------------------
-
+  //! Node flags, specify what the node is and/or does.
   ASMJIT_ENUM(Flags) {
-    kFlagIsCode          = 0x0001U,       //!< Node is code that can be executed (instruction, label, align, etc...).
-    kFlagIsData          = 0x0002U,       //!< Node is data that cannot be executed (data, const-pool, etc...).
-    kFlagIsInformative   = 0x0004U,       //!< Node is informative, can be removed and ignored.
-    kFlagIsRemovable     = 0x0008U,       //!< Node can be safely removed if unreachable.
+    kFlagIsCode          = 0x01U,        //!< Node is code that can be executed (instruction, label, align, etc...).
+    kFlagIsData          = 0x02U,        //!< Node is data that cannot be executed (data, const-pool, etc...).
+    kFlagIsInformative   = 0x04U,        //!< Node is informative, can be removed and ignored.
+    kFlagIsRemovable     = 0x08U,        //!< Node can be safely removed if unreachable.
 
-    kFlagHasNoEffect     = 0x0010U,       //!< Node does nothing when executed (label, align, explicit nop).
+    kFlagHasNoEffect     = 0x10U,        //!< Node does nothing when executed (label, align, explicit nop).
 
-    kFlagActsAsInst      = 0x1000U,       //!< Node is an instruction or acts as it.
-    kFlagActsAsLabel     = 0x2000U        //!< Node is a label or acts as it.
+    kFlagActsAsInst      = 0x40U,        //!< Node is an instruction or acts as it.
+    kFlagActsAsLabel     = 0x80U         //!< Node is a label or acts as it.
   };
 
   // --------------------------------------------------------------------------
@@ -360,9 +349,10 @@ public:
   ASMJIT_INLINE CBNode(CodeBuilder* cb, uint32_t type, uint32_t flags = 0) noexcept {
     _link[kLinkPrev] = nullptr;
     _link[kLinkNext] = nullptr;
-    _type = static_cast<uint8_t>(type);
-    _reserved = 0;
-    _flags = static_cast<uint16_t>(flags | cb->_nodeFlags);
+    _any._type = static_cast<uint8_t>(type);
+    _any._flags = static_cast<uint8_t>(flags | cb->_nodeFlags);
+    _any._reserved0 = 0;
+    _any._reserved1 = 1;
     _position = cb->_nodeFlowId;
     _inlineComment = nullptr;
     _passData = nullptr;
@@ -390,18 +380,20 @@ public:
   ASMJIT_INLINE void _setNext(CBNode* node) noexcept { _link[kLinkNext] = node; }
 
   //! Get the node type, see \ref Type.
-  ASMJIT_INLINE uint32_t getType() const noexcept { return _type; }
+  ASMJIT_INLINE uint32_t getType() const noexcept { return _any._type; }
+  //! Set the node type, see \ref Type (internal).
+  ASMJIT_INLINE void setType(uint32_t type) noexcept { _any._type = static_cast<uint8_t>(type); }
 
   //! Get the node flags.
-  ASMJIT_INLINE uint32_t getFlags() const noexcept { return _flags; }
+  ASMJIT_INLINE uint32_t getFlags() const noexcept { return _any._flags; }
   //! Get whether the instruction has flag `flag`.
-  ASMJIT_INLINE bool hasFlag(uint32_t flag) const noexcept { return (static_cast<uint32_t>(_flags) & flag) != 0; }
+  ASMJIT_INLINE bool hasFlag(uint32_t flag) const noexcept { return (static_cast<uint32_t>(_any._flags) & flag) != 0; }
   //! Set node flags to `flags`.
-  ASMJIT_INLINE void setFlags(uint32_t flags) noexcept { _flags = static_cast<uint16_t>(flags); }
+  ASMJIT_INLINE void setFlags(uint32_t flags) noexcept { _any._flags = static_cast<uint8_t>(flags); }
   //! Add instruction `flags`.
-  ASMJIT_INLINE void addFlags(uint32_t flags) noexcept { _flags |= static_cast<uint16_t>(flags); }
+  ASMJIT_INLINE void addFlags(uint32_t flags) noexcept { _any._flags |= static_cast<uint8_t>(flags); }
   //! And instruction `flags`.
-  ASMJIT_INLINE void clearFlags(uint32_t flags) noexcept { _flags &= ~static_cast<uint16_t>(flags); }
+  ASMJIT_INLINE void clearFlags(uint32_t flags) noexcept { _any._flags &= ~static_cast<uint8_t>(flags); }
 
   //! Get if the node is code that can be executed.
   ASMJIT_INLINE bool isCode() const noexcept { return hasFlag(kFlagIsCode); }
@@ -467,13 +459,29 @@ public:
 
   CBNode* _link[2];                      //!< Links (previous and next nodes).
 
-  uint8_t _type;                         //!< Node type, see \ref NodeType.
-  uint8_t _reserved;                     //!< \internal
-  uint16_t _flags;                       //!< Flags, different meaning for every type of the node.
+  struct AnyData {
+    uint8_t _type;                       //!< Node type, see \ref NodeType.
+    uint8_t _flags;                      //!< Nodef flags.
+    uint8_t _reserved0;                  //!< Used (#0) by other nodes.
+    uint8_t _reserved1;                  //!< Used (#1) by other nodes.
+  };
+
+  struct InstData {
+    uint8_t _type;                       //!< Node type, see \ref NodeType.
+    uint8_t _flags;                      //!< Nodef flags.
+    uint8_t _opCount;                    //!< Number of operands.
+    uint8_t _opCapacity;                 //!< Maximum number of operands (capacity).
+  };
+
+  union {
+    AnyData _any;
+    InstData _inst;
+  };
+
   uint32_t _position;                    //!< Node position in code (should be unique).
 
   const char* _inlineComment;            //!< Inline comment or null if not used.
-  void* _passData;                       //!< Data used exclusively by the current `CBPass`.
+  void* _passData;                       //!< Data used exclusively by the current `Pass`.
 };
 
 // ============================================================================
@@ -512,10 +520,11 @@ public:
   //! Create a new `CBInst` instance.
   ASMJIT_INLINE CBInst(CodeBuilder* cb, uint32_t instId, uint32_t options, uint32_t opCapacity = kBaseOpCapacity) noexcept
     : CBNode(cb, kNodeInst, kFlagIsCode | kFlagIsRemovable | kFlagActsAsInst),
-      _instId(static_cast<uint16_t>(instId)),
-      _opCapacity(static_cast<uint8_t>(opCapacity)),
-      _opCount(0),
-      _options(options) {}
+      _instId(instId),
+      _options(options) {
+    _inst._opCapacity = static_cast<uint8_t>(opCapacity);
+    _inst._opCount = 0;
+  }
 
   //! Destroy the `CBInst` instance (NEVER CALLED).
   ASMJIT_INLINE ~CBInst() noexcept {}
@@ -527,7 +536,7 @@ public:
   //! Reset all built-in operands.
   ASMJIT_INLINE void _resetOps() noexcept {
     _opExtra.reset();
-    for (uint32_t i = 0; i < _opCapacity; i++)
+    for (uint32_t i = 0, count = getOpCapacity(); i < count; i++)
       _opArray[i].reset();
   }
 
@@ -562,13 +571,13 @@ public:
   ASMJIT_INLINE bool hasOpExtra() const noexcept { return hasOption(CodeEmitter::kOptionOpExtra); }
 
   //! Get operands capacity.
-  ASMJIT_INLINE uint32_t getOpCapacity() const noexcept { return _opCapacity; }
+  ASMJIT_INLINE uint32_t getOpCapacity() const noexcept { return _inst._opCapacity; }
   //! Get operands count.
-  ASMJIT_INLINE uint32_t getOpCount() const noexcept { return _opCount; }
+  ASMJIT_INLINE uint32_t getOpCount() const noexcept { return _inst._opCount; }
   //! Set operands count.
   ASMJIT_INLINE void setOpCount(int32_t opCount) noexcept {
-    ASMJIT_ASSERT(opCount < _opCapacity);
-    _opCount = static_cast<uint8_t>(opCount);
+    ASMJIT_ASSERT(opCount <= getOpCapacity());
+    _inst._opCount = static_cast<uint8_t>(opCount);
   }
 
   //! Get operands array.
@@ -577,22 +586,22 @@ public:
   ASMJIT_INLINE const Operand* getOpArray() const noexcept { return (const Operand*)_opArray; }
 
   ASMJIT_INLINE Operand& getOp(uint32_t index) noexcept {
-    ASMJIT_ASSERT(index < _opCapacity);
+    ASMJIT_ASSERT(index < getOpCapacity());
     return static_cast<Operand&>(_opArray[index]);
   }
 
   ASMJIT_INLINE const Operand& getOp(uint32_t index) const noexcept {
-    ASMJIT_ASSERT(index < _opCapacity);
+    ASMJIT_ASSERT(index < getOpCapacity());
     return static_cast<const Operand&>(_opArray[index]);
   }
 
   ASMJIT_INLINE void setOp(uint32_t index, const Operand_& op) noexcept {
-    ASMJIT_ASSERT(index < _opCapacity);
+    ASMJIT_ASSERT(index < getOpCapacity());
     _opArray[index].copyFrom(op);
   }
 
   ASMJIT_INLINE void resetOp(uint32_t index) noexcept {
-    ASMJIT_ASSERT(index < _opCapacity);
+    ASMJIT_ASSERT(index < getOpCapacity());
     _opArray[index].reset();
   }
 
@@ -608,7 +617,7 @@ public:
   // --------------------------------------------------------------------------
 
   ASMJIT_INLINE bool hasOpType(uint32_t opType) const noexcept {
-    for (uint32_t i = 0; i < _opCount; i++)
+    for (uint32_t i = 0, count = getOpCount(); i < count; i++)
       if (_opArray[i].getOp() == opType)
         return true;
     return false;
@@ -621,11 +630,14 @@ public:
 
   ASMJIT_INLINE uint32_t indexOfOpType(uint32_t opType) const noexcept {
     uint32_t i = 0;
-    while (i < _opCount) {
+    uint32_t count = getOpCount();
+
+    while (i < count) {
       if (_opArray[i].getOp() == opType)
         break;
       i++;
     }
+
     return i;
   }
 
@@ -637,9 +649,7 @@ public:
   // [Members]
   // --------------------------------------------------------------------------
 
-  uint16_t _instId;                      //!< Instruction id (architecture dependent).
-  uint8_t _opCapacity;                   //!< Operands capacity.
-  uint8_t _opCount;                      //!< Count of operands.
+  uint32_t _instId;                      //!< Instruction id and modifiers (architecture dependent).
   uint32_t _options;                     //!< Instruction options.
   Operand_ _opExtra;                     //!< Extra operand.
   Operand_ _opArray[kBaseOpCapacity];    //!< First 4 or 5 operands (indexed from 0).
@@ -843,6 +853,9 @@ public:
 
   //! Get the label id.
   ASMJIT_INLINE uint32_t getId() const noexcept { return _id; }
+  //! Set the label id (use with caution, improper use can break a lot of things).
+  ASMJIT_INLINE void setId(uint32_t id) noexcept { _id = id; }
+
   //! Get the label as `Label` operand.
   ASMJIT_INLINE Label getLabel() const noexcept { return Label(_id); }
 
@@ -870,7 +883,7 @@ public:
     : CBLabel(cb, id),
       _constPool(&cb->_cbBaseZone) {
 
-    _type = kNodeConstPool;
+    setType(kNodeConstPool);
     addFlags(kFlagIsData);
     clearFlags(kFlagIsCode | kFlagHasNoEffect);
   }

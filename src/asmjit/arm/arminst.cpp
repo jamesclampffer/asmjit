@@ -599,21 +599,21 @@ static const InstNameAZ ArmInstNameAZ[26] = {
 
 uint32_t ArmInst::getIdByName(const char* name, size_t len) noexcept {
   if (ASMJIT_UNLIKELY(!name))
-    return Globals::kInvalidInst;
+    return Globals::kInvalidInstId;
 
   if (len == Globals::kInvalidIndex)
     len = ::strlen(name);
 
   if (ASMJIT_UNLIKELY(len == 0 || len > kArmInstMaxLength))
-    return Globals::kInvalidInst;
+    return Globals::kInvalidInstId;
 
   uint32_t prefix = static_cast<uint32_t>(name[0]) - kArmInstAlphaIndexFirst;
   if (ASMJIT_UNLIKELY(prefix > kArmInstAlphaIndexLast - kArmInstAlphaIndexFirst))
-    return Globals::kInvalidInst;
+    return Globals::kInvalidInstId;
 
   uint32_t index = ArmInstNameAZ[prefix].start;
   if (ASMJIT_UNLIKELY(!index))
-    return Globals::kInvalidInst;
+    return Globals::kInvalidInstId;
 
   const char* nameData = ArmInstDB::nameData;
   const ArmInst* instData = ArmInstDB::instData;

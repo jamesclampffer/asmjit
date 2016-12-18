@@ -233,7 +233,7 @@ ASMJIT_FAVOR_SIZE Error X86FuncArgsContext::markStackArgsReg(FuncFrameInfo& ffi)
     uint32_t saRegId = ffi.getStackArgsRegId();
     uint32_t usedRegs = wd.usedRegs;
 
-    if (saRegId != Globals::kInvalidReg) {
+    if (saRegId != Globals::kInvalidRegId) {
       // Check if the user chosen SA register doesn't overlap with others.
       // However, it's fine if it overlaps with some 'dstMove' register.
       if (usedRegs & Utils::mask(saRegId))
@@ -435,8 +435,8 @@ ASMJIT_FAVOR_SIZE Error X86Internal::initFuncDetail(FuncDetail& func, const Func
       uint32_t typeId = arg.getTypeId();
 
       if (TypeId::isInt(typeId)) {
-        uint32_t regId = gpzPos < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindGp].id[gpzPos] : Globals::kInvalidReg;
-        if (regId != Globals::kInvalidReg) {
+        uint32_t regId = gpzPos < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindGp].id[gpzPos] : Globals::kInvalidRegId;
+        if (regId != Globals::kInvalidRegId) {
           uint32_t regType = (typeId <= TypeId::kU32)
             ? X86Reg::kRegGpd
             : X86Reg::kRegGpq;
@@ -453,13 +453,13 @@ ASMJIT_FAVOR_SIZE Error X86Internal::initFuncDetail(FuncDetail& func, const Func
       }
 
       if (TypeId::isFloat(typeId) || TypeId::isVec(typeId)) {
-        uint32_t regId = vecPos < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindVec].id[vecPos] : Globals::kInvalidReg;
+        uint32_t regId = vecPos < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindVec].id[vecPos] : Globals::kInvalidRegId;
 
         // If this is a float, but `floatByVec` is false, we have to pass by stack.
         if (TypeId::isFloat(typeId) && !cc.hasFlag(CallConv::kFlagPassFloatsByVec))
-          regId = Globals::kInvalidReg;
+          regId = Globals::kInvalidRegId;
 
-        if (regId != Globals::kInvalidReg) {
+        if (regId != Globals::kInvalidRegId) {
           arg.initReg(typeId, x86VecTypeIdToRegType(typeId), regId);
           func.addUsedRegs(X86Reg::kKindVec, Utils::mask(regId));
           vecPos++;
@@ -482,8 +482,8 @@ ASMJIT_FAVOR_SIZE Error X86Internal::initFuncDetail(FuncDetail& func, const Func
       uint32_t size = TypeId::sizeOf(typeId);
 
       if (TypeId::isInt(typeId) || TypeId::isMmx(typeId)) {
-        uint32_t regId = i < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindGp].id[i] : Globals::kInvalidReg;
-        if (regId != Globals::kInvalidReg) {
+        uint32_t regId = i < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindGp].id[i] : Globals::kInvalidRegId;
+        if (regId != Globals::kInvalidRegId) {
           uint32_t regType = (size <= 4 && !TypeId::isMmx(typeId))
             ? X86Reg::kRegGpd
             : X86Reg::kRegGpq;
@@ -499,8 +499,8 @@ ASMJIT_FAVOR_SIZE Error X86Internal::initFuncDetail(FuncDetail& func, const Func
       }
 
       if (TypeId::isFloat(typeId) || TypeId::isVec(typeId)) {
-        uint32_t regId = i < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindVec].id[i] : Globals::kInvalidReg;
-        if (regId != Globals::kInvalidReg && (TypeId::isFloat(typeId) || cc.hasFlag(CallConv::kFlagVectorCall))) {
+        uint32_t regId = i < CallConv::kNumRegArgsPerKind ? cc._passedOrder[X86Reg::kKindVec].id[i] : Globals::kInvalidRegId;
+        if (regId != Globals::kInvalidRegId && (TypeId::isFloat(typeId) || cc.hasFlag(CallConv::kFlagVectorCall))) {
           uint32_t regType = x86VecTypeIdToRegType(typeId);
           uint32_t regId = cc._passedOrder[X86Reg::kKindVec].id[i];
 
@@ -565,7 +565,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::initFrameLayout(FuncFrameLayout& layout, co
 
   // These two are identical if the function doesn't align its stack dynamically.
   uint32_t stackArgsRegId = ffi.getStackArgsRegId();
-  if (stackArgsRegId == Globals::kInvalidReg)
+  if (stackArgsRegId == Globals::kInvalidRegId)
     stackArgsRegId = X86Gp::kIdSp;
 
   // Fix stack arguments base-register from ESP|RSP to EBP|RBP in case it was
@@ -685,7 +685,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitRegMove(X86Emitter* emitter,
   Operand dst(dst_);
   Operand src(src_);
 
-  uint32_t instId = Globals::kInvalidInst;
+  uint32_t instId = Globals::kInvalidInstId;
   uint32_t memFlags = 0;
 
   enum MemFlags {
@@ -790,7 +790,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitArgMove(X86Emitter* emitter,
 
   uint32_t dstSize = TypeId::sizeOf(dstTypeId);
   uint32_t srcSize = TypeId::sizeOf(srcTypeId);
-  uint32_t instId = Globals::kInvalidInst;
+  uint32_t instId = Globals::kInvalidInstId;
 
   // Not a real loop, just 'break' is nicer than 'goto'.
   for (;;) {
@@ -1012,7 +1012,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitProlog(X86Emitter* emitter, const FuncF
 
   // Emit: 'mov saReg, zsp'.
   uint32_t stackArgsRegId = layout.getStackArgsRegId();
-  if (stackArgsRegId != Globals::kInvalidReg && stackArgsRegId != X86Gp::kIdSp) {
+  if (stackArgsRegId != Globals::kInvalidRegId && stackArgsRegId != X86Gp::kIdSp) {
     saReg.setId(stackArgsRegId);
     if (!(layout.hasPreservedFP() && stackArgsRegId == X86Gp::kIdBp))
       ASMJIT_PROPAGATE(emitter->mov(saReg, zsp));

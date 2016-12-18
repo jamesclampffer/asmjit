@@ -61,7 +61,7 @@ Error RABlock::prependSuccessor(RABlock* successor) noexcept {
 // ============================================================================
 
 RAPass::RAPass() noexcept
-  : CBPass("RA"),
+  : Pass("RA"),
     _zone(nullptr),
     _heap(),
     _archRegCount(),
@@ -116,7 +116,7 @@ Error RAPass::compile(CCFunc* func) noexcept {
     err = constructCFG();
     if (err) break;
 
-    err = constructDomTree();
+    err = constructDOM();
     if (err) break;
 
     // TODO:
@@ -273,7 +273,7 @@ static RABlock* intersectBlocks(RABlock* b1, RABlock* b2) noexcept {
   return b1;
 }
 
-Error RAPass::constructDomTree() noexcept {
+Error RAPass::constructDOM() noexcept {
   // Based on "A Simple, Fast Dominance Algorithm".
   RABlocks pov(&_heap);
   ASMJIT_PROPAGATE(constructPostOrderView(pov, _blocks));
