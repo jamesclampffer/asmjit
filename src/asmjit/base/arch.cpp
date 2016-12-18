@@ -56,7 +56,7 @@ ASMJIT_FAVOR_SIZE Error ArchUtils::typeIdToRegInfo(uint32_t archType, uint32_t& 
   uint32_t typeId = typeIdInOut;
 
   // Zero the signature so it's clear in case that typeId is not invalid.
-  regInfo.signature = 0;
+  regInfo._signature = 0;
 
 #if defined(ASMJIT_BUILD_X86)
   if (ArchInfo::isX86Family(archType)) {
@@ -147,7 +147,7 @@ ASMJIT_FAVOR_SIZE Error ArchUtils::typeIdToRegInfo(uint32_t archType, uint32_t& 
     }
 
     typeIdInOut = typeId;
-    regInfo.signature = x86OpData.archRegs.regInfo[regType].signature;
+    regInfo._signature = x86OpData.archRegs.regInfo[regType].getSignature();
     return kErrorOk;
   }
 #endif // ASMJIT_BUILD_X86

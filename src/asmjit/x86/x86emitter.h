@@ -217,7 +217,7 @@ struct X86EmitterExplicitT {
 
   //! Create a target dependent pointer of which base register's id is `baseId`.
   ASMJIT_INLINE X86Mem ptr_base(uint32_t baseId, int32_t off = 0, uint32_t size = 0) const noexcept {
-    uint32_t baseType = static_cast<const This*>(this)->_nativeGpReg.getRegType();
+    uint32_t baseType = static_cast<const This*>(this)->_nativeGpReg.getType();
     uint32_t flags = 0;
     return X86Mem(Init, baseType, baseId, 0, 0, off, size, flags);
   }
@@ -279,12 +279,12 @@ struct X86EmitterExplicitT {
   //! \overload
   ASMJIT_INLINE X86Mem intptr_ptr_abs(uint64_t base) const noexcept {
     uint32_t nativeGpSize = static_cast<const This*>(this)->getGpSize();
-    return X86Mem(base, nativeGpSize, Mem::kFlagAbs);
+    return X86Mem(base, nativeGpSize, Mem::kSignatureMemAbsoluteFlag);
   }
   //! \overload
   ASMJIT_INLINE X86Mem intptr_ptr_abs(uint64_t base, const X86Gp& index, uint32_t shift = 0) const noexcept {
     uint32_t nativeGpSize = static_cast<const This*>(this)->getGpSize();
-    return X86Mem(base, index, shift, nativeGpSize, Mem::kFlagAbs);
+    return X86Mem(base, index, shift, nativeGpSize, Mem::kSignatureMemAbsoluteFlag);
   }
 
   // --------------------------------------------------------------------------

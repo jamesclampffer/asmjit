@@ -779,7 +779,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitArgMove(X86Emitter* emitter,
   const Operand_& src_, uint32_t srcTypeId, bool avxEnabled, const char* comment) {
 
   // Deduce optional `dstTypeId`, which may be `TypeId::kVoid` in some cases.
-  if (!dstTypeId) dstTypeId = x86OpData.archRegs.regTypeToTypeId[dst_.getRegType()];
+  if (!dstTypeId) dstTypeId = x86OpData.archRegs.regTypeToTypeId[dst_.getType()];
 
   // Invalid or abstract TypeIds are not allowed.
   ASMJIT_ASSERT(TypeId::isValid(dstTypeId) && !TypeId::isAbstract(dstTypeId));
@@ -815,7 +815,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitArgMove(X86Emitter* emitter,
         // Zero extend by using 'movzx' or 'mov'.
         if (dstSize <= 4 && srcSize < 4) {
           instId = X86Inst::kIdMovzx;
-          dst.setSignature(X86Reg::signatureOf<X86Reg::kRegGpd>());
+          dst.setSignature(X86Reg::signatureOfT<X86Reg::kRegGpd>());
         }
         else {
           // We should have caught all possibilities where `srcSize` is less
@@ -824,8 +824,8 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitArgMove(X86Emitter* emitter,
           instId = X86Inst::kIdMov;
           srcSize = Utils::iMin(srcSize, dstSize);
 
-          dst.setSignature(srcSize == 4 ? X86Reg::signatureOf<X86Reg::kRegGpd>()
-                                        : X86Reg::signatureOf<X86Reg::kRegGpq>());
+          dst.setSignature(srcSize == 4 ? X86Reg::signatureOfT<X86Reg::kRegGpd>()
+                                        : X86Reg::signatureOfT<X86Reg::kRegGpq>());
           if (src.isReg()) src.setSignature(dst.getSignature());
         }
         break;
@@ -842,14 +842,14 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitArgMove(X86Emitter* emitter,
 
         // 32-bit move.
         instId = X86Inst::kIdMovd;
-        dst.setSignature(X86Reg::signatureOf<X86Reg::kRegGpd>());
+        dst.setSignature(X86Reg::signatureOfT<X86Reg::kRegGpd>());
         break;
       }
 
       if (TypeId::isMask(srcTypeId)) {
         instId = X86Inst::kmovIdFromSize(srcSize);
-        dst.setSignature(srcSize <= 4 ? X86Reg::signatureOf<X86Reg::kRegGpd>()
-                                      : X86Reg::signatureOf<X86Reg::kRegGpq>());
+        dst.setSignature(srcSize <= 4 ? X86Reg::signatureOfT<X86Reg::kRegGpd>()
+                                      : X86Reg::signatureOfT<X86Reg::kRegGpq>());
         break;
       }
 
@@ -860,7 +860,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitArgMove(X86Emitter* emitter,
 
         // 32-bit move.
         instId = avxEnabled ? X86Inst::kIdVmovd : X86Inst::kIdMovd;
-        dst.setSignature(X86Reg::signatureOf<X86Reg::kRegGpd>());
+        dst.setSignature(X86Reg::signatureOfT<X86Reg::kRegGpd>());
         break;
       }
     }
@@ -875,7 +875,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitArgMove(X86Emitter* emitter,
 
         // 32-bit move.
         instId = X86Inst::kIdMovd;
-        if (src.isReg()) src.setSignature(X86Reg::signatureOf<X86Reg::kRegGpd>());
+        if (src.isReg()) src.setSignature(X86Reg::signatureOfT<X86Reg::kRegGpd>());
         break;
       }
 
@@ -891,14 +891,14 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitArgMove(X86Emitter* emitter,
 
       if (TypeId::isInt(srcTypeId) || TypeId::isMask(srcTypeId) || src.isMem()) {
         instId = X86Inst::kmovIdFromSize(srcSize);
-        if (X86Reg::isGp(src) && srcSize <= 4) src.setSignature(X86Reg::signatureOf<X86Reg::kRegGpd>());
+        if (X86Reg::isGp(src) && srcSize <= 4) src.setSignature(X86Reg::signatureOfT<X86Reg::kRegGpd>());
         break;
       }
     }
 
     if (TypeId::isVec(dstTypeId)) {
       // By default set destination to XMM, will be set to YMM|ZMM if needed.
-      dst.setSignature(X86Reg::signatureOf<X86Reg::kRegXmm>());
+      dst.setSignature(X86Reg::signatureOfT<X86Reg::kRegXmm>());
 
       // NOTE: This will hurt if `avxEnabled`.
       if (X86Reg::isMm(src)) {
@@ -921,7 +921,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitArgMove(X86Emitter* emitter,
           instId = avxEnabled ? X86Inst::kIdVcvtps2pd : X86Inst::kIdCvtps2pd;
 
         if (dstSize == 32)
-          dst.setSignature(X86Reg::signatureOf<X86Reg::kRegYmm>());
+          dst.setSignature(X86Reg::signatureOfT<X86Reg::kRegYmm>());
         if (src.isReg())
           src.setSignature(X86Reg::signatureOfVecBySize(srcSize));
         break;
@@ -938,7 +938,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitArgMove(X86Emitter* emitter,
 
         dst.setSignature(X86Reg::signatureOfVecBySize(dstSize));
         if (src.isReg() && srcSize >= 32)
-          src.setSignature(X86Reg::signatureOf<X86Reg::kRegYmm>());
+          src.setSignature(X86Reg::signatureOfT<X86Reg::kRegYmm>());
         break;
       }
 
@@ -947,7 +947,7 @@ ASMJIT_FAVOR_SIZE Error X86Internal::emitArgMove(X86Emitter* emitter,
         // 32-bit move.
         if (srcSize <= 4) {
           instId = avxEnabled ? X86Inst::kIdVmovd : X86Inst::kIdMovd;
-          if (src.isReg()) src.setSignature(X86Reg::signatureOf<X86Reg::kRegGpd>());
+          if (src.isReg()) src.setSignature(X86Reg::signatureOfT<X86Reg::kRegGpd>());
           break;
         }
 

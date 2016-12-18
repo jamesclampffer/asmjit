@@ -35,11 +35,77 @@ struct Operand_ {
 
   //! Operand types that can be encoded in \ref Operand.
   ASMJIT_ENUM(OpType) {
-    kOpNone         = 0,                 //!< Not an operand or not initialized.
-    kOpReg          = 1,                 //!< Operand is a register.
-    kOpMem          = 2,                 //!< Operand is a memory.
-    kOpImm          = 3,                 //!< Operand is an immediate value.
-    kOpLabel        = 4                  //!< Operand is a label.
+    kOpNone  = 0,                        //!< Not an operand or not initialized.
+    kOpReg   = 1,                        //!< Operand is a register.
+    kOpMem   = 2,                        //!< Operand is a memory.
+    kOpImm   = 3,                        //!< Operand is an immediate value.
+    kOpLabel = 4                         //!< Operand is a label.
+  };
+
+  // --------------------------------------------------------------------------
+  // [Operand Signature (Bits)]
+  // --------------------------------------------------------------------------
+
+  ASMJIT_ENUM(SignatureBits) {
+    // Operand type (3 least significant bits).
+    // |........|........|........|.....XXX|
+    kSignatureOpShift           = 0,
+    kSignatureOpBits            = 0x07U,
+    kSignatureOpMask            = kSignatureOpBits << kSignatureOpShift,
+
+    // Operand size (8 most significant bits).
+    // |XXXXXXXX|........|........|........|
+    kSignatureSizeShift         = 24,
+    kSignatureSizeBits          = 0xFFU,
+    kSignatureSizeMask          = kSignatureSizeBits << kSignatureSizeShift,
+
+    // Register type (5 bits).
+    // |........|........|........|XXXXX...|
+    kSignatureRegTypeShift      = 3,
+    kSignatureRegTypeBits       = 0x1FU,
+    kSignatureRegTypeMask       = kSignatureRegTypeBits << kSignatureRegTypeShift,
+
+    // Register kind (4 bits).
+    // |........|........|....XXXX|........|
+    kSignatureRegKindShift      = 8,
+    kSignatureRegKindBits       = 0x0FU,
+    kSignatureRegKindMask       = kSignatureRegKindBits << kSignatureRegKindShift,
+
+    // Memory base type (5 bits).
+    // |........|........|........|XXXXX...|
+    kSignatureMemBaseTypeShift  = 3,
+    kSignatureMemBaseTypeBits   = 0x1FU,
+    kSignatureMemBaseTypeMask   = kSignatureMemBaseTypeBits << kSignatureMemBaseTypeShift,
+
+    // Memory index type (5 bits).
+    // |........|........|...XXXXX|........|
+    kSignatureMemIndexTypeShift = 8,
+    kSignatureMemIndexTypeBits  = 0x1FU,
+    kSignatureMemIndexTypeMask  = kSignatureMemIndexTypeBits << kSignatureMemIndexTypeShift,
+
+    // Memory base+index combined (10 bits).
+    // |........|........|...XXXXX|XXXXX...|
+    kSignatureMemBaseIndexShift = 3,
+    kSignatureMemBaseIndexBits  = 0x3FFU,
+    kSignatureMemBaseIndexMask  = kSignatureMemBaseIndexBits << kSignatureMemBaseIndexShift,
+
+    // Memory should be encoded as absolute immediate (X86|X64).
+    // |........|........|..X.....|........|
+    kSignatureMemAbsoluteShift  = 13,
+    kSignatureMemAbsoluteBits   = 0x01U,
+    kSignatureMemAbsoluteFlag   = kSignatureMemAbsoluteBits << kSignatureMemAbsoluteShift,
+
+    // This memory operand represents a function argument's stack location (CodeCompiler)
+    // |........|........|.X......|........|
+    kSignatureMemArgHomeShift   = 14,
+    kSignatureMemArgHomeBits    = 0x01U,
+    kSignatureMemArgHomeFlag    = kSignatureMemArgHomeBits << kSignatureMemArgHomeShift,
+
+    // This memory operand represents a virtual register's home-slot (CodeCompiler).
+    // |........|........|X.......|........|
+    kSignatureMemRegHomeShift   = 15,
+    kSignatureMemRegHomeBits    = 0x01U,
+    kSignatureMemRegHomeFlag    = kSignatureMemRegHomeBits << kSignatureMemRegHomeShift
   };
 
   // --------------------------------------------------------------------------
@@ -73,24 +139,13 @@ struct Operand_ {
   //! Convert a packed-id back to real-id.
   static ASMJIT_INLINE uint32_t unpackId(uint32_t id) noexcept { return id - kPackedIdMin; }
 
-  static ASMJIT_INLINE uint32_t makeSignature(uint32_t opType, uint32_t subType, uint32_t payload, uint32_t size) noexcept {
-    return Utils::pack32_4x8(opType, subType, payload, size);
-  }
-
-  static ASMJIT_INLINE uint32_t makeRegSignature(uint32_t regType, uint32_t kind, uint32_t size) noexcept {
-    return Utils::pack32_4x8(kOpReg, regType, kind, size);
-  }
-
   // --------------------------------------------------------------------------
   // [Operand Data]
   // --------------------------------------------------------------------------
 
   //! Any operand.
   struct AnyData {
-    uint8_t op;                          //!< Type of the operand (see \ref OpType).
-    uint8_t subType;                     //!< Subtype - depends on `op`.
-    uint8_t payload;                     //!< Payload - depends on `op`.
-    uint8_t size;                        //!< Size of the operand (register, address, immediate).
+    uint32_t signature;                  //!< Type of the operand (see \ref OpType) and other data.
     uint32_t id;                         //!< Operand id or `0`.
     uint32_t reserved8_4;                //!< \internal
     uint32_t reserved12_4;               //!< \internal
@@ -98,10 +153,7 @@ struct Operand_ {
 
   //! Register operand data.
   struct RegData {
-    uint8_t op;                          //!< Type of the operand (always \ref kOpReg).
-    uint8_t regType;                     //!< Register type (also operand sub-type).
-    uint8_t kind;                        //!< Register kind.
-    uint8_t size;                        //!< Size of the register.
+    uint32_t signature;                  //!< Type of the operand (always \ref kOpReg) and other data.
     uint32_t id;                         //!< Physical or virtual register id.
     uint32_t reserved8_4;                //!< \internal
     uint32_t reserved12_4;               //!< \internal
@@ -109,10 +161,7 @@ struct Operand_ {
 
   //! Memory operand data.
   struct MemData {
-    uint8_t op;                          //!< Type of the operand (always \ref kOpMem).
-    uint8_t baseIndexType;               //!< Type of BASE and INDEX registers.
-    uint8_t flags;                       //!< Architecture dependent flags.
-    uint8_t size;                        //!< Size of the memory operand.
+    uint32_t signature;                  //!< Type of the operand (always \ref kOpMem) and other data.
     uint32_t index;                      //!< INDEX register id or `0`.
 
     // [BASE + OFF32] vs just [OFF64].
@@ -132,20 +181,14 @@ struct Operand_ {
 
   //! Immediate operand data.
   struct ImmData {
-    uint8_t op;                          //!< Type of the operand (always \ref kOpImm).
-    uint8_t reserved_1_1;                //!< Must be zero.
-    uint8_t reserved_2_1;                //!< Must be zero.
-    uint8_t size;                        //!< Size of the immediate (or 0 to autodetect).
+    uint32_t signature;                  //!< Type of the operand (always \ref kOpImm) and other data.
     uint32_t id;                         //!< Immediate id (always `0`).
     UInt64 value;                        //!< Immediate value.
   };
 
   //! Label operand data.
   struct LabelData {
-    uint8_t op;                          //!< Type of the operand (always \ref kOpLabel).
-    uint8_t reserved_1_1;                //!< Must be zero.
-    uint8_t reserved_2_1;                //!< Must be zero.
-    uint8_t size;                        //!< Must be zero.
+    uint32_t signature;                  //!< Type of the operand (always \ref kOpLabel) and other data.
     uint32_t id;                         //!< Label id (`0` if not initialized).
     uint32_t reserved8_4;                //!< \internal
     uint32_t reserved12_4;               //!< \internal
@@ -161,20 +204,9 @@ struct Operand_ {
   ASMJIT_INLINE void _init(const Operand_& other) noexcept { ::memcpy(this, &other, sizeof(Operand_)); }
 
   //! \internal
-  ASMJIT_INLINE void _initReg(uint32_t signature, uint32_t id) {
-    _init_packed_d0_d1(signature, id);
+  ASMJIT_INLINE void _initReg(uint32_t signature, uint32_t rd) {
+    _init_packed_d0_d1(signature, rd);
     _init_packed_d2_d3(0, 0);
-  }
-
-  //! \internal
-  ASMJIT_INLINE void _init_packed_op_b1_b2_sz_id(uint32_t op, uint32_t r0, uint32_t r1, uint32_t size, uint32_t id) noexcept {
-    // This hack is not for performance, it's to decrease the size of the binary
-    // generated when constructing AsmJit operands (mostly for third parties).
-    // Some compilers are not able to join four BYTE writes to a single DWORD
-    // write. Because the `op`, `r0`, `r1`, and `size` arguments are usually compile
-    // time constants the compiler can do a really nice job if they are joined
-    // by using bitwise operations.
-    _packed[0].setPacked_2x32(makeSignature(op, r0, r1, size), id);
   }
 
   //! \internal
@@ -194,10 +226,6 @@ struct Operand_ {
   //! Get if the operand matches the given signature `sign`.
   ASMJIT_INLINE bool hasSignature(uint32_t signature) const noexcept { return _signature == signature; }
 
-  //! Get if the operand matches a signature composed of `opType`, `subType`, `payload`, and `size`,
-  ASMJIT_INLINE bool hasSignature(uint32_t opType, uint32_t subType, uint32_t payload, uint32_t size) const noexcept {
-    return _signature == makeSignature(opType, subType, payload, size);
-  }
   //! Get if the operand matches a signature of the `other` operand.
   ASMJIT_INLINE bool hasSignature(const Operand_& other) const noexcept {
     return _signature == other.getSignature();
@@ -213,23 +241,38 @@ struct Operand_ {
   //!
   //! Improper use of `setSignature()` can lead to hard-to-debug errors.
   ASMJIT_INLINE void setSignature(uint32_t signature) noexcept { _signature = signature; }
-  //! \overload
-  ASMJIT_INLINE void setSignature(uint32_t opType, uint32_t subType, uint32_t payload, uint32_t size) noexcept {
-    _signature = makeSignature(opType, subType, payload, size);
+
+  ASMJIT_INLINE bool _hasSignatureData(uint32_t bits) const noexcept {
+    return (_signature & bits) != 0;
+  }
+
+  //! \internal
+  //!
+  //! Unpacks information from operand's signature.
+  ASMJIT_INLINE uint32_t _getSignatureData(uint32_t bits, uint32_t shift) const noexcept {
+    return (_signature >> shift) & bits;
+  }
+
+  //! \internal
+  //!
+  //! Packs information to operand's signature.
+  ASMJIT_INLINE void _setSignatureData(uint32_t value, uint32_t bits, uint32_t shift) noexcept {
+    ASMJIT_ASSERT(value <= bits);
+    _signature = (_signature & ~(bits << shift)) | (value << shift);
   }
 
   //! Get type of the operand, see \ref OpType.
-  ASMJIT_INLINE uint32_t getOp() const noexcept { return _any.op; }
+  ASMJIT_INLINE uint32_t getOp() const noexcept { return _getSignatureData(kSignatureOpBits, kSignatureOpShift); }
   //! Get if the operand is none (\ref kOpNone).
-  ASMJIT_INLINE bool isNone() const noexcept { return _any.op == kOpNone; }
+  ASMJIT_INLINE bool isNone() const noexcept { return getOp() == 0; }
   //! Get if the operand is a register (\ref kOpReg).
-  ASMJIT_INLINE bool isReg() const noexcept { return _any.op == kOpReg; }
+  ASMJIT_INLINE bool isReg() const noexcept { return getOp() == kOpReg; }
   //! Get if the operand is a memory location (\ref kOpMem).
-  ASMJIT_INLINE bool isMem() const noexcept { return _any.op == kOpMem; }
+  ASMJIT_INLINE bool isMem() const noexcept { return getOp() == kOpMem; }
   //! Get if the operand is an immediate (\ref kOpImm).
-  ASMJIT_INLINE bool isImm() const noexcept { return _any.op == kOpImm; }
+  ASMJIT_INLINE bool isImm() const noexcept { return getOp() == kOpImm; }
   //! Get if the operand is a label (\ref kOpLabel).
-  ASMJIT_INLINE bool isLabel() const noexcept { return _any.op == kOpLabel; }
+  ASMJIT_INLINE bool isLabel() const noexcept { return getOp() == kOpLabel; }
 
   //! Get if the operand is a physical register.
   ASMJIT_INLINE bool isPhysReg() const noexcept { return isReg() && _reg.id < Globals::kInvalidRegId; }
@@ -237,9 +280,9 @@ struct Operand_ {
   ASMJIT_INLINE bool isVirtReg() const noexcept { return isReg() && isPackedId(_reg.id); }
 
   //! Get if the operand specifies a size (i.e. the size is not zero).
-  ASMJIT_INLINE bool hasSize() const noexcept { return _any.size != 0; }
+  ASMJIT_INLINE bool hasSize() const noexcept { return _hasSignatureData(kSignatureSizeMask); }
   //! Get if the size of the operand matches `size`.
-  ASMJIT_INLINE bool hasSize(uint32_t size) const noexcept { return _any.size == size; }
+  ASMJIT_INLINE bool hasSize(uint32_t size) const noexcept { return getSize() == size; }
 
   //! Get size of the operand (in bytes).
   //!
@@ -252,7 +295,7 @@ struct Operand_ {
   //!   * Mem   - Size is optional and will be in most cases zero.
   //!   * Imm   - Should always return zero size.
   //!   * Label - Should always return zero size.
-  ASMJIT_INLINE uint32_t getSize() const noexcept { return _any.size; }
+  ASMJIT_INLINE uint32_t getSize() const noexcept { return _getSignatureData(kSignatureSizeBits, kSignatureSizeShift); }
 
   //! Get the operand id.
   //!
@@ -272,22 +315,22 @@ struct Operand_ {
            (_packed[1] == other._packed[1]) ;
   }
 
-  //! Get if the operand is a register matching `regType`.
-  ASMJIT_INLINE bool isReg(uint32_t regType) const noexcept {
-    const uint32_t kMsk = makeSignature(0xFF  , 0xFF   , 0, 0);
-    const uint32_t kSgn = makeSignature(kOpReg, regType, 0, 0);
+  //! Get if the operand is a register matching `rType`.
+  ASMJIT_INLINE bool isReg(uint32_t rType) const noexcept {
+    const uint32_t kMsk = (kSignatureOpBits << kSignatureOpShift) | (kSignatureRegTypeBits << kSignatureRegTypeShift);
+    const uint32_t kSgn = (kOpReg           << kSignatureOpShift) | (rType                 << kSignatureRegTypeShift);
     return (_signature & kMsk) == kSgn;
   }
 
   //! Get whether the operand is register and of `type` and `id`.
-  ASMJIT_INLINE bool isReg(uint32_t regType, uint32_t id) const noexcept {
-    return isReg(regType) && getId() == id;
+  ASMJIT_INLINE bool isReg(uint32_t rType, uint32_t rId) const noexcept {
+    return isReg(rType) && getId() == rId;
   }
 
   //! Get whether the operand is a register or memory.
   ASMJIT_INLINE bool isRegOrMem() const noexcept {
     ASMJIT_ASSERT(kOpMem - kOpReg == 1);
-    return _any.op >= kOpReg && _any.op <= kOpMem;
+    return Utils::inInterval<uint32_t>(getOp(), kOpReg, kOpMem);
   }
 
   //! Cast this operand to `T` type.
@@ -330,7 +373,7 @@ struct Operand_ {
   //! assert(a == b);
   //! ```
   ASMJIT_INLINE void reset() noexcept {
-    _init_packed_op_b1_b2_sz_id(kOpNone, 0, 0, 0, 0);
+    _init_packed_d0_d1(kOpNone, 0);
     _init_packed_d2_d3(0, 0);
   }
 
@@ -448,7 +491,7 @@ public:
   ASMJIT_INLINE Label(const Label& other) noexcept : Operand(other) {}
 
   explicit ASMJIT_INLINE Label(uint32_t id) noexcept : Operand(NoInit) {
-    _init_packed_op_b1_b2_sz_id(kOpLabel, 0, 0, 0, id);
+    _init_packed_d0_d1(kOpLabel, id);
     _init_packed_d2_d3(0, 0);
   }
 
@@ -461,7 +504,7 @@ public:
   // TODO: I think that if operand is reset it shouldn't say it's a Label, it
   // should be none like all other operands.
   ASMJIT_INLINE void reset() noexcept {
-    _init_packed_op_b1_b2_sz_id(kOpLabel, 0, 0, 0, 0);
+    _init_packed_d0_d1(kOpLabel, 0);
     _init_packed_d2_d3(0, 0);
   }
 
@@ -498,7 +541,10 @@ struct TRAITS_T < TYPE > {                                                    \
     kType      = TYPE,                                                        \
     kKind      = KIND,                                                        \
     kSize      = SIZE,                                                        \
-    kSignature = ASMJIT_PACK32_4x8(Operand::kOpReg, TYPE, KIND, SIZE)         \
+    kSignature = (Operand::kOpReg << Operand::kSignatureOpShift     ) |       \
+                 (kType           << Operand::kSignatureRegTypeShift) |       \
+                 (kKind           << Operand::kSignatureRegKindShift) |       \
+                 (kSize           << Operand::kSignatureSizeShift   )         \
   };                                                                          \
 }                                                                             \
 
@@ -512,13 +558,13 @@ public:                                                                       \
   ASMJIT_INLINE REG_T(const REG_T& other) ASMJIT_NOEXCEPT                     \
     : BASE_T(other) {}                                                        \
                                                                               \
-  /*! Copy the `other` REG_T register operand having its id set to `id` */    \
-  ASMJIT_INLINE REG_T(const Reg& other, uint32_t id) ASMJIT_NOEXCEPT          \
-    : BASE_T(other, id) {}                                                    \
+  /*! Copy the `other` REG_T register operand having its id set to `rId` */   \
+  ASMJIT_INLINE REG_T(const Reg& other, uint32_t rId) ASMJIT_NOEXCEPT         \
+    : BASE_T(other, rId) {}                                                   \
                                                                               \
-  /*! Create a REG_T register operand based on `signature` and `id`. */       \
-  ASMJIT_INLINE REG_T(const _Init& init, uint32_t signature, uint32_t id) ASMJIT_NOEXCEPT \
-    : BASE_T(init, signature, id) {}                                          \
+  /*! Create a REG_T register operand based on `signature` and `rId`. */      \
+  ASMJIT_INLINE REG_T(const _Init& init, uint32_t signature, uint32_t rId) ASMJIT_NOEXCEPT \
+    : BASE_T(init, signature, rId) {}                                          \
                                                                               \
   /*! Create a completely uninitialized REG_T register operand (garbage). */  \
   explicit ASMJIT_INLINE REG_T(const _NoInit&) ASMJIT_NOEXCEPT                \
@@ -528,13 +574,13 @@ public:                                                                       \
   ASMJIT_INLINE REG_T clone() const ASMJIT_NOEXCEPT { return REG_T(*this); }  \
                                                                               \
   /*! Create a new register from register type and id. */                     \
-  static ASMJIT_INLINE REG_T fromTypeAndId(uint32_t regType, uint32_t id) ASMJIT_NOEXCEPT { \
-    return REG_T(Init, signatureOf(regType), id);                             \
+  static ASMJIT_INLINE REG_T fromTypeAndId(uint32_t rType, uint32_t rId) ASMJIT_NOEXCEPT { \
+    return REG_T(Init, signatureOf(rType), rId);                              \
   }                                                                           \
                                                                               \
   /*! Create a new register from signature and id. */                         \
-  static ASMJIT_INLINE REG_T fromSignature(uint32_t signature, uint32_t id) ASMJIT_NOEXCEPT { \
-    return REG_T(Init, signature, id);                                        \
+  static ASMJIT_INLINE REG_T fromSignature(uint32_t signature, uint32_t rId) ASMJIT_NOEXCEPT { \
+    return REG_T(Init, signature, rId);                                       \
   }                                                                           \
   /* TODO: Depreceted */                                                      \
   ASMJIT_INLINE REG_T m() const noexcept { return *this; }                    \
@@ -551,8 +597,8 @@ public:                                                                       \
   ASMJIT_DEFINE_ABSTRACT_REG(REG_T, BASE_T)                                   \
                                                                               \
   /*! Create a REG_T register with `id`. */                                   \
-  explicit ASMJIT_INLINE REG_T(uint32_t id) ASMJIT_NOEXCEPT                   \
-    : BASE_T(Init, kSignature, id) {}                                         \
+  explicit ASMJIT_INLINE REG_T(uint32_t rId) ASMJIT_NOEXCEPT                  \
+    : BASE_T(Init, kSignature, rId) {}                                        \
                                                                               \
   enum {                                                                      \
     kThisType  = TRAITS_T::kType,                                             \
@@ -561,22 +607,32 @@ public:                                                                       \
     kSignature = TRAITS_T::kSignature                                         \
   };
 
-//! Structure that contains information about a physical register.
+//! Structure that contains core register information.
 //!
-//! This information is stored in first 4 bytes of `Reg` operand. It consists
-//! of:
-//!   * `op`      - Operand type, always \ref Operand::kOpReg.
-//!   * `regType` - Register type - platform specific, see \ref X86Reg::Type.
-//!   * `kind`    - Register kind - platform specific, see \ref X86Reg::Kind.
-//!   * `size`    - Size of the register.
-union RegInfo {
-  struct {
-    uint8_t op;                        //!< Type of the operand (always \ref kOpReg).
-    uint8_t regType;                   //!< Register type.
-    uint8_t kind;                      //!< Register kind.
-    uint8_t size;                      //!< Size of the register.
-  };
-  uint32_t signature;
+//! This information is compatible with operand's signature (32-bit integer)
+//! and `RegInfo` just provides easy way to access it.
+struct RegInfo {
+  ASMJIT_INLINE uint32_t getSignature() const noexcept {
+    return _signature;
+  }
+
+  ASMJIT_INLINE uint32_t getOp() const noexcept {
+    return (_signature >> Operand::kSignatureOpShift) & Operand::kSignatureOpBits;
+  }
+
+  ASMJIT_INLINE uint32_t getType() const noexcept {
+    return (_signature >> Operand::kSignatureRegTypeShift) & Operand::kSignatureRegTypeBits;
+  }
+
+  ASMJIT_INLINE uint32_t getKind() const noexcept {
+    return (_signature >> Operand::kSignatureRegKindShift) & Operand::kSignatureRegKindBits;
+  }
+
+  ASMJIT_INLINE uint32_t getSize() const noexcept {
+    return (_signature >> Operand::kSignatureSizeShift) & Operand::kSignatureSizeBits;
+  }
+
+  uint32_t _signature;
 };
 
 //! Physical/Virtual register operand.
@@ -622,19 +678,20 @@ public:
   ASMJIT_INLINE Reg() noexcept : Operand() {}
   //! Create a new register operand which is the same as `other` .
   ASMJIT_INLINE Reg(const Reg& other) noexcept : Operand(other) {}
-  //! Create a new register operand compatible with `other`, but with a different `id`.
-  ASMJIT_INLINE Reg(const Reg& other, uint32_t id) noexcept : Operand(NoInit) {
-    _signature = other._signature;
-    _reg.id = id;
+  //! Create a new register operand compatible with `other`, but with a different `rId`.
+  ASMJIT_INLINE Reg(const Reg& other, uint32_t rId) noexcept : Operand(NoInit) {
+    _init_packed_d0_d1(other._signature, rId);
     _packed[1] = other._packed[1];
   }
 
-  //! Create a register initialized to `signature` and `id`.
-  ASMJIT_INLINE Reg(const _Init&, uint32_t signature, uint32_t id) noexcept : Operand(NoInit) { _initReg(signature, id); }
+  //! Create a register initialized to `signature` and `rId`.
+  ASMJIT_INLINE Reg(const _Init&, uint32_t signature, uint32_t rId) noexcept : Operand(NoInit) {
+    _initReg(signature, rId);
+  }
   explicit ASMJIT_INLINE Reg(const _NoInit&) noexcept : Operand(NoInit) {}
 
-  //! Create a new register based on `signature` and `id`.
-  static ASMJIT_INLINE Reg fromSignature(uint32_t signature, uint32_t id) noexcept { return Reg(Init, signature, id); }
+  //! Create a new register based on `signature` and `rId`.
+  static ASMJIT_INLINE Reg fromSignature(uint32_t signature, uint32_t rId) noexcept { return Reg(Init, signature, rId); }
 
   // --------------------------------------------------------------------------
   // [Reg Specific]
@@ -647,13 +704,6 @@ public:
   //! Get if this is a virtual register (used by \ref CodeCompiler).
   ASMJIT_INLINE bool isVirtReg() const noexcept { return isPackedId(_reg.id); }
 
-  using Operand_::isReg;
-
-  //! Get if the register type matches `type`.
-  ASMJIT_INLINE bool isReg(uint32_t regType) const noexcept { return _reg.regType == regType; }
-  //! Get if the register type matches `type` and register id matches `id`.
-  ASMJIT_INLINE bool isReg(uint32_t regType, uint32_t id) const noexcept { return isReg(regType) && getId() == id; }
-
   //! Get if this register is the same as `other`.
   //!
   //! This is just an optimization. Registers by default only use the first
@@ -665,14 +715,28 @@ public:
   //! false. However. no such case is known at the moment.
   ASMJIT_INLINE bool isSame(const Reg& other) const noexcept { return _packed[0] == _packed[1]; }
 
-  //! Set a 32-bit operand signature based on traits of `RegT`.
-  template<typename RegT>
-  ASMJIT_INLINE void setSignatureT() noexcept { _signature = RegT::kSignature; }
+  //! Get if the register type matches `rType`.
+  //! Same as `isReg(rType)`, provided for convenience.
+  ASMJIT_INLINE bool isType(uint32_t rType) const noexcept { return (_signature & kSignatureRegTypeMask) == (rType << kSignatureRegTypeShift); }
+  //! Get if the register kind matches `rKind`.
+  ASMJIT_INLINE bool isKind(uint32_t rKind) const noexcept { return (_signature & kSignatureRegKindMask) == (rKind << kSignatureRegKindShift); }
+
+  //! Get if the register is a general purpose register (any size).
+  ASMJIT_INLINE bool isGp() const noexcept { return isKind(kKindGp); }
+  //! Get if the register is a vector register.
+  ASMJIT_INLINE bool isVec() const noexcept { return isKind(kKindVec); }
+
+  using Operand_::isReg;
+
+  //! Same as `isType()`, provided for convenience.
+  ASMJIT_INLINE bool isReg(uint32_t rType) const noexcept { return isType(rType); }
+  //! Get if the register type matches `type` and register id matches `rId`.
+  ASMJIT_INLINE bool isReg(uint32_t rType, uint32_t rId) const noexcept { return isType(rType) && getId() == rId; }
 
   //! Get the register type.
-  ASMJIT_INLINE uint32_t getRegType() const noexcept { return _reg.regType; }
+  ASMJIT_INLINE uint32_t getType() const noexcept { return _getSignatureData(kSignatureRegTypeBits, kSignatureRegTypeShift); }
   //! Get the register kind.
-  ASMJIT_INLINE uint32_t getKind() const noexcept { return _reg.kind; }
+  ASMJIT_INLINE uint32_t getKind() const noexcept { return _getSignatureData(kSignatureRegKindBits, kSignatureRegKindShift); }
 
   //! Clone the register operand.
   ASMJIT_INLINE Reg clone() const noexcept { return Reg(*this); }
@@ -690,13 +754,39 @@ public:
   ASMJIT_INLINE RegT cloneAs(const RegT& other) const noexcept { return RegT(Init, other.getSignature(), getId()); }
 
   //! Set the register id to `id`.
-  ASMJIT_INLINE void setId(uint32_t id) noexcept { _reg.id = id; }
+  ASMJIT_INLINE void setId(uint32_t rId) noexcept { _reg.id = rId; }
 
-  //! Set register's `signature` and `id`.
-  ASMJIT_INLINE void setSignatureAndId(uint32_t signature, uint32_t id) noexcept {
+  //! Set a 32-bit operand signature based on traits of `RegT`.
+  template<typename RegT>
+  ASMJIT_INLINE void setSignatureT() noexcept { _signature = RegT::kSignature; }
+
+  //! Set register's `signature` and `rId`.
+  ASMJIT_INLINE void setSignatureAndId(uint32_t signature, uint32_t rId) noexcept {
     _signature = signature;
-    _reg.id = id;
+    _reg.id = rId;
   }
+
+  // --------------------------------------------------------------------------
+  // [Reg Statics]
+  // --------------------------------------------------------------------------
+
+  static ASMJIT_INLINE bool isGp(const Operand_& op) noexcept {
+    // Check operand type and register kind. Not interested in register type and size.
+    const uint32_t kSgn = (kOpReg  << kSignatureOpShift     ) |
+                          (kKindGp << kSignatureRegKindShift) ;
+    return (op.getSignature() & (kSignatureOpMask | kSignatureRegKindMask)) == kSgn;
+  }
+
+  //! Get if the `op` operand is either a low or high 8-bit GPB register.
+  static ASMJIT_INLINE bool isVec(const Operand_& op) noexcept {
+    // Check operand type and register kind. Not interested in register type and size.
+    const uint32_t kSgn = (kOpReg   << kSignatureOpShift     ) |
+                          (kKindVec << kSignatureRegKindShift) ;
+    return (op.getSignature() & (kSignatureOpMask | kSignatureRegKindMask)) == kSgn;
+  }
+
+  static ASMJIT_INLINE bool isGp(const Operand_& op, uint32_t rId) noexcept { return isGp(op) & (op.getId() == rId); }
+  static ASMJIT_INLINE bool isVec(const Operand_& op, uint32_t rId) noexcept { return isVec(op) & (op.getId() == rId); }
 };
 
 // ============================================================================
@@ -731,35 +821,6 @@ public:
 //!          prefix and index shift (scale).
 class Mem : public Operand {
 public:
-  //! Memory operand flags.
-  ASMJIT_ENUM(Flags) {
-    //! Should be encoded as an absolute memory operand.
-    kFlagAbs = 0x20,
-
-    //! This memory operand represents a function argument's stack location.
-    //!
-    //! This flag is used exclusively by \ref CodeCompiler.
-    kFlagArgHome = 0x40,
-
-    //! This memory operand represents a virtual register's home-slot.
-    //!
-    //! This flag is used exclusively by \ref CodeCompiler.
-    kFlagRegHome = 0x80
-  };
-
-  //! Helper constants to pack BASE and INDEX register types into `MemData::baseIndexType`.
-  ASMJIT_ENUM(BaseIndexType) {
-    kMemBaseTypeShift  = 0,
-    kMemIndexTypeShift = 4,
-
-    kMemBaseTypeMask   = 0xF << kMemBaseTypeShift,
-    kMemIndexTypeMask  = 0xF << kMemIndexTypeShift
-  };
-
-  static ASMJIT_INLINE uint32_t encodeBaseIndex(uint32_t baseType, uint32_t indexType) noexcept {
-    return (baseType << kMemBaseTypeShift) | (indexType << kMemIndexTypeShift);
-  }
-
   // --------------------------------------------------------------------------
   // [Construction / Destruction]
   // --------------------------------------------------------------------------
@@ -773,26 +834,15 @@ public:
     uint32_t indexType, uint32_t indexId,
     int32_t off, uint32_t size, uint32_t flags) noexcept : Operand(NoInit) {
 
-    uint32_t baseIndexType = encodeBaseIndex(baseType, indexType);
-    _init_packed_op_b1_b2_sz_id(kOpMem, baseIndexType, flags, size, indexId);
+    uint32_t signature = (baseType  << kSignatureMemBaseTypeShift ) |
+                         (indexType << kSignatureMemIndexTypeShift) |
+                         (size      << kSignatureSizeShift        ) ;
+
+    _init_packed_d0_d1(kOpMem | signature | flags, indexId);
     _mem.base = baseId;
     _mem.offsetLo32 = static_cast<uint32_t>(off);
   }
   explicit ASMJIT_INLINE Mem(const _NoInit&) noexcept : Operand(NoInit) {}
-
-  // --------------------------------------------------------------------------
-  // [Mem Internal]
-  // --------------------------------------------------------------------------
-
-  ASMJIT_INLINE uint32_t _unpackFromFlags(uint32_t shift, uint32_t bits) const noexcept {
-    return (static_cast<uint32_t>(_mem.flags) >> shift) & bits;
-  }
-
-  ASMJIT_INLINE void _packToFlags(uint32_t value, uint32_t shift, uint32_t bits) noexcept {
-    ASMJIT_ASSERT(value <= bits);
-    _mem.flags = static_cast<uint8_t>(
-      (static_cast<uint32_t>(_mem.flags) & ~(bits << shift)) | (value << shift));
-  }
 
   // --------------------------------------------------------------------------
   // [Mem Specific]
@@ -803,91 +853,87 @@ public:
 
   //! Reset the memory operand - after reset the memory points to [0].
   ASMJIT_INLINE void reset() noexcept {
-    _init_packed_op_b1_b2_sz_id(kOpMem, 0, 0, 0, 0);
+    _init_packed_d0_d1(kOpMem, 0);
     _init_packed_d2_d3(0, 0);
   }
 
-  ASMJIT_INLINE uint32_t getFlags() const noexcept { return _mem.flags; }
-  ASMJIT_INLINE bool hasFlag(uint32_t flag) const noexcept { return (_mem.flags & flag) != 0; }
-  ASMJIT_INLINE void addFlags(uint32_t flags) noexcept { _mem.flags |= static_cast<uint8_t>(flags); }
-  ASMJIT_INLINE void clearFlags(uint32_t flags) noexcept { _mem.flags &= ~static_cast<uint8_t>(flags); }
+  ASMJIT_INLINE bool isAbs() const noexcept { return _hasSignatureData(kSignatureMemAbsoluteFlag); }
+  ASMJIT_INLINE bool isArgHome() const noexcept { return _hasSignatureData(kSignatureMemArgHomeFlag); }
+  ASMJIT_INLINE bool isRegHome() const noexcept { return _hasSignatureData(kSignatureMemRegHomeFlag); }
 
-  ASMJIT_INLINE bool isAbs() const noexcept { return hasFlag(kFlagAbs); }
-  ASMJIT_INLINE bool isArgHome() const noexcept { return hasFlag(kFlagArgHome); }
-  ASMJIT_INLINE bool isRegHome() const noexcept { return hasFlag(kFlagRegHome); }
+  ASMJIT_INLINE void setAbs() noexcept { _signature |= kSignatureMemAbsoluteFlag; }
+  ASMJIT_INLINE void setArgHome() noexcept { _signature |= kSignatureMemArgHomeFlag; }
+  ASMJIT_INLINE void setRegHome() noexcept { _signature |= kSignatureMemRegHomeFlag; }
 
-  ASMJIT_INLINE void setAbs(bool value = false) noexcept {
-    _mem.flags = static_cast<uint8_t>((_mem.flags & ~kFlagAbs) | (value ? kFlagAbs : 0));
-  }
-  ASMJIT_INLINE void markArgHome() noexcept { addFlags(kFlagArgHome); }
-  ASMJIT_INLINE void markRegHome() noexcept { addFlags(kFlagRegHome); }
-
-  ASMJIT_INLINE void clearAbs(bool value = false) noexcept { _mem.flags &= ~kFlagAbs; }
-  ASMJIT_INLINE void clearArgHome() noexcept { clearFlags(kFlagArgHome); }
-  ASMJIT_INLINE void clearRegHome() noexcept { clearFlags(kFlagRegHome); }
+  ASMJIT_INLINE void clearAbs() noexcept { _signature &= ~kSignatureMemAbsoluteFlag; }
+  ASMJIT_INLINE void clearArgHome() noexcept { _signature &= ~kSignatureMemArgHomeFlag; }
+  ASMJIT_INLINE void clearRegHome() noexcept { _signature &= ~kSignatureMemRegHomeFlag; }
 
   //! Get if the memory operand has a BASE register or label specified.
-  ASMJIT_INLINE bool hasBase() const noexcept { return getBaseType() != 0; }
+  ASMJIT_INLINE bool hasBase() const noexcept { return (_signature & kSignatureMemBaseTypeMask) != 0; }
   //! Get if the memory operand has an INDEX register specified.
-  ASMJIT_INLINE bool hasIndex() const noexcept { return getIndexType() != 0; }
-
+  ASMJIT_INLINE bool hasIndex() const noexcept { return (_signature & kSignatureMemIndexTypeMask) != 0; }
   //! Get whether the memory operand has BASE and INDEX register.
-  ASMJIT_INLINE bool hasBaseOrIndex() const noexcept { return _mem.baseIndexType != 0; }
+  ASMJIT_INLINE bool hasBaseOrIndex() const noexcept { return (_signature & kSignatureMemBaseIndexMask) != 0; }
   //! Get whether the memory operand has BASE and INDEX register.
-  ASMJIT_INLINE bool hasBaseAndIndex() const noexcept { return (_mem.baseIndexType & 0xF0U) != 0 && (_mem.baseIndexType & 0x0FU) != 0; }
+  ASMJIT_INLINE bool hasBaseAndIndex() const noexcept {
+    return (_signature & kSignatureMemBaseTypeMask) != 0 &&
+           (_signature & kSignatureMemIndexTypeMask) != 0;
+  }
 
   //! Get if the BASE operand is a register.
   ASMJIT_INLINE bool hasBaseReg() const noexcept {
-    // It's hacky, but if we know that 0 and 1 reg-type is never used by any
-    // register we can assume that every reg-type will always have at least
-    // one of three remaining bits (in a 4-bit nibble) set. This is a good
-    // optimization as we don't have to unpack the BASE type from `baseIndexType`.
-    return (_mem.baseIndexType & (0xE << kMemBaseTypeShift)) != 0;
+    // Registers start after kLabelTag.
+    return (_signature & kSignatureMemBaseTypeMask) > (Label::kLabelTag << kSignatureMemBaseTypeShift);
   }
-  //! Get if the BASE operand is a register.
-  ASMJIT_INLINE bool hasIndexReg() const noexcept {
-    return (_mem.baseIndexType & (0xE << kMemIndexTypeShift)) != 0;
+  //! Get if the BASE operand is a label.
+  ASMJIT_INLINE bool hasBaseLabel() const noexcept {
+    return (_signature & kSignatureMemBaseTypeMask) == (Label::kLabelTag << kSignatureMemBaseTypeShift);
   }
 
-  //! Get if the BASE operand is a label.
-  ASMJIT_INLINE bool hasBaseLabel() const noexcept { return getBaseType() == Label::kLabelTag; }
+  //! Get if the INDEX operand is a register.
+  ASMJIT_INLINE bool hasIndexReg() const noexcept {
+    // Registers start after kLabelTag.
+    return (_signature & kSignatureMemIndexTypeMask) > (Label::kLabelTag << kSignatureMemIndexTypeShift);
+  }
 
   //! Get type of a BASE register (0 if this memory operand doesn't use the BASE register).
   //!
   //! NOTE: If the returned type is one (a value never associated to a register
   //! type) the BASE is not register, but it's a label. One equals to `kLabelTag`.
   //! You should always check `hasBaseLabel()` before using `getBaseId()` result.
-  ASMJIT_INLINE uint32_t getBaseType() const noexcept { return (_mem.baseIndexType >> kMemBaseTypeShift) & 0xF; }
+  ASMJIT_INLINE uint32_t getBaseType() const noexcept {
+    return _getSignatureData(kSignatureMemBaseTypeBits, kSignatureMemBaseTypeShift);
+  }
   //! Get type of an INDEX register (0 if this memory operand doesn't use the INDEX register).
-  ASMJIT_INLINE uint32_t getIndexType() const noexcept { return (_mem.baseIndexType >> kMemIndexTypeShift) & 0xF; }
+  ASMJIT_INLINE uint32_t getIndexType() const noexcept {
+    return _getSignatureData(kSignatureMemIndexTypeBits, kSignatureMemIndexTypeShift);
+  }
 
-  //! Get both BASE (3:0 bits) and INDEX (7:4 bits) types combined into a single integer.
+  //! Get both BASE (4:0 bits) and INDEX (9:5 bits) types combined into a single integer.
   //!
-  //! NOTE: This is the way these two are stored. You can use `encodeBaseIndex()`
-  //! to encode any two types into the format and bit masking to extract the BASE
-  //! and INDEX types from the packed integer.
-  ASMJIT_INLINE uint32_t getBaseIndexType() const noexcept { return _mem.baseIndexType; }
+  //! This is used internally for BASE+INDEX validation.
+  ASMJIT_INLINE uint32_t getBaseIndexType() const noexcept {
+    return _getSignatureData(kSignatureMemBaseIndexBits, kSignatureMemBaseIndexShift);
+  }
 
   //! Get id of the BASE register or label (if the BASE was specified as label).
   ASMJIT_INLINE uint32_t getBaseId() const noexcept { return _mem.base; }
-
   //! Get id of the INDEX register.
   ASMJIT_INLINE uint32_t getIndexId() const noexcept { return _mem.index; }
 
-  ASMJIT_INLINE void _setBase(uint32_t regType, uint32_t id) noexcept {
-    _mem.baseIndexType = static_cast<uint8_t>(
-      (_mem.baseIndexType & ~encodeBaseIndex(0xF, 0)) | encodeBaseIndex(regType, 0));
-    _mem.base = id;
+  ASMJIT_INLINE void _setBase(uint32_t rType, uint32_t rId) noexcept {
+    _setSignatureData(rType, kSignatureMemBaseTypeBits, kSignatureMemBaseTypeShift);
+    _mem.base = rId;
   }
 
-  ASMJIT_INLINE void _setIndex(uint32_t regType, uint32_t id) noexcept {
-    _mem.baseIndexType = static_cast<uint8_t>(
-      (_mem.baseIndexType & ~encodeBaseIndex(0, 0xF)) | encodeBaseIndex(0, regType));
-    _mem.index = id;
+  ASMJIT_INLINE void _setIndex(uint32_t rType, uint32_t rId) noexcept {
+    _setSignatureData(rType, kSignatureMemIndexTypeBits, kSignatureMemIndexTypeShift);
+    _mem.index = rId;
   }
 
-  ASMJIT_INLINE void setBase(const Reg& base) noexcept { return _setBase(base.getRegType(), base.getId()); }
-  ASMJIT_INLINE void setIndex(const Reg& index) noexcept { return _setIndex(index.getRegType(), index.getId()); }
+  ASMJIT_INLINE void setBase(const Reg& base) noexcept { return _setBase(base.getType(), base.getId()); }
+  ASMJIT_INLINE void setIndex(const Reg& index) noexcept { return _setIndex(index.getType(), index.getId()); }
 
   //! Reset the memory operand's BASE register / label.
   ASMJIT_INLINE void resetBase() noexcept { _setBase(0, 0); }
@@ -895,7 +941,9 @@ public:
   ASMJIT_INLINE void resetIndex() noexcept { _setIndex(0, 0); }
 
   //! Set memory operand size.
-  ASMJIT_INLINE void setSize(uint32_t size) noexcept { _mem.size = static_cast<uint8_t>(size); }
+  ASMJIT_INLINE void setSize(uint32_t size) noexcept {
+    _setSignatureData(size, kSignatureSizeBits, kSignatureSizeShift);
+  }
 
   ASMJIT_INLINE bool hasOffset() const noexcept {
     int32_t lo = static_cast<int32_t>(_mem.offsetLo32);
@@ -988,13 +1036,13 @@ public:
 
   //! Create a new immediate value (initial value is 0).
   Imm() noexcept : Operand(NoInit) {
-    _init_packed_op_b1_b2_sz_id(kOpImm, 0, 0, 0, 0);
+    _init_packed_d0_d1(kOpImm, 0);
     _imm.value.i64 = 0;
   }
 
   //! Create a new signed immediate value, assigning the value to `val`.
   explicit Imm(int64_t val) noexcept : Operand(NoInit) {
-    _init_packed_op_b1_b2_sz_id(kOpImm, 0, 0, 0, 0);
+    _init_packed_d0_d1(kOpImm, 0);
     _imm.value.i64 = val;
   }
 
@@ -1377,43 +1425,44 @@ template<typename T> struct TypeIdOf<T*> {
 template<typename T>
 struct TypeIdOfInt {
   enum {
-    kSigned = int(~static_cast<T>(0) < static_cast<T>(0)),
-    kTypeId = (sizeof(T) == 1) ? (int)(kSigned ? TypeId::kI8  : TypeId::kU8 ) :
-              (sizeof(T) == 2) ? (int)(kSigned ? TypeId::kI16 : TypeId::kU16) :
-              (sizeof(T) == 4) ? (int)(kSigned ? TypeId::kI32 : TypeId::kU32) :
-              (sizeof(T) == 8) ? (int)(kSigned ? TypeId::kI64 : TypeId::kU64) : (int)TypeId::kVoid
+    kSignatureed = int(~static_cast<T>(0) < static_cast<T>(0)),
+    kTypeId = (sizeof(T) == 1) ? (int)(kSignatureed ? TypeId::kI8  : TypeId::kU8 ) :
+              (sizeof(T) == 2) ? (int)(kSignatureed ? TypeId::kI16 : TypeId::kU16) :
+              (sizeof(T) == 4) ? (int)(kSignatureed ? TypeId::kI32 : TypeId::kU32) :
+              (sizeof(T) == 8) ? (int)(kSignatureed ? TypeId::kI64 : TypeId::kU64) : (int)TypeId::kVoid
   };
 };
 
-#define ASMJIT_DEFINE_TYPE_ID(T, TYPE_INFO) \
-  template<> struct TypeIdOf<T> { enum { kTypeId = TYPE_INFO }; }
+#define ASMJIT_DEFINE_TYPE_ID(T, TYPE_ID) \
+  template<> \
+  struct TypeIdOf<T> { enum { kTypeId = TYPE_ID}; }
 
-ASMJIT_DEFINE_TYPE_ID(signed char       , TypeIdOfInt<signed char>::kTypeId);
-ASMJIT_DEFINE_TYPE_ID(unsigned char     , TypeIdOfInt<unsigned char>::kTypeId);
-ASMJIT_DEFINE_TYPE_ID(short             , TypeIdOfInt<short>::kTypeId);
-ASMJIT_DEFINE_TYPE_ID(unsigned short    , TypeIdOfInt<unsigned short>::kTypeId);
-ASMJIT_DEFINE_TYPE_ID(int               , TypeIdOfInt<int>::kTypeId);
-ASMJIT_DEFINE_TYPE_ID(unsigned int      , TypeIdOfInt<unsigned int>::kTypeId);
-ASMJIT_DEFINE_TYPE_ID(long              , TypeIdOfInt<long>::kTypeId);
-ASMJIT_DEFINE_TYPE_ID(unsigned long     , TypeIdOfInt<unsigned long>::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(signed char       , TypeIdOfInt< signed char        >::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(unsigned char     , TypeIdOfInt< unsigned char      >::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(short             , TypeIdOfInt< short              >::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(unsigned short    , TypeIdOfInt< unsigned short     >::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(int               , TypeIdOfInt< int                >::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(unsigned int      , TypeIdOfInt< unsigned int       >::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(long              , TypeIdOfInt< long               >::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(unsigned long     , TypeIdOfInt< unsigned long      >::kTypeId);
 #if ASMJIT_CC_MSC && !ASMJIT_CC_MSC_GE(16, 0, 0)
-ASMJIT_DEFINE_TYPE_ID(__int64           , TypeIdOfInt<__int64>::kTypeId);
-ASMJIT_DEFINE_TYPE_ID(unsigned __int64  , TypeIdOfInt<unsigned __int64>::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(__int64           , TypeIdOfInt< __int64            >::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(unsigned __int64  , TypeIdOfInt< unsigned __int64   >::kTypeId);
 #else
-ASMJIT_DEFINE_TYPE_ID(long long         , TypeIdOfInt<long long>::kTypeId);
-ASMJIT_DEFINE_TYPE_ID(unsigned long long, TypeIdOfInt<unsigned long long>::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(long long         , TypeIdOfInt< long long          >::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(unsigned long long, TypeIdOfInt< unsigned long long >::kTypeId);
 #endif
 #if ASMJIT_CC_HAS_NATIVE_CHAR
-ASMJIT_DEFINE_TYPE_ID(char              , TypeIdOfInt<char>::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(char              , TypeIdOfInt< char               >::kTypeId);
 #endif
 #if ASMJIT_CC_HAS_NATIVE_CHAR16_T
-ASMJIT_DEFINE_TYPE_ID(char16_t          , TypeIdOfInt<char16_t>::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(char16_t          , TypeIdOfInt< char16_t           >::kTypeId);
 #endif
 #if ASMJIT_CC_HAS_NATIVE_CHAR32_T
-ASMJIT_DEFINE_TYPE_ID(char32_t          , TypeIdOfInt<char32_t>::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(char32_t          , TypeIdOfInt< char32_t           >::kTypeId);
 #endif
 #if ASMJIT_CC_HAS_NATIVE_WCHAR_T
-ASMJIT_DEFINE_TYPE_ID(wchar_t           , TypeIdOfInt<wchar_t>::kTypeId);
+ASMJIT_DEFINE_TYPE_ID(wchar_t           , TypeIdOfInt< wchar_t            >::kTypeId);
 #endif
 
 ASMJIT_DEFINE_TYPE_ID(void              , TypeId::kVoid);

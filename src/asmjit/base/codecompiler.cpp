@@ -283,7 +283,7 @@ VirtReg* CodeCompiler::newVirtReg(uint32_t typeId, uint32_t signature, const cha
     return nullptr;
 
   vreg->_id = Operand::packId(static_cast<uint32_t>(index));
-  vreg->_regInfo.signature = signature;
+  vreg->_regInfo._signature = signature;
   vreg->_name = noName;
 
 #if !defined(ASMJIT_DISABLE_LOGGING)
@@ -310,13 +310,13 @@ Error CodeCompiler::_newReg(Reg& out, uint32_t typeId, const char* name) {
   Error err = ArchUtils::typeIdToRegInfo(getArchType(), typeId, regInfo);
   if (ASMJIT_UNLIKELY(err)) return setLastError(err);
 
-  VirtReg* vReg = newVirtReg(typeId, regInfo.signature, name);
+  VirtReg* vReg = newVirtReg(typeId, regInfo.getSignature(), name);
   if (ASMJIT_UNLIKELY(!vReg)) {
     out.reset();
     return setLastError(DebugUtils::errored(kErrorNoHeapMemory));
   }
 
-  out._initReg(regInfo.signature, vReg->getId());
+  out._initReg(regInfo.getSignature(), vReg->getId());
   return kErrorOk;
 }
 
@@ -385,19 +385,19 @@ Error CodeCompiler::_newReg(Reg& out, const Reg& ref, const char* name) {
     }
   }
   else {
-    typeId = ref.getRegType();
+    typeId = ref.getType();
   }
 
   Error err = ArchUtils::typeIdToRegInfo(getArchType(), typeId, regInfo);
   if (ASMJIT_UNLIKELY(err)) return setLastError(err);
 
-  VirtReg* vReg = newVirtReg(typeId, regInfo.signature, name);
+  VirtReg* vReg = newVirtReg(typeId, regInfo.getSignature(), name);
   if (ASMJIT_UNLIKELY(!vReg)) {
     out.reset();
     return setLastError(DebugUtils::errored(kErrorNoHeapMemory));
   }
 
-  out._initReg(regInfo.signature, vReg->getId());
+  out._initReg(regInfo.getSignature(), vReg->getId());
   return kErrorOk;
 }
 
@@ -428,7 +428,7 @@ Error CodeCompiler::_newStack(Mem& out, uint32_t size, uint32_t alignment, const
   vReg->_alignment = static_cast<uint8_t>(alignment);
 
   // Set the memory operand to GPD/GPQ and its id to VirtReg.
-  out = Mem(Init, _nativeGpReg.getRegType(), vReg->getId(), Reg::kRegNone, 0, 0, 0, Mem::kFlagRegHome);
+  out = Mem(Init, _nativeGpReg.getType(), vReg->getId(), Reg::kRegNone, 0, 0, 0, Mem::kSignatureMemRegHomeFlag);
   return kErrorOk;
 }
 

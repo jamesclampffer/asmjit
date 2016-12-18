@@ -134,11 +134,13 @@ UNIT(base_operand) {
 
   EXPECT(Reg().isReg() == false,
     "Default constructed register should not isReg()");
-  EXPECT(static_cast<const Reg&>(dummy).isValid() == false,
+  EXPECT(dummy.as<Reg>().isValid() == false,
     "Default constructed Operand casted to Reg should not be valid");
 
   // Create some register (not specific to any architecture).
-  uint32_t rSig = Operand::makeRegSignature(1, 2, 8);
+  uint32_t rSig = Operand::kOpReg | (1 << Operand::kSignatureRegTypeShift) |
+                                    (2 << Operand::kSignatureRegKindShift) |
+                                    (8 << Operand::kSignatureSizeShift   ) ;
   Reg r1(Reg::fromSignature(rSig, 5));
 
   EXPECT(r1.isValid()      == true);
@@ -147,7 +149,7 @@ UNIT(base_operand) {
   EXPECT(r1.isPhysReg()    == true);
   EXPECT(r1.isVirtReg()    == false);
   EXPECT(r1.getSignature() == rSig);
-  EXPECT(r1.getRegType()   == 1);
+  EXPECT(r1.getType()      == 1);
   EXPECT(r1.getKind()      == 2);
   EXPECT(r1.getSize()      == 8);
   EXPECT(r1.getId()        == 5);
@@ -164,7 +166,7 @@ UNIT(base_operand) {
   EXPECT(r2.isPhysReg()    == true);
   EXPECT(r2.isVirtReg()    == false);
   EXPECT(r2.getSignature() == rSig);
-  EXPECT(r2.getRegType()   == r1.getRegType());
+  EXPECT(r2.getType()      == r1.getType());
   EXPECT(r2.getKind()      == r1.getKind());
   EXPECT(r2.getSize()      == r1.getSize());
   EXPECT(r2.getId()        == 6);

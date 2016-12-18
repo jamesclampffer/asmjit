@@ -12,6 +12,7 @@
 #if !defined(ASMJIT_DISABLE_LOGGING)
 
 // [Dependencies]
+#include "../base/misc_p.h"
 #include "../x86/x86inst.h"
 #include "../x86/x86logging_p.h"
 #include "../x86/x86operand.h"
@@ -29,65 +30,90 @@ namespace asmjit {
 // [asmjit::X86Logging - Constants]
 // ============================================================================
 
-struct X86RegNameInfo {
-  uint8_t valid;
-  uint8_t special;
-  char format[6];
+struct X86RegFormatInfo {
+  uint8_t count;
+  uint8_t formatIndex;
+  uint8_t specialIndex;
+  uint8_t specialCount;
 };
 
-#define ASMJIT_X86_REG_ENTRY(TYPE)          \
-{                                           \
-  X86RegTraits<TYPE>::kSignature != 0,      \
-  , \
-  TYPE == X86Reg::kRegGpbLo ? "r%ub"  :     \
-  TYPE == X86Reg::kRegGpbHi ? "r%uh"  :     \
-  TYPE == X86Reg::kRegGpw   ? "r%uw"  :     \
-  TYPE == X86Reg::kRegGpd   ? "r%ud"  :     \
-  TYPE == X86Reg::kRegGpq   ? "r%u"   :     \
-  TYPE == X86Reg::kRegXmm   ? "xmm%u" :     \
-  TYPE == X86Reg::kRegYmm   ? "ymm%u" :     \
-  TYPE == X86Reg::kRegZmm   ? "zmm%u" :     \
-  TYPE == X86Reg::kRegRip   ? "rip%u" :     \
-  TYPE == X86Reg::kRegSeg   ? "seg%u" :     \
-  TYPE == X86Reg::kRegFp    ? "fp%u"  :     \
-  TYPE == X86Reg::kRegMm    ? "mm%u"  :     \
-  TYPE == X86Reg::kRegK     ? "k%u"   :     \
-  TYPE == X86Reg::kRegBnd   ? "bnd%u" :     \
-  TYPE == X86Reg::kRegCr    ? "cr%u"  :     \
-  TYPE == X86Reg::kRegDr    ? "dr%u"  : ""  \
+static const char x86RegFormatStrings[] =
+  "r%ub"  "\0" // #0
+  "r%uh"  "\0" // #5
+  "r%uw"  "\0" // #10
+  "r%ud"  "\0" // #15
+  "r%u"   "\0" // #20
+  "xmm%u" "\0" // #24
+  "ymm%u" "\0" // #30
+  "zmm%u" "\0" // #36
+  "rip%u" "\0" // #42
+  "seg%u" "\0" // #48
+  "fp%u"  "\0" // #54
+  "mm%u"  "\0" // #59
+  "k%u"   "\0" // #64
+  "bnd%u" "\0" // #68
+  "cr%u"  "\0" // #74
+  "dr%u"  "\0" // #79
+
+  "rip\0"      // #84
+  "\0\0\0\0"   // #88
+  "\0\0\0\0"   // #92
+
+  "al\0\0" "cl\0\0" "dl\0\0" "bl\0\0" "spl\0"  "bpl\0"  "sil\0"  "dil\0"  // #96
+  "ah\0\0" "ch\0\0" "dh\0\0" "bh\0\0" "n/a\0"  "n/a\0"  "n/a\0"  "n/a\0"  // #128
+  "eax\0"  "ecx\0"  "edx\0"  "ebx\0"  "esp\0"  "ebp\0"  "esi\0"  "edi\0"  // #160
+  "rax\0"  "rcx\0"  "rdx\0"  "rbx\0"  "rsp\0"  "rbp\0"  "rsi\0"  "rdi\0"  // #192
+  "n/a\0"  "es\0\0" "cs\0\0" "ss\0\0" "ds\0\0" "fs\0\0" "gs\0\0" "n/a\0"; // #224
+
+template<uint32_t X>
+struct X86RegFormatInfo_T {
+  enum {
+    kFormatIndex  = X == X86Reg::kRegGpbLo ? 0   :
+                    X == X86Reg::kRegGpbHi ? 5   :
+                    X == X86Reg::kRegGpw   ? 10  :
+                    X == X86Reg::kRegGpd   ? 15  :
+                    X == X86Reg::kRegGpq   ? 20  :
+                    X == X86Reg::kRegXmm   ? 24  :
+                    X == X86Reg::kRegYmm   ? 30  :
+                    X == X86Reg::kRegZmm   ? 36  :
+                    X == X86Reg::kRegRip   ? 42  :
+                    X == X86Reg::kRegSeg   ? 48  :
+                    X == X86Reg::kRegFp    ? 54  :
+                    X == X86Reg::kRegMm    ? 59  :
+                    X == X86Reg::kRegK     ? 64  :
+                    X == X86Reg::kRegBnd   ? 68  :
+                    X == X86Reg::kRegCr    ? 74  :
+                    X == X86Reg::kRegDr    ? 79  : 0,
+
+    kSpecialIndex = X == X86Reg::kRegGpbLo ? 96  :
+                    X == X86Reg::kRegGpbHi ? 128 :
+                    X == X86Reg::kRegGpw   ? 161 :
+                    X == X86Reg::kRegGpd   ? 160 :
+                    X == X86Reg::kRegGpq   ? 192 :
+                    X == X86Reg::kRegRip   ? 84  :
+                    X == X86Reg::kRegSeg   ? 224 : 0,
+
+    kSpecialCount = X == X86Reg::kRegGpbLo ? 8   :
+                    X == X86Reg::kRegGpbHi ? 4   :
+                    X == X86Reg::kRegGpw   ? 8   :
+                    X == X86Reg::kRegGpd   ? 8   :
+                    X == X86Reg::kRegGpq   ? 8   :
+                    X == X86Reg::kRegRip   ? 1   :
+                    X == X86Reg::kRegSeg   ? 7   : 0
+  };
+};
+
+#define ASMJIT_X86_REG_FORMAT(TYPE) {      \
+  X86RegTraits<TYPE>::kCount,              \
+  X86RegFormatInfo_T<TYPE>::kFormatIndex,  \
+  X86RegFormatInfo_T<TYPE>::kSpecialIndex, \
+  X86RegFormatInfo_T<TYPE>::kSpecialCount  \
 }
 
-static const X86RegNameInfo x86RegisterNames[] = {
-  { false, 0 , ""      }, // #00 None.
-  { false, 0 , ""      }, // #01 Reserved.
-  { true , 1 , "rip%u" }, // #02 RIP.
-  { true , 7 , "seg%u" }, // #03 SEG.
-  { true , 8 , "r%ub"  }, // #04 GPB-LO.
-  { true , 4 , "r%uh"  }, // #05 GPB-HI.
-  { true , 8 , "r%uw"  }, // #06 GPW.
-  { true , 8 , "r%ud"  }, // #07 GPD.
-  { true , 8 , "r%u"   }, // #08 GPQ.
-  { true , 0 , "fp%u"  }, // #09 FP.
-  { true , 0 , "mm%u"  }, // #10 MM.
-  { true , 0 , "k%u"   }, // #11 K.
-  { true , 0 , "xmm%u" }, // #12 XMM.
-  { true , 0 , "ymm%u" }, // #13 YMM.
-  { true , 0 , "zmm%u" }, // #14 ZMM.
-  { false, 0 , ""      }, // #15 FUTURE.
-  { true , 0 , "bnd%u" }, // #16 BND.
-  { true , 0 , "cr%u"  }, // #17 CR.
-  { true , 0 , "dr%u"  }  // #18 DR.
+static const X86RegFormatInfo x86RegFormatInfo[] = {
+  ASMJIT_TABLE_16(ASMJIT_X86_REG_FORMAT, 0 ),
+  ASMJIT_TABLE_16(ASMJIT_X86_REG_FORMAT, 16)
 };
-
-static const char x86SegmentNames[] =
-  "\0\0\0\0"
-  "es:\0"
-  "cs:\0"
-  "ss:\0"
-  "ds:\0"
-  "fs:\0"
-  "gs:\0"
-  "??:\0"; // Unknown 7th segment?
 
 static const char* x86GetAddressSizeString(uint32_t size) noexcept {
   switch (size) {
@@ -114,10 +140,8 @@ ASMJIT_FAVOR_SIZE Error X86Logging::formatOperand(
   uint32_t archType,
   const Operand_& op) noexcept {
 
-  if (op.isReg()) {
-    const Reg& r = op.as<Reg>();
-    return formatRegister(sb, logOptions, emitter, archType, r.getRegType(), r.getId());
-  }
+  if (op.isReg())
+    return formatRegister(sb, logOptions, emitter, archType, op.as<Reg>().getType(), op.as<Reg>().getId());
 
   if (op.isMem()) {
     const X86Mem& m = op.as<X86Mem>();
@@ -126,7 +150,7 @@ ASMJIT_FAVOR_SIZE Error X86Logging::formatOperand(
     // Segment override prefix.
     uint32_t seg = m.getSegmentId();
     if (seg != X86Seg::kIdNone && seg < X86Seg::kIdCount)
-      ASMJIT_PROPAGATE(sb.appendString(x86SegmentNames + seg * 4));
+      ASMJIT_PROPAGATE(sb.appendFormat("%s:", x86RegFormatStrings + 224 + seg * 4));
 
     ASMJIT_PROPAGATE(sb.appendChar('['));
     if (m.isAbs())
@@ -185,7 +209,7 @@ ASMJIT_FAVOR_SIZE Error X86Logging::formatOperand(
     return Logging::formatLabel(sb, logOptions, emitter, op.getId());
   }
 
-  return sb.appendString("None", 4);
+  return sb.appendString("<None>");
 }
 
 // ============================================================================
@@ -505,85 +529,44 @@ ASMJIT_FAVOR_SIZE Error X86Logging::formatRegister(
   uint32_t logOptions,
   const CodeEmitter* emitter,
   uint32_t archType,
-  uint32_t regType,
-  uint32_t regId) noexcept {
+  uint32_t rType,
+  uint32_t rId) noexcept {
 
   ASMJIT_UNUSED(logOptions);
   ASMJIT_UNUSED(archType);
 
-  static const char reg8l[] = "al\0\0" "cl\0\0" "dl\0\0" "bl\0\0" "spl\0"  "bpl\0"  "sil\0"  "dil\0" ;
-  static const char reg8h[] = "ah\0\0" "ch\0\0" "dh\0\0" "bh\0\0" "--\0\0" "--\0\0" "--\0\0" "--\0\0";
-  static const char reg32[] = "eax\0"  "ecx\0"  "edx\0"  "ebx\0"  "esp\0"  "ebp\0"  "esi\0"  "edi\0" ;
-  static const char reg64[] = "rax\0"  "rcx\0"  "rdx\0"  "rbx\0"  "rsp\0"  "rbp\0"  "rsi\0"  "rdi\0" ;
-
-  if (Operand::isPackedId(regId)) {
+  if (Operand::isPackedId(rId)) {
     if (emitter && emitter->getType() == CodeEmitter::kTypeCompiler) {
       const CodeCompiler* cc = static_cast<const CodeCompiler*>(emitter);
 
-      if (cc->isVirtRegValid(regId)) {
-        VirtReg* vreg = cc->getVirtRegById(regId);
+      if (cc->isVirtRegValid(rId)) {
+        VirtReg* vreg = cc->getVirtRegById(rId);
         ASMJIT_ASSERT(vreg != nullptr);
 
         const char* name = vreg->getName();
-        if (name && name[0] != '\0') {
-          sb.appendString(name);
-        }
-        else {
-          sb.appendChar('v');
-          sb.appendUInt(Operand::unpackId(regId));
-        }
-        return kErrorOk;
+        if (name && name[0] != '\0')
+          return sb.appendString(name);
+        else
+          return sb.appendFormat("v%u", static_cast<unsigned int>(Operand::unpackId(rId)));
       }
     }
 
-    sb.appendFormat("VirtReg(Type=%u Id=%u)", regType, regId);
-    return kErrorOk;
+    return sb.appendFormat("VirtReg<Type=%u Id=%u>", rType, rId);
   }
+  else {
+    if (rType < ASMJIT_ARRAY_SIZE(x86RegFormatInfo)) {
+      const X86RegFormatInfo& rfi = x86RegFormatInfo[rType];
 
-  if (regType < ASMJIT_ARRAY_SIZE(x86RegisterNames)) {
-    const X86RegNameInfo& rfd = x86RegisterNames[regType];
-    if (rfd.valid) {
-      if (regId < rfd.special) {
-        const char prefix = '\0';
-        const char* s = nullptr;
-        size_t len = Globals::kInvalidIndex;
+      if (rId < rfi.specialCount)
+        return sb.appendString(x86RegFormatStrings + rfi.specialIndex + rId * 4);
 
-        if (regType == X86Reg::kRegGpbLo) {
-          s = reg8l;
-        }
-        else if (regType == X86Reg::kRegGpbHi) {
-          s = reg8h;
-        }
-        else if (regType == X86Reg::kRegGpw) {
-          s = reg32 + 1;
-        }
-        else if (regType == X86Reg::kRegGpd) {
-          s = reg32;
-        }
-        else if (regType == X86Reg::kRegGpq) {
-          s = reg64;
-        }
-        else if (regType == X86Reg::kRegRip) {
-          s = "rip";
-        }
-        else {
-          if (regId == 0) goto Invalid;
-          s = x86SegmentNames;
-          len = 2;
-        }
-
-        sb.appendString(s + regId * 4, len);
-        return kErrorOk;
-      }
-
-      sb.appendFormat(rfd.format, regId);
-      return kErrorOk;
+      if (rId < rfi.count)
+        return sb.appendFormat(x86RegFormatStrings + rfi.formatIndex, static_cast<unsigned int>(rId));
+      return sb.appendFormat("PhysReg<Type=%u Id=%u COUNT=%u>", rType, rId, rfi.count);
     }
-  }
 
-Invalid:
-  sb.appendFormat("InvalidReg[Type=%u ID=%u]", regType, regId);
-  return kErrorOk;
+    return sb.appendFormat("PhysReg<Type=%u Id=%u>", rType, rId);
+  }
 }
 
 // ============================================================================

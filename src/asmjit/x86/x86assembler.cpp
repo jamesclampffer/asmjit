@@ -162,49 +162,45 @@ enum X86MemInfo_Enum {
   kX86MemInfo_67H_Mask  = 0xC0  //!< Contains all address-size override bits.
 };
 
-#define B(X) (((X) >> Mem::kMemBaseTypeShift ) & 0xF)
-#define I(X) (((X) >> Mem::kMemIndexTypeShift) & 0xF)
-#define X86MemInfo_T(X)                                                                              \
-  (/* BASE */ ((B(X) >= X86Reg::kRegGpw  && B(X) <= X86Reg::kRegGpq ) ? kX86MemInfo_BaseGp    : 0) | \
-              ((B(X) == X86Reg::kRegRip                             ) ? kX86MemInfo_BaseRip   : 0) | \
-              ((B(X) == Label::kLabelTag                            ) ? kX86MemInfo_BaseLabel : 0) | \
-                                                                                                     \
-   /* IDX  */ ((I(X) >= X86Reg::kRegGpw  && I(X) <= X86Reg::kRegGpq ) ? kX86MemInfo_Index     :      \
-               (I(X) >= X86Reg::kRegXmm  && I(X) <= X86Reg::kRegZmm ) ? kX86MemInfo_Index     : 0) | \
-                                                                                                     \
-   /* 67H  */ ((B(X) == X86Reg::kRegGpw  && I(X) == X86Reg::kRegNone) ? kX86MemInfo_67H_X86   :      \
-               (B(X) == X86Reg::kRegGpd  && I(X) == X86Reg::kRegNone) ? kX86MemInfo_67H_X64   :      \
-               (B(X) == X86Reg::kRegNone && I(X) == X86Reg::kRegGpw ) ? kX86MemInfo_67H_X86   :      \
-               (B(X) == X86Reg::kRegNone && I(X) == X86Reg::kRegGpd ) ? kX86MemInfo_67H_X64   :      \
-               (B(X) == X86Reg::kRegGpw  && I(X) == X86Reg::kRegGpw ) ? kX86MemInfo_67H_X86   :      \
-               (B(X) == X86Reg::kRegGpd  && I(X) == X86Reg::kRegGpd ) ? kX86MemInfo_67H_X64   :      \
-               (B(X) == X86Reg::kRegGpw  && I(X) == X86Reg::kRegXmm ) ? kX86MemInfo_67H_X86   :      \
-               (B(X) == X86Reg::kRegGpd  && I(X) == X86Reg::kRegXmm ) ? kX86MemInfo_67H_X64   :      \
-               (B(X) == X86Reg::kRegGpw  && I(X) == X86Reg::kRegYmm ) ? kX86MemInfo_67H_X86   :      \
-               (B(X) == X86Reg::kRegGpd  && I(X) == X86Reg::kRegYmm ) ? kX86MemInfo_67H_X64   :      \
-               (B(X) == X86Reg::kRegGpw  && I(X) == X86Reg::kRegZmm ) ? kX86MemInfo_67H_X86   :      \
-               (B(X) == X86Reg::kRegGpd  && I(X) == X86Reg::kRegZmm ) ? kX86MemInfo_67H_X64   :      \
-               (B(X) == Label::kLabelTag && I(X) == X86Reg::kRegGpw ) ? kX86MemInfo_67H_X86   :      \
-               (B(X) == Label::kLabelTag && I(X) == X86Reg::kRegGpd ) ? kX86MemInfo_67H_X64   : 0) | 0x04 | 0x08)
+template<uint32_t X>
+struct X86MemInfo_T {
+  enum {
+    B = (X     ) & 0x1F,
+    I = (X >> 5) & 0x1F,
+
+    kBase  = ((B >= X86Reg::kRegGpw  && B <= X86Reg::kRegGpq ) ? kX86MemInfo_BaseGp    :
+              (B == X86Reg::kRegRip                          ) ? kX86MemInfo_BaseRip   :
+              (B == Label::kLabelTag                         ) ? kX86MemInfo_BaseLabel : 0),
+
+    kIndex = ((I >= X86Reg::kRegGpw  && I <= X86Reg::kRegGpq ) ? kX86MemInfo_Index     :
+              (I >= X86Reg::kRegXmm  && I <= X86Reg::kRegZmm ) ? kX86MemInfo_Index     : 0),
+
+    k67H   = ((B == X86Reg::kRegGpw  && I == X86Reg::kRegNone) ? kX86MemInfo_67H_X86   :
+              (B == X86Reg::kRegGpd  && I == X86Reg::kRegNone) ? kX86MemInfo_67H_X64   :
+              (B == X86Reg::kRegNone && I == X86Reg::kRegGpw ) ? kX86MemInfo_67H_X86   :
+              (B == X86Reg::kRegNone && I == X86Reg::kRegGpd ) ? kX86MemInfo_67H_X64   :
+              (B == X86Reg::kRegGpw  && I == X86Reg::kRegGpw ) ? kX86MemInfo_67H_X86   :
+              (B == X86Reg::kRegGpd  && I == X86Reg::kRegGpd ) ? kX86MemInfo_67H_X64   :
+              (B == X86Reg::kRegGpw  && I == X86Reg::kRegXmm ) ? kX86MemInfo_67H_X86   :
+              (B == X86Reg::kRegGpd  && I == X86Reg::kRegXmm ) ? kX86MemInfo_67H_X64   :
+              (B == X86Reg::kRegGpw  && I == X86Reg::kRegYmm ) ? kX86MemInfo_67H_X86   :
+              (B == X86Reg::kRegGpd  && I == X86Reg::kRegYmm ) ? kX86MemInfo_67H_X64   :
+              (B == X86Reg::kRegGpw  && I == X86Reg::kRegZmm ) ? kX86MemInfo_67H_X86   :
+              (B == X86Reg::kRegGpd  && I == X86Reg::kRegZmm ) ? kX86MemInfo_67H_X64   :
+              (B == Label::kLabelTag && I == X86Reg::kRegGpw ) ? kX86MemInfo_67H_X86   :
+              (B == Label::kLabelTag && I == X86Reg::kRegGpd ) ? kX86MemInfo_67H_X64   : 0),
+
+    kValue = kBase | kIndex | k67H | 0x04 | 0x08
+  };
+};
+
 // The result stored in the LUT is a combination of
 //   - 67H - Address override prefix - depends on BASE+INDEX register types and
 //           the target architecture.
 //   - REX - A possible combination of REX.[B|X|R|W] bits in REX prefix where
 //           REX.B and REX.X are possibly masked out, but REX.R and REX.W are
 //           kept as is.
-static const uint8_t x86MemInfo[256] = {
-  ASMJIT_TABLE_16(X86MemInfo_T,   0), ASMJIT_TABLE_16(X86MemInfo_T,  16),
-  ASMJIT_TABLE_16(X86MemInfo_T,  32), ASMJIT_TABLE_16(X86MemInfo_T,  48),
-  ASMJIT_TABLE_16(X86MemInfo_T,  64), ASMJIT_TABLE_16(X86MemInfo_T,  80),
-  ASMJIT_TABLE_16(X86MemInfo_T,  96), ASMJIT_TABLE_16(X86MemInfo_T, 112),
-  ASMJIT_TABLE_16(X86MemInfo_T, 128), ASMJIT_TABLE_16(X86MemInfo_T, 144),
-  ASMJIT_TABLE_16(X86MemInfo_T, 160), ASMJIT_TABLE_16(X86MemInfo_T, 176),
-  ASMJIT_TABLE_16(X86MemInfo_T, 192), ASMJIT_TABLE_16(X86MemInfo_T, 208),
-  ASMJIT_TABLE_16(X86MemInfo_T, 224), ASMJIT_TABLE_16(X86MemInfo_T, 240)
-};
-#undef X86MemInfo_T
-#undef I
-#undef B
+static const uint8_t x86MemInfo[] = { ASMJIT_TABLE_T_1024(X86MemInfo_T, kValue, 0) };
 
 // VEX3 or XOP xor bits applied to the opcode before emitted. The index to this
 // table is 'mmmmm' value, which contains all we need. This is only used by a
@@ -213,61 +209,65 @@ static const uint8_t x86MemInfo[256] = {
 // or XOP instruction. This should minimize the code required to emit such
 // instructions and should also make it faster as we don't need any branch to
 // decide between VEX3 vs XOP.
-//
 //            ____    ___
 // [_OPCODE_|WvvvvLpp|RXBmmmmm|VEX3_XOP]
-#define X86VEXPrefix_T(X) \
-  ( (((X) & 0x08) ? kX86ByteXop3 : kX86ByteVex3) | (0xF << 19) | (0x7 << 13) )
-static const uint32_t x86VEXPrefix[16] = { ASMJIT_TABLE_16(X86VEXPrefix_T, 0) };
-#undef X86VEXPrefix_T
+template<uint32_t X>
+struct X86VEXPrefix_T {
+  enum { kValue = ((X & 0x08) ? kX86ByteXop3 : kX86ByteVex3) | (0xF << 19) | (0x7 << 13) };
+};
+static const uint32_t x86VEXPrefix[] = { ASMJIT_TABLE_T_16(X86VEXPrefix_T, kValue, 0) };
 
 // Table that contains LL opcode field addressed by a register size / 16. It's
 // used to propagate L.256 or L.512 when YMM or ZMM registers are used,
 // respectively.
-#define X86LLBySizeDiv16_T(X)                      \
-  (((X) & (64 >> 4)) ? X86Inst::kOpCode_LL_512 :   \
-   ((X) & (32 >> 4)) ? X86Inst::kOpCode_LL_256 : 0 )
-static const uint32_t x86LLBySizeDiv16[16] = { ASMJIT_TABLE_16(X86LLBySizeDiv16_T, 0) };
-#undef X86LLBySizeDiv16_T
+template<uint32_t X>
+struct X86LLBySizeDiv16_T {
+  enum {
+    kValue = (X & (64 >> 4)) ? X86Inst::kOpCode_LL_512 :
+             (X & (32 >> 4)) ? X86Inst::kOpCode_LL_256 : 0
+  };
+};
+static const uint32_t x86LLBySizeDiv16[] = { ASMJIT_TABLE_T_16(X86LLBySizeDiv16_T, kValue, 0) };
 
 // Table that contains LL opcode field addressed by a register size / 16. It's
 // used to propagate L.256 or L.512 when YMM or ZMM registers are used,
 // respectively.
-#define X86LLByRegType_T(X)                             \
-  ((X) == X86Reg::kRegZmm ? X86Inst::kOpCode_LL_512 :   \
-   (X) == X86Reg::kRegYmm ? X86Inst::kOpCode_LL_256 : 0 )
-static const uint32_t x86LLByRegType[16] = { ASMJIT_TABLE_16(X86LLByRegType_T, 0) };
-#undef X86LLByRegType_T
+template<uint32_t X>
+struct X86LLByRegType_T {
+  enum {
+    kValue = X == X86Reg::kRegZmm ? X86Inst::kOpCode_LL_512 :
+             X == X86Reg::kRegYmm ? X86Inst::kOpCode_LL_256 : 0
+  };
+};
+static const uint32_t x86LLByRegType[] = { ASMJIT_TABLE_T_16(X86LLByRegType_T, kValue, 0) };
 
 // Table that contains a scale (shift left) based on 'TTWLL' field and
 // the instruction's tuple-type (TT) field. The scale is then applied to
 // the BASE-N stored in each opcode to calculate the final compressed
 // displacement used by all EVEX encoded instructions.
-#define TT(X) (((X) >> 3) << X86Inst::kOpCode_CDTT_Shift)
-#define LL(X) (((X) >> 0) & 0x3)
-#define W(X)  (((X) >> 2) & 0x1)
-#define X86CDisp8SHL_T(X)                                                                        \
-  ((TT(X) == X86Inst::kOpCode_CDTT_None ? ((LL(X)==0) ? 0    : (LL(X)==1) ? 0      : 0     ) :   \
-    TT(X) == X86Inst::kOpCode_CDTT_ByLL ? ((LL(X)==0) ? 0    : (LL(X)==1) ? 1      : 2     ) :   \
-    TT(X) == X86Inst::kOpCode_CDTT_T1W  ? ((LL(X)==0) ? W(X) : (LL(X)==1) ? 1+W(X) : 2+W(X)) :   \
-    TT(X) == X86Inst::kOpCode_CDTT_DUP  ? ((LL(X)==0) ? 0    : (LL(X)==1) ? 2      : 3     ) : 0 ) << X86Inst::kOpCode_CDSHL_Shift)
-static const uint32_t x86CDisp8SHL[32] = {
-  ASMJIT_TABLE_16(X86CDisp8SHL_T,  0),
-  ASMJIT_TABLE_16(X86CDisp8SHL_T, 16)
+template<uint32_t X>
+struct X86CDisp8SHL_T {
+  enum {
+    TT = (((X) >> 3) << X86Inst::kOpCode_CDTT_Shift),
+    LL = (((X) >> 0) & 0x3),
+    W  = (((X) >> 2) & 0x1),
+
+    kValue = (TT == X86Inst::kOpCode_CDTT_None ? ((LL==0) ? 0 : (LL==1) ? 0   : 0  ) :
+              TT == X86Inst::kOpCode_CDTT_ByLL ? ((LL==0) ? 0 : (LL==1) ? 1   : 2  ) :
+              TT == X86Inst::kOpCode_CDTT_T1W  ? ((LL==0) ? W : (LL==1) ? 1+W : 2+W) :
+              TT == X86Inst::kOpCode_CDTT_DUP  ? ((LL==0) ? 0 : (LL==1) ? 2   : 3  ) : 0 ) << X86Inst::kOpCode_CDSHL_Shift
+  };
 };
-#undef X86CDisp8SHL_T
-#undef W
-#undef TT
-#undef LL
+static const uint32_t x86CDisp8SHL[] = { ASMJIT_TABLE_T_32(X86CDisp8SHL_T, kValue, 0) };
 
 // Table that contains MOD byte of a 16-bit [BASE + disp] address.
 //   0xFF == Invalid.
 static const uint8_t x86Mod16BaseTable[8] = {
-  0xFF, // AX -> Not encodable.
-  0xFF, // CX -> Not encodable.
-  0xFF, // DX -> Not encodable.
+  0xFF, // AX -> N/A.
+  0xFF, // CX -> N/A.
+  0xFF, // DX -> N/A.
   0x07, // BX -> 111.
-  0xFF, // SP -> Not encodable.
+  0xFF, // SP -> N/A.
   0x06, // BP -> 110.
   0x04, // SI -> 100.
   0x05  // DI -> 101.
@@ -275,20 +275,19 @@ static const uint8_t x86Mod16BaseTable[8] = {
 
 // Table that contains MOD byte of a 16-bit [BASE + INDEX + disp] combination.
 //   0xFF == Invalid.
-#define IS_BASE_INDEX(X, BASE, INDEX) (((X) >> 3) == X86Gp::kId##BASE && ((X) & 0x7) == X86Gp::kId##INDEX)
-#define X86Mod16BaseIndexTable(X) \
-  ((IS_BASE_INDEX(X, Bx, Si) || IS_BASE_INDEX(X, Si, Bx)) ? 0x00 : \
-   (IS_BASE_INDEX(X, Bx, Di) || IS_BASE_INDEX(X, Di, Bx)) ? 0x01 : \
-   (IS_BASE_INDEX(X, Bp, Si) || IS_BASE_INDEX(X, Si, Bp)) ? 0x02 : \
-   (IS_BASE_INDEX(X, Bp, Di) || IS_BASE_INDEX(X, Di, Bp)) ? 0x03 : 0xFF)
-static const uint8_t x86Mod16BaseIndexTable[64] = {
-  ASMJIT_TABLE_16(X86Mod16BaseIndexTable, 0),
-  ASMJIT_TABLE_16(X86Mod16BaseIndexTable, 1),
-  ASMJIT_TABLE_16(X86Mod16BaseIndexTable, 2),
-  ASMJIT_TABLE_16(X86Mod16BaseIndexTable, 3)
+template<uint32_t X>
+struct X86Mod16BaseIndexTable_T {
+  enum {
+    B = X >> 3,
+    I = X & 0x7,
+
+    kValue = ((B == X86Gp::kIdBx && I == X86Gp::kIdSi) || (B == X86Gp::kIdSi && I == X86Gp::kIdBx)) ? 0x00 :
+             ((B == X86Gp::kIdBx && I == X86Gp::kIdDi) || (B == X86Gp::kIdDi && I == X86Gp::kIdBx)) ? 0x01 :
+             ((B == X86Gp::kIdBp && I == X86Gp::kIdSi) || (B == X86Gp::kIdSi && I == X86Gp::kIdBp)) ? 0x02 :
+             ((B == X86Gp::kIdBp && I == X86Gp::kIdDi) || (B == X86Gp::kIdDi && I == X86Gp::kIdBp)) ? 0x03 : 0xFF
+  };
 };
-#undef X86Mod16BaseIndexTable
-#undef IS_BASE_INDEX
+static const uint8_t x86Mod16BaseIndexTable[] = { ASMJIT_TABLE_T_64(X86Mod16BaseIndexTable_T, kValue, 0) };
 
 // ============================================================================
 // [asmjit::X86Assembler - Helpers]

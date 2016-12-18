@@ -152,40 +152,22 @@ public:
 
   static ASMJIT_INLINE uint32_t kindOf(uint32_t regType) noexcept;
   template<uint32_t Type>
-  static ASMJIT_INLINE uint32_t kindOf() noexcept { return ArmRegTraits<Type>::kKind; }
+  static ASMJIT_INLINE uint32_t kindOfT() noexcept { return ArmRegTraits<Type>::kKind; }
 
   static ASMJIT_INLINE uint32_t signatureOf(uint32_t regType) noexcept;
   template<uint32_t Type>
-  static ASMJIT_INLINE uint32_t signatureOf() noexcept { return ArmRegTraits<Type>::kSignature; }
-
-  static ASMJIT_INLINE bool isGp(const Operand_& op) noexcept {
-    // Check operand type and register kind. Not interested in register type and size.
-    const uint32_t kMsk = Utils::pack32_4x8(0xFF           , 0x00, 0xFF           , 0x00);
-    const uint32_t kSgn = Utils::pack32_4x8(Operand::kOpReg, 0x00, ArmReg::kKindGp, 0x00);
-    return (op.getSignature() & kMsk) == kSgn;
-  }
+  static ASMJIT_INLINE uint32_t signatureOfT() noexcept { return ArmRegTraits<Type>::kSignature; }
 
   static ASMJIT_INLINE bool isGpR(const Operand_& op) noexcept { return op.as<ArmReg>().isGpR(); }
   static ASMJIT_INLINE bool isGpW(const Operand_& op) noexcept { return op.as<ArmReg>().isGpW(); }
   static ASMJIT_INLINE bool isGpX(const Operand_& op) noexcept { return op.as<ArmReg>().isGpX(); }
-
-  static ASMJIT_INLINE bool isGp(const Operand_& op, uint32_t id) noexcept { return isGp(op) & (op.getId() == id); }
   static ASMJIT_INLINE bool isGpR(const Operand_& op, uint32_t id) noexcept { return isGpR(op) & (op.getId() == id); }
   static ASMJIT_INLINE bool isGpW(const Operand_& op, uint32_t id) noexcept { return isGpW(op) & (op.getId() == id); }
   static ASMJIT_INLINE bool isGpX(const Operand_& op, uint32_t id) noexcept { return isGpX(op) & (op.getId() == id); }
 
-  static ASMJIT_INLINE bool isVec(const Operand_& op) noexcept {
-    // Check operand type and register kind. Not interested in register type and size.
-    const uint32_t kMsk = Utils::pack32_4x8(0xFF           , 0x00, 0xFF            , 0x00);
-    const uint32_t kSgn = Utils::pack32_4x8(Operand::kOpReg, 0x00, ArmReg::kKindVec, 0   );
-    return (op.getSignature() & kMsk) == kSgn;
-  }
-
   static ASMJIT_INLINE bool isVecS(const Operand_& op) noexcept { return op.as<ArmReg>().isVecS(); }
   static ASMJIT_INLINE bool isVecD(const Operand_& op) noexcept { return op.as<ArmReg>().isVecD(); }
   static ASMJIT_INLINE bool isVecV(const Operand_& op) noexcept { return op.as<ArmReg>().isVecV(); }
-
-  static ASMJIT_INLINE bool isVec(const Operand_& op, uint32_t id) noexcept { return isVec(op) & (op.getId() == id); }
   static ASMJIT_INLINE bool isVecS(const Operand_& op, uint32_t id) noexcept { return isVecS(op) & (op.getId() == id); }
   static ASMJIT_INLINE bool isVecD(const Operand_& op, uint32_t id) noexcept { return isVecD(op) & (op.getId() == id); }
   static ASMJIT_INLINE bool isVecV(const Operand_& op, uint32_t id) noexcept { return isVecV(op) & (op.getId() == id); }

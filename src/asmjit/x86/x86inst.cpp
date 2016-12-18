@@ -3764,7 +3764,7 @@ ASMJIT_FAVOR_SIZE Error X86Inst::validate(
 
     switch (op.getOp()) {
       case Operand::kOpReg: {
-        uint32_t regType = static_cast<const Reg&>(op).getRegType();
+        uint32_t regType = op.as<Reg>().getType();
         if (ASMJIT_UNLIKELY(regType >= X86Reg::kRegCount))
           return DebugUtils::errored(kErrorInvalidRegType);
 

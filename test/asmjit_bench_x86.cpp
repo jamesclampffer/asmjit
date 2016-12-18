@@ -128,6 +128,8 @@ static void benchX86(uint32_t archType) {
   // [Bench - CodeCompiler]
   // --------------------------------------------------------------------------
 
+  return;
+
   perf.reset();
   for (r = 0; r < kNumRepeats; r++) {
     ccOutputSize = 0;

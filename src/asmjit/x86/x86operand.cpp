@@ -78,7 +78,7 @@ UNIT(x86_operand) {
   EXPECT(x86::eax.isReg() == true);
   EXPECT(x86::eax.getId() == 0);
   EXPECT(x86::eax.getSize() == 4);
-  EXPECT(x86::eax.getRegType() == X86Reg::kRegGpd);
+  EXPECT(x86::eax.getType() == X86Reg::kRegGpd);
   EXPECT(x86::eax.getKind() == X86Reg::kKindGp);
 
   INFO("Checking FP register properties");
@@ -86,7 +86,7 @@ UNIT(x86_operand) {
   EXPECT(x86::fp1.isReg() == true);
   EXPECT(x86::fp1.getId() == 1);
   EXPECT(x86::fp1.getSize() == 10);
-  EXPECT(x86::fp1.getRegType() == X86Reg::kRegFp);
+  EXPECT(x86::fp1.getType() == X86Reg::kRegFp);
   EXPECT(x86::fp1.getKind() == X86Reg::kKindFp);
 
   INFO("Checking MM register properties");
@@ -94,15 +94,15 @@ UNIT(x86_operand) {
   EXPECT(x86::mm2.isReg() == true);
   EXPECT(x86::mm2.getId() == 2);
   EXPECT(x86::mm2.getSize() == 8);
-  EXPECT(x86::mm2.getRegType() == X86Reg::kRegMm);
+  EXPECT(x86::mm2.getType() == X86Reg::kRegMm);
   EXPECT(x86::mm2.getKind() == X86Reg::kKindMm);
 
   INFO("Checking K register properties");
   EXPECT(X86KReg().isReg() == false);
   EXPECT(x86::k3.isReg() == true);
   EXPECT(x86::k3.getId() == 3);
-  EXPECT(x86::k3.getSize() == 8);
-  EXPECT(x86::k3.getRegType() == X86Reg::kRegK);
+  EXPECT(x86::k3.getSize() == 0);
+  EXPECT(x86::k3.getType() == X86Reg::kRegK);
   EXPECT(x86::k3.getKind() == X86Reg::kKindK);
 
   INFO("Checking XMM register properties");
@@ -110,7 +110,7 @@ UNIT(x86_operand) {
   EXPECT(x86::xmm4.isReg() == true);
   EXPECT(x86::xmm4.getId() == 4);
   EXPECT(x86::xmm4.getSize() == 16);
-  EXPECT(x86::xmm4.getRegType() == X86Reg::kRegXmm);
+  EXPECT(x86::xmm4.getType() == X86Reg::kRegXmm);
   EXPECT(x86::xmm4.getKind() == X86Reg::kKindVec);
   EXPECT(x86::xmm4.isVec());
 
@@ -119,7 +119,7 @@ UNIT(x86_operand) {
   EXPECT(x86::ymm5.isReg() == true);
   EXPECT(x86::ymm5.getId() == 5);
   EXPECT(x86::ymm5.getSize() == 32);
-  EXPECT(x86::ymm5.getRegType() == X86Reg::kRegYmm);
+  EXPECT(x86::ymm5.getType() == X86Reg::kRegYmm);
   EXPECT(x86::ymm5.getKind() == X86Reg::kKindVec);
   EXPECT(x86::ymm5.isVec());
 
@@ -128,7 +128,7 @@ UNIT(x86_operand) {
   EXPECT(x86::zmm6.isReg() == true);
   EXPECT(x86::zmm6.getId() == 6);
   EXPECT(x86::zmm6.getSize() == 64);
-  EXPECT(x86::zmm6.getRegType() == X86Reg::kRegZmm);
+  EXPECT(x86::zmm6.getType() == X86Reg::kRegZmm);
   EXPECT(x86::zmm6.getKind() == X86Reg::kKindVec);
   EXPECT(x86::zmm6.isVec());
 

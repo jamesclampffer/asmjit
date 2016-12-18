@@ -42,7 +42,7 @@ public:
     for (uint32_t i = 0; i < opCount; i++) {
       const Operand& op = opArray[i];
       if (!op.isReg()) continue;
-      mask |= Utils::mask(static_cast<const Reg&>(op).getRegType());
+      mask |= Utils::mask(op.as<Reg>().getType());
     }
     return mask;
   }

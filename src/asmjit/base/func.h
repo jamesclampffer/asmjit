@@ -1180,7 +1180,7 @@ public:
     ASMJIT_ASSERT(index < ASMJIT_ARRAY_SIZE(_args));
     ASMJIT_ASSERT(reg.isPhysReg());
 
-    _args[index].assign(typeId, reg.getRegType(), reg.getId());
+    _args[index].assign(typeId, reg.getType(), reg.getId());
   }
 
   // NOTE: All `assignAll()` methods are shortcuts to assign all arguments at

@@ -41,8 +41,8 @@ UNIT(arm_operand) {
   EXPECT(arm::x31.getId() == 31);
   EXPECT(arm::w0.getSize() == 4);
   EXPECT(arm::x0.getSize() == 8);
-  EXPECT(arm::w0.getRegType() == ArmReg::kRegGpw);
-  EXPECT(arm::x0.getRegType() == ArmReg::kRegGpx);
+  EXPECT(arm::w0.getType() == ArmReg::kRegGpw);
+  EXPECT(arm::x0.getType() == ArmReg::kRegGpx);
   EXPECT(arm::w0.getKind() == ArmReg::kKindGp);
   EXPECT(arm::x0.getKind() == ArmReg::kKindGp);
 }

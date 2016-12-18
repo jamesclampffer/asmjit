@@ -68,44 +68,18 @@ const ArmOpData armOpData = {
   // --------------------------------------------------------------------------
 
   {
-    // RegInfo[] {
-    //   uint8_t opType;
-    //   uint8_t regType;
-    //   uint8_t kind;
-    //   uint8_t size;
-    // }
     {
-#define ASMJIT_ARM_REG_SIGNATURE(TYPE)        \
-      {{                                      \
-          uint8_t(ArmRegTraits<TYPE>::kValid  \
-            ? Operand::kOpReg                 \
-            : Operand::kOpNone),              \
-          uint8_t(ArmRegTraits<TYPE>::kValid  \
-            ? TYPE                            \
-            : 0),                             \
-          uint8_t(ArmRegTraits<TYPE>::kKind), \
-          uint8_t(ArmRegTraits<TYPE>::kSize)  \
-      }}
+#define ASMJIT_ARM_REG_SIGNATURE(TYPE) { ArmRegTraits<TYPE>::kSignature }
       ASMJIT_TABLE_16(ASMJIT_ARM_REG_SIGNATURE,  0),
       ASMJIT_TABLE_16(ASMJIT_ARM_REG_SIGNATURE, 16)
 #undef ASMJIT_ARM_REG_SIGNATURE
     },
 
     // RegCount[]
-    {
-#define ASMJIT_ARM_REG_COUNT(TYPE) ArmRegTraits<TYPE>::kCount
-      ASMJIT_TABLE_16(ASMJIT_ARM_REG_COUNT,  0),
-      ASMJIT_TABLE_16(ASMJIT_ARM_REG_COUNT, 16)
-#undef ASMJIT_ARM_REG_COUNT
-    },
+    { ASMJIT_TABLE_T_32(ArmRegTraits, kCount, 0) },
 
     // RegTypeToTypeId[]
-    {
-#define ASMJIT_ARM_REG_TYPE_ID(TYPE) ArmRegTraits<TYPE>::kTypeId
-      ASMJIT_TABLE_16(ASMJIT_ARM_REG_TYPE_ID,  0),
-      ASMJIT_TABLE_16(ASMJIT_ARM_REG_TYPE_ID, 16)
-#undef ASMJIT_ARM_REG_TYPE_ID
-    }
+    { ASMJIT_TABLE_T_32(ArmRegTraits, kTypeId, 0) }
   },
 
   // --------------------------------------------------------------------------

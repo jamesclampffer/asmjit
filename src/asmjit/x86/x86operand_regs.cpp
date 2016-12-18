@@ -34,39 +34,36 @@ namespace asmjit {
 //   uint32_t reserved8_4;
 //   uint32_t reserved12_4;
 // }
-#define ASMJIT_X86_REG_01(TYPE, ID)   \
-{{{                                   \
-  uint8_t(Operand::kOpReg),           \
-  uint8_t(TYPE),                      \
-  uint8_t(X86RegTraits<TYPE>::kKind), \
-  uint8_t(X86RegTraits<TYPE>::kSize), \
-  uint32_t(ID),                       \
-  uint32_t(0),                        \
-  uint32_t(0)                         \
+#define ASMJIT_X86_REG_01(TYPE, ID)         \
+{{{                                         \
+  uint32_t(X86RegTraits<TYPE>::kSignature), \
+  uint32_t(ID),                             \
+  uint32_t(0),                              \
+  uint32_t(0)                               \
 }}}
 
-#define ASMJIT_X86_REG_04(TYPE, ID)   \
-  ASMJIT_X86_REG_01(TYPE, ID + 0 ),   \
-  ASMJIT_X86_REG_01(TYPE, ID + 1 ),   \
-  ASMJIT_X86_REG_01(TYPE, ID + 2 ),   \
+#define ASMJIT_X86_REG_04(TYPE, ID) \
+  ASMJIT_X86_REG_01(TYPE, ID + 0 ), \
+  ASMJIT_X86_REG_01(TYPE, ID + 1 ), \
+  ASMJIT_X86_REG_01(TYPE, ID + 2 ), \
   ASMJIT_X86_REG_01(TYPE, ID + 3 )
 
-#define ASMJIT_X86_REG_07(TYPE, ID)   \
-  ASMJIT_X86_REG_04(TYPE, ID + 0 ),   \
-  ASMJIT_X86_REG_01(TYPE, ID + 4 ),   \
-  ASMJIT_X86_REG_01(TYPE, ID + 5 ),   \
+#define ASMJIT_X86_REG_07(TYPE, ID) \
+  ASMJIT_X86_REG_04(TYPE, ID + 0 ), \
+  ASMJIT_X86_REG_01(TYPE, ID + 4 ), \
+  ASMJIT_X86_REG_01(TYPE, ID + 5 ), \
   ASMJIT_X86_REG_01(TYPE, ID + 6 )
 
-#define ASMJIT_X86_REG_08(TYPE, ID)   \
-  ASMJIT_X86_REG_04(TYPE, ID + 0 ),   \
+#define ASMJIT_X86_REG_08(TYPE, ID) \
+  ASMJIT_X86_REG_04(TYPE, ID + 0 ), \
   ASMJIT_X86_REG_04(TYPE, ID + 4 )
 
-#define ASMJIT_X86_REG_16(TYPE, ID)   \
-  ASMJIT_X86_REG_08(TYPE, ID + 0 ),   \
+#define ASMJIT_X86_REG_16(TYPE, ID) \
+  ASMJIT_X86_REG_08(TYPE, ID + 0 ), \
   ASMJIT_X86_REG_08(TYPE, ID + 8 )
 
-#define ASMJIT_X86_REG_32(TYPE, ID)   \
-  ASMJIT_X86_REG_16(TYPE, ID + 0 ),   \
+#define ASMJIT_X86_REG_32(TYPE, ID) \
+  ASMJIT_X86_REG_16(TYPE, ID + 0 ), \
   ASMJIT_X86_REG_16(TYPE, ID + 16)
 
 const X86OpData x86OpData = {
@@ -75,44 +72,18 @@ const X86OpData x86OpData = {
   // --------------------------------------------------------------------------
 
   {
-    // RegInfo[] {
-    //   uint8_t opType;
-    //   uint8_t regType;
-    //   uint8_t kind;
-    //   uint8_t size;
-    // }
     {
-#define ASMJIT_X86_REG_SIGNATURE(TYPE)        \
-      {{                                      \
-          uint8_t(X86RegTraits<TYPE>::kValid  \
-            ? Operand::kOpReg                 \
-            : Operand::kOpNone),              \
-          uint8_t(X86RegTraits<TYPE>::kValid  \
-            ? TYPE                            \
-            : 0),                             \
-          uint8_t(X86RegTraits<TYPE>::kKind), \
-          uint8_t(X86RegTraits<TYPE>::kSize)  \
-      }}
+#define ASMJIT_X86_REG_SIGNATURE(TYPE) { X86RegTraits<TYPE>::kSignature }
       ASMJIT_TABLE_16(ASMJIT_X86_REG_SIGNATURE,  0),
       ASMJIT_TABLE_16(ASMJIT_X86_REG_SIGNATURE, 16)
 #undef ASMJIT_X86_REG_SIGNATURE
     },
 
     // RegCount[]
-    {
-#define ASMJIT_X86_REG_COUNT(TYPE) X86RegTraits<TYPE>::kCount
-      ASMJIT_TABLE_16(ASMJIT_X86_REG_COUNT,  0),
-      ASMJIT_TABLE_16(ASMJIT_X86_REG_COUNT, 16)
-#undef ASMJIT_X86_REG_COUNT
-    },
+    { ASMJIT_TABLE_T_32(X86RegTraits, kCount, 0) },
 
     // RegTypeToTypeId[]
-    {
-#define ASMJIT_X86_REG_TYPE_ID(TYPE) X86RegTraits<TYPE>::kTypeId
-      ASMJIT_TABLE_16(ASMJIT_X86_REG_TYPE_ID,  0),
-      ASMJIT_TABLE_16(ASMJIT_X86_REG_TYPE_ID, 16)
-#undef ASMJIT_X86_REG_TYPE_ID
-    }
+    { ASMJIT_TABLE_T_32(X86RegTraits, kTypeId, 0) }
   },
 
   // --------------------------------------------------------------------------

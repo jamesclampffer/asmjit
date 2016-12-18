@@ -74,13 +74,13 @@ struct VirtReg {
   ASMJIT_INLINE const char* getName() const noexcept { return _name; }
 
   //! Get a physical register type.
-  ASMJIT_INLINE uint32_t getRegType() const noexcept { return _regInfo.regType; }
+  ASMJIT_INLINE uint32_t getType() const noexcept { return _regInfo.getType(); }
   //! Get a physical register kind.
-  ASMJIT_INLINE uint32_t getKind() const noexcept { return _regInfo.kind; }
+  ASMJIT_INLINE uint32_t getKind() const noexcept { return _regInfo.getKind(); }
   //! Get a physical register size.
-  ASMJIT_INLINE uint32_t getRegSize() const noexcept { return _regInfo.size; }
+  ASMJIT_INLINE uint32_t getRegSize() const noexcept { return _regInfo.getSize(); }
   //! Get a register signature of this virtual register.
-  ASMJIT_INLINE uint32_t getSignature() const noexcept { return _regInfo.signature; }
+  ASMJIT_INLINE uint32_t getSignature() const noexcept { return _regInfo.getSignature(); }
 
   //! Get a register's type-id, see \ref TypeId.
   ASMJIT_INLINE uint32_t getTypeId() const noexcept { return _typeId; }
