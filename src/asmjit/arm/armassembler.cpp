@@ -12,12 +12,12 @@
 #if defined(ASMJIT_BUILD_ARM)
 
 // [Dependencies]
-#include "../arm/armassembler.h"
-#include "../arm/armlogging_p.h"
 #include "../base/cpuinfo.h"
 #include "../base/logging.h"
 #include "../base/misc_p.h"
 #include "../base/utils.h"
+#include "../arm/armassembler.h"
+#include "../arm/armlogging_p.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"

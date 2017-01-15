@@ -12,9 +12,9 @@
 #if defined(ASMJIT_BUILD_ARM)
 
 // [Dependencies]
+#include "../base/utils.h"
 #include "../arm/arminst.h"
 #include "../arm/armoperand.h"
-#include "../base/utils.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"

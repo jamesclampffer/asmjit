@@ -13,8 +13,8 @@
 #if defined(ASMJIT_BUILD_ARM)
 
 // [Dependencies]
-#include "../arm/armoperand.h"
 #include "../base/misc_p.h"
+#include "../arm/armoperand.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"

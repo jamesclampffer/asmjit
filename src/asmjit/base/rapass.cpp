@@ -175,6 +175,23 @@ Error RAPass::runOnFunction(Zone* zone, CCFunc* func) noexcept {
 // [asmjit::RAPass - ConstructPOV]
 // ============================================================================
 
+class POVStackItem {
+public:
+  ASMJIT_INLINE POVStackItem(RABlock* block, size_t index) noexcept
+    : _block(block),
+      _index(index) {}
+
+  ASMJIT_INLINE POVStackItem(const POVStackItem& other) noexcept
+    : _block(other._block),
+      _index(other._index) {}
+
+  ASMJIT_INLINE RABlock* getBlock() const noexcept { return _block; }
+  ASMJIT_INLINE size_t getIndex() const noexcept { return _index; }
+
+  RABlock* _block;
+  size_t _index;
+};
+
 Error RAPass::constructPOV() noexcept {
   ASMJIT_RA_LOG_INIT(getLogger());
   ASMJIT_RA_LOG_FORMAT("[RA::ConstructPOV]\n");
@@ -188,23 +205,6 @@ Error RAPass::constructPOV() noexcept {
 
   ZoneHeap* heap = output.getHeap();
   ASMJIT_PROPAGATE(output.reserve(count));
-
-  class POVStackItem {
-  public:
-    ASMJIT_INLINE POVStackItem(RABlock* block, size_t index) noexcept
-      : _block(block),
-        _index(index) {}
-
-    ASMJIT_INLINE POVStackItem(const POVStackItem& other) noexcept
-      : _block(other._block),
-        _index(other._index) {}
-
-    ASMJIT_INLINE RABlock* getBlock() const noexcept { return _block; }
-    ASMJIT_INLINE size_t getIndex() const noexcept { return _index; }
-
-    RABlock* _block;
-    size_t _index;
-  };
 
   ZoneStack<POVStackItem> stack;
   ASMJIT_PROPAGATE(stack.init(heap));
