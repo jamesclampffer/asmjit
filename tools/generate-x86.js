@@ -163,8 +163,8 @@ class GenUtils {
   static singleRegCase(name) {
     switch (name) {
       case "xchg"    :
-      case "and"     :
 
+      case "and"     :
       case "pand"    : case "vpand"    : case "vpandd"  : case "vpandq"   :
       case "andpd"   : case "vandpd"   :
       case "andps"   : case "vandps"   :
@@ -186,6 +186,8 @@ class GenUtils {
 
       case "xor"     :
       case "pxor"    : case "vpxor"    : case "vpxord"  : case "vpxorq"   :
+      case "xorpd"   : case "vxorpd"    :
+      case "xorps"   : case "vxorps"    :
 
       case "sub"     :
       case "psubb"   : case "vpsubb"   :

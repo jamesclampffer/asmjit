@@ -870,7 +870,7 @@ public:
   // [Construction / Destruction]
   // --------------------------------------------------------------------------
 
-  explicit ASMJIT_INLINE ZoneBitVector(ZoneHeap* heap) noexcept :
+  explicit ASMJIT_INLINE ZoneBitVector(ZoneHeap* heap = nullptr) noexcept :
     _heap(heap),
     _data(nullptr),
     _length(0),

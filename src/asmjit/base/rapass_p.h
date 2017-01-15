@@ -21,14 +21,21 @@
 #if !defined(ASMJIT_DISABLE_LOGGING)
 # define ASMJIT_RA_LOG_INIT(LOGGER) \
   Logger* logger = LOGGER;
-# define ASMJIT_RA_LOG_FORMAT(...) \
-  do {                             \
-    if (logger)                    \
-      logger->logf(__VA_ARGS__);   \
+# define ASMJIT_RA_LOG_FORMAT(...)  \
+  do {                              \
+    if (logger)                     \
+      logger->logf(__VA_ARGS__);    \
+  } while (0)
+# define ASMJIT_RA_LOG_COMPLEX(...) \
+  do {                              \
+    if (logger) {                   \
+      __VA_ARGS__                   \
+    }                               \
   } while (0)
 #else
-# define ASMJIT_RA_LOG_INIT(LOGGER) do {} while (0)
-# define ASMJIT_RA_LOG_FORMAT(...)    do {} while (0)
+# define ASMJIT_RA_LOG_INIT(LOGGER) ASMJIT_NOP
+# define ASMJIT_RA_LOG_FORMAT(...) ASMJIT_NOP
+# define ASMJIT_RA_LOG_COMPLEX(...) ASMJIT_NOP
 #endif
 
 namespace asmjit {
@@ -448,6 +455,14 @@ class RABlock {
 public:
   ASMJIT_NONCOPYABLE(RABlock)
 
+  ASMJIT_ENUM(LiveType) {
+    kLiveIn    = 0,
+    kLiveOut   = 1,
+    kLiveGen   = 2,
+    kLiveKill  = 3,
+    kLiveCount = 4
+  };
+
   ASMJIT_ENUM(Flags) {
     kFlagIsConstructed    = 0x00000001U, //!< Block has been constructed from nodes.
     kFlagIsSinglePass     = 0x00000002U, //!< Executed only once (initialization code).
@@ -471,11 +486,13 @@ public:
       _lastMark(0),
       _predecessors(heap),
       _successors(heap),
-      _in(heap),
-      _out(heap),
-      _gen(heap),
-      _kill(heap),
-      _idom(nullptr) {}
+      _idom(nullptr) {
+
+    _liveBits[kLiveIn  ].reset(heap);
+    _liveBits[kLiveOut ].reset(heap);
+    _liveBits[kLiveGen ].reset(heap);
+    _liveBits[kLiveKill].reset(heap);
+  }
 
   // --------------------------------------------------------------------------
   // [Accessors]
@@ -521,11 +538,23 @@ public:
   ASMJIT_INLINE const RABlock* getIDom() const noexcept { return _idom; }
   ASMJIT_INLINE void setIDom(RABlock* block) noexcept { _idom = block; }
 
+  ASMJIT_INLINE LiveBits& getIn() noexcept { return _liveBits[kLiveIn]; }
+  ASMJIT_INLINE const LiveBits& getIn() const noexcept { return _liveBits[kLiveIn]; }
+
+  ASMJIT_INLINE LiveBits& getOut() noexcept { return _liveBits[kLiveOut]; }
+  ASMJIT_INLINE const LiveBits& getOut() const noexcept { return _liveBits[kLiveOut]; }
+
+  ASMJIT_INLINE LiveBits& getGen() noexcept { return _liveBits[kLiveGen]; }
+  ASMJIT_INLINE const LiveBits& getGen() const noexcept { return _liveBits[kLiveGen]; }
+
+  ASMJIT_INLINE LiveBits& getKill() noexcept { return _liveBits[kLiveKill]; }
+  ASMJIT_INLINE const LiveBits& getKill() const noexcept { return _liveBits[kLiveKill]; }
+
   ASMJIT_INLINE Error resizeLiveBits(size_t size) noexcept {
-    ASMJIT_PROPAGATE(_in.resize(size));
-    ASMJIT_PROPAGATE(_out.resize(size));
-    ASMJIT_PROPAGATE(_gen.resize(size));
-    ASMJIT_PROPAGATE(_kill.resize(size));
+    ASMJIT_PROPAGATE(_liveBits[kLiveIn  ].resize(size));
+    ASMJIT_PROPAGATE(_liveBits[kLiveOut ].resize(size));
+    ASMJIT_PROPAGATE(_liveBits[kLiveGen ].resize(size));
+    ASMJIT_PROPAGATE(_liveBits[kLiveKill].resize(size));
     return kErrorOk;
   }
 
@@ -566,10 +595,7 @@ public:
   RABlocks _predecessors;                //!< Block predecessors.
   RABlocks _successors;                  //!< Block successors.
 
-  LiveBits _in;                          //!< Liveness in.
-  LiveBits _out;                         //!< Liveness out.
-  LiveBits _gen;                         //!< Liveness gen.
-  LiveBits _kill;                        //!< Liveness kill.
+  LiveBits _liveBits[kLiveCount];        //!< Liveness in/out/use/kill.
 };
 
 // ============================================================================
@@ -662,7 +688,7 @@ struct TiedReg {
   // --------------------------------------------------------------------------
 
   ASMJIT_INLINE void init(VirtReg* vReg, uint32_t flags, uint32_t allocableRegs, uint32_t rPhysId, uint32_t wPhysId) noexcept {
-    this->vreg = vReg;
+    this->vReg = vReg;
     this->flags = flags;
     this->allocableRegs = allocableRegs;
     this->refCount = 1;
@@ -706,7 +732,7 @@ struct TiedReg {
   // --------------------------------------------------------------------------
 
   //! Pointer to the associated \ref VirtReg.
-  VirtReg* vreg;
+  VirtReg* vReg;
 
   //! Allocation flags.
   uint32_t flags;
@@ -818,7 +844,7 @@ struct RAData {
     uint32_t tiedCount = tiedTotal;
 
     for (uint32_t i = 0; i < tiedCount; i++)
-      if (tiedArray[i].vreg == vReg)
+      if (tiedArray[i].vReg == vReg)
         return &tiedArray[i];
 
     return nullptr;
@@ -830,7 +856,7 @@ struct RAData {
     uint32_t tiedCount = getTiedCountByKind(kind);
 
     for (uint32_t i = 0; i < tiedCount; i++)
-      if (tiedArray[i].vreg == vReg)
+      if (tiedArray[i].vReg == vReg)
         return &tiedArray[i];
 
     return nullptr;
@@ -1196,10 +1222,11 @@ public:
       ASMJIT_PROPAGATE(pass->addToWorkRegs(vReg));
       tReg = cur++;
       tReg->init(vReg, flags, allocable, rPhysId, wPhysId);
+      vReg->setTiedReg(tReg);
       return kErrorOk;
     }
     else {
-      // Already used by this node.
+      // Already used by this node, thus it must have `workReg` already assigned.
       ASMJIT_ASSERT(vReg->hasWorkReg());
 
       if (ASMJIT_UNLIKELY(wPhysId != kAnyReg)) {
@@ -1233,7 +1260,12 @@ public:
     raData->clobberedRegs.reset();
     raData->tiedIndex = index;
     raData->tiedCount = count;
-    ::memcpy(raData->tiedArray, tmp, total * sizeof(TiedReg));
+
+    for (uint32_t i = 0; i < total; i++) {
+      TiedReg* tReg = &tmp[i];
+      tReg->vReg->resetTiedReg();
+      raData->tiedArray[i] = *tReg;
+    }
 
     node->setPassData<RAData>(raData);
     return kErrorOk;

@@ -150,10 +150,12 @@ struct VirtReg {
   ASMJIT_INLINE bool hasTiedReg() const noexcept { return _tiedReg != nullptr; }
   ASMJIT_INLINE TiedReg* getTiedReg() const noexcept { return _tiedReg; }
   ASMJIT_INLINE void setTiedReg(TiedReg* tiedReg) noexcept { _tiedReg = tiedReg; }
+  ASMJIT_INLINE void resetTiedReg() noexcept { _tiedReg = nullptr; }
 
   ASMJIT_INLINE bool hasWorkReg() const noexcept { return _workReg != nullptr; }
   ASMJIT_INLINE WorkReg* getWorkReg() const noexcept { return _workReg; }
   ASMJIT_INLINE void setWorkReg(WorkReg* workReg) noexcept { _workReg = workReg; }
+  ASMJIT_INLINE void resetWorkReg() noexcept { _workReg = nullptr; }
 
   // --------------------------------------------------------------------------
   // [Members]

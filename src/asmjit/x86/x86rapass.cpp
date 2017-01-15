@@ -327,7 +327,7 @@ public:
             kindsUsed |= Utils::mask(kind);
 
             uint32_t allocable = _pass->_allocableRegs.get(kind);
-            ASMJIT_PROPAGATE(tb.add(vReg, 0, allocable, rwArray[i].rPhysId, rwArray[i].wPhysId));
+            ASMJIT_PROPAGATE(tb.add(vReg, rwArray[i].flags, allocable, rwArray[i].rPhysId, rwArray[i].wPhysId));
 
             if (singleRegOps == i)
               singleRegOps++;
@@ -347,7 +347,7 @@ public:
               kindsUsed |= Utils::mask(kind);
 
               uint32_t allocable = _pass->_allocableRegs.get(kind);
-              ASMJIT_PROPAGATE(tb.add(vReg, 0, allocable, RAPass::kAnyReg, RAPass::kAnyReg));
+              ASMJIT_PROPAGATE(tb.add(vReg, TiedReg::kRReg, allocable, RAPass::kAnyReg, RAPass::kAnyReg));
             }
           }
 
@@ -362,7 +362,7 @@ public:
               kindsUsed |= Utils::mask(kind);
 
               uint32_t allocable = _pass->_allocableRegs.get(kind);
-              ASMJIT_PROPAGATE(tb.add(vReg, 0, allocable, RAPass::kAnyReg, RAPass::kAnyReg));
+              ASMJIT_PROPAGATE(tb.add(vReg, TiedReg::kRReg, allocable, RAPass::kAnyReg, RAPass::kAnyReg));
             }
           }
         }

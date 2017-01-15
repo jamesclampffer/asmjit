@@ -407,17 +407,17 @@ Error RAPass::constructLiveness() noexcept {
 
         for (uint32_t i = 0; i < count; i++) {
           const TiedReg& tReg = tRegs[i];
-          const WorkReg* wReg = tReg.vreg->getWorkReg();
+          const WorkReg* wReg = tReg.vReg->getWorkReg();
 
           uint32_t workId = wReg->getWorkId();
           if (tReg.isWriteOnly()) {
             // KILL.
-            block->_kill.setAt(workId, true);
+            block->getKill().setAt(workId, true);
           }
           else {
             // GEN.
-            block->_kill.setAt(workId, false);
-            block->_gen.setAt(workId, true);
+            block->getKill().setAt(workId, false);
+            block->getGen().setAt(workId, true);
           }
         }
       }
@@ -446,19 +446,19 @@ Error RAPass::constructLiveness() noexcept {
 
     for (size_t i = 0; i < numSuccessors; i++) {
       changed |= LiveOps::op<LiveOps::Or>(
-        block->_out.getData(),
-        successors[i]->_in.getData(), numBitWords);
+        block->getOut().getData(),
+        successors[i]->getIn().getData(), numBitWords);
     }
 
     // Calculate `IN` based on `OUT`, `GEN`, and `KILL` bits.
     if (changed) {
       changed = LiveOps::op<LiveOps::LiveIn>(
-        block->_in.getData(),
-        block->_out.getData(),
-        block->_gen.getData(),
-        block->_kill.getData(), numBitWords);
+        block->getIn().getData(),
+        block->getOut().getData(),
+        block->getGen().getData(),
+        block->getKill().getData(), numBitWords);
 
-      // Add all predecessors to the `workList` if liveness of this block changed.
+      // Add all predecessors to the `workList` if live-in of this block changed.
       if (changed) {
         const RABlocks& predecessors = block->getPredecessors();
         size_t numPredecessors = predecessors.getLength();
@@ -473,6 +473,47 @@ Error RAPass::constructLiveness() noexcept {
       }
     }
   }
+
+  ASMJIT_RA_LOG_COMPLEX({
+    StringBuilderTmp<512> sb;
+
+    for (uint32_t i = 0; i < numBlocks; i++) {
+      RABlock* block = _blocks[i];
+
+      sb.clear();
+      sb.appendFormat("{Block #%u}\n", static_cast<unsigned int>(block->getBlockId()));
+
+      for (uint32_t liveType = 0; liveType < RABlock::kLiveCount; liveType++) {
+        const char* bitsName = liveType == RABlock::kLiveIn  ? "IN  " :
+                               liveType == RABlock::kLiveOut ? "OUT " :
+                               liveType == RABlock::kLiveGen ? "GEN " : "KILL";
+
+        const LiveBits& bits = block->_liveBits[liveType];
+        ASMJIT_ASSERT(bits.getLength() == numWorkRegs);
+
+        bool first = true;
+        for (size_t workId = 0; workId < numWorkRegs; workId++) {
+          if (bits.getAt(workId)) {
+            WorkReg* workReg = _workRegs[workId];
+
+            if (first) {
+              sb.appendFormat("  %s [", bitsName);
+              first = false;
+            }
+            else {
+              sb.appendString(", ");
+            }
+            sb.appendString(workReg->getVirtReg()->getName());
+          }
+        }
+
+        if (!first)
+          sb.appendString("]\n");
+      }
+
+      logger->log(sb);
+    }
+  });
 
   ASMJIT_RA_LOG_FORMAT("  Done (%u visits)\n", static_cast<unsigned int>(nVisits));
   return kErrorOk;
@@ -652,21 +693,16 @@ Error RAPass::_logBlockIds(const RABlocks& blocks) noexcept {
   ASMJIT_ASSERT(hasLogger());
 
   StringBuilderTmp<1024> sb;
-  sb.appendString("  => { ");
+  sb.appendString("  => [");
 
-  if (blocks.isEmpty()) {
-    sb.appendString("none");
-  }
-  else {
-    for (size_t i = 0, len = blocks.getLength(); i < len; i++) {
-      const RABlock* block = blocks[i];
-      if (i != 0)
-        sb.appendString(", ");
-      sb.appendFormat("#%u", static_cast<unsigned int>(block->getBlockId()));
-    }
+  for (size_t i = 0, len = blocks.getLength(); i < len; i++) {
+    const RABlock* block = blocks[i];
+    if (i != 0)
+      sb.appendString(", ");
+    sb.appendFormat("#%u", static_cast<unsigned int>(block->getBlockId()));
   }
 
-  sb.appendString(" }\n");
+  sb.appendString("]\n");
   return getLogger()->log(sb.getData(), sb.getLength());
 }
 #endif
