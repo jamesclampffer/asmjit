@@ -12,7 +12,7 @@
 #if !defined(ASMJIT_DISABLE_BUIILDER)
 
 // [Dependencies]
-#include "../base/codebuilder.h"
+#include "../x86/x86builder.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
@@ -26,11 +26,13 @@ namespace asmjit {
 // [asmjit::X86SseToAvxPass]
 // ============================================================================
 
-class X86SseToAvxPass : public Pass {
+class X86SseToAvxPass : public CBPass {
   ASMJIT_NONCOPYABLE(X86SseToAvxPass)
 public:
+  typedef CBPass Base;
+
   X86SseToAvxPass() noexcept;
-  virtual Error process(Zone* zone) noexcept override;
+  Error run(Zone* zone) noexcept override;
 
   enum ProbeMask {
     kProbeMmx  = 1U << X86Reg::kRegMm,    //!< Instruction uses MMX registers.

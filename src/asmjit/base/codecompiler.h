@@ -15,6 +15,7 @@
 #include "../base/assembler.h"
 #include "../base/codebuilder.h"
 #include "../base/constpool.h"
+#include "../base/debugutils.h"
 #include "../base/func.h"
 #include "../base/operand.h"
 #include "../base/utils.h"
@@ -33,8 +34,8 @@ struct VirtReg;
 
 struct RAState;
 struct RAStackSlot;
-struct RATiedReg;
-class RALocal;
+struct TiedReg;
+class WorkReg;
 
 //! \addtogroup asmjit_base
 //! \{
@@ -146,21 +147,20 @@ struct VirtReg {
   //! Set home stack slot.
   ASMJIT_INLINE void setStackSlot(RAStackSlot* cell) noexcept { _stackSlot = cell; }
 
-  ASMJIT_INLINE bool hasTied() const noexcept { return _tied != nullptr; }
-  ASMJIT_INLINE RATiedReg* getTied() const noexcept { return _tied; }
-  ASMJIT_INLINE void setTied(RATiedReg* tied) noexcept { _tied = tied; }
+  ASMJIT_INLINE bool hasTiedReg() const noexcept { return _tiedReg != nullptr; }
+  ASMJIT_INLINE TiedReg* getTiedReg() const noexcept { return _tiedReg; }
+  ASMJIT_INLINE void setTiedReg(TiedReg* tiedReg) noexcept { _tiedReg = tiedReg; }
 
-
-  ASMJIT_INLINE bool hasLocal() const noexcept { return _local != nullptr; }
-  ASMJIT_INLINE RALocal* getLocal() const noexcept { return _local; }
-  ASMJIT_INLINE void setLocal(RALocal* local) noexcept { _local = local; }
+  ASMJIT_INLINE bool hasWorkReg() const noexcept { return _workReg != nullptr; }
+  ASMJIT_INLINE WorkReg* getWorkReg() const noexcept { return _workReg; }
+  ASMJIT_INLINE void setWorkReg(WorkReg* workReg) noexcept { _workReg = workReg; }
 
   // --------------------------------------------------------------------------
   // [Members]
   // --------------------------------------------------------------------------
 
   uint32_t _id;                          //!< Virtual register id.
-  RegInfo _regInfo;                      //!< Physical register info & signature.
+  RegInfo _regInfo;                      //!< Register info (signature).
   const char* _name;                     //!< Virtual name (user provided).
   uint32_t _size;                        //!< Virtual size (can be smaller than `regInfo._size`).
   uint8_t _typeId;                       //!< Type-id.
@@ -183,8 +183,8 @@ struct VirtReg {
   uint8_t _physId;                       //!< Actual register index (only used by `RAPass)`, during translate.
   uint8_t _modified;                     //!< Whether variable was changed (connected with actual `RAState)`.
 
-  RATiedReg* _tied;                      //!< Reference to `RATiedReg` used during register allocation.
-  RALocal* _local;                       //!< Reference to `RALocal` used during register allocation.
+  TiedReg* _tiedReg;                     //!< Reference to `TiedReg`, used during register allocation.
+  WorkReg* _workReg;                     //!< Reference to `WorkReg`, used during register allocation.
   RAStackSlot* _stackSlot;               //!< Home stack slot, assigned by `RAPass` (initially nullptr).
 };
 
@@ -255,9 +255,9 @@ public:
   }
 
   //! Set argument at `i`.
-  ASMJIT_INLINE void setArg(uint32_t i, VirtReg* vreg) noexcept {
+  ASMJIT_INLINE void setArg(uint32_t i, VirtReg* vReg) noexcept {
     ASMJIT_ASSERT(i < getArgCount());
-    _args[i] = vreg;
+    _args[i] = vReg;
   }
 
   //! Reset argument at `i`.
@@ -467,8 +467,8 @@ public:
   // [Events]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error onAttach(CodeHolder* code) noexcept override;
-  ASMJIT_API virtual Error onDetach(CodeHolder* code) noexcept override;
+  ASMJIT_API Error onAttach(CodeHolder* code) noexcept override;
+  ASMJIT_API Error onDetach(CodeHolder* code) noexcept override;
 
   // --------------------------------------------------------------------------
   // [Func]
@@ -564,13 +564,13 @@ public:
     return _vRegArray[index];
   }
 
-  //! Get \ref VirtReg associated with the given `id`.
+  //! Get \ref VirtReg associated with the given `index`.
   ASMJIT_INLINE VirtReg* getVirtRegAt(size_t index) const noexcept {
     ASMJIT_ASSERT(index < _vRegArray.getLength());
     return _vRegArray[index];
   }
 
-  //! Get an array of all virtual registers managed by CodeCompiler.
+  //! Get an array of all virtual registers managed by `CodeCompiler`.
   ASMJIT_INLINE const ZoneVector<VirtReg*>& getVirtRegArray() const noexcept { return _vRegArray; }
 
   //! Rename variable `reg` to `name`.
@@ -589,6 +589,23 @@ public:
 
   CBConstPool* _localConstPool;          //!< Local constant pool, flushed at the end of each function.
   CBConstPool* _globalConstPool;         //!< Global constant pool, flushed by `finalize()`.
+};
+
+// ============================================================================
+// [asmjit::CCFuncPass]
+// ============================================================================
+
+class ASMJIT_VIRTAPI CCFuncPass : public CBPass {
+public:
+  ASMJIT_NONCOPYABLE(CCFuncPass)
+  typedef CBPass Base;
+
+  ASMJIT_API CCFuncPass(const char* name) noexcept;
+
+  //! Calls `runOnFunction()` on each `CCFunc` node found.
+  ASMJIT_API Error run(Zone* zone) noexcept override;
+
+  virtual Error runOnFunction(Zone* zone, CCFunc* func) noexcept = 0;
 };
 
 //! \}

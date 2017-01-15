@@ -11,6 +11,7 @@
 // [Dependencies]
 #include "../base/codeemitter.h"
 #include "../base/codeholder.h"
+#include "../base/debugutils.h"
 #include "../base/operand.h"
 #include "../base/simdtypes.h"
 
@@ -50,8 +51,8 @@ public:
   // [Events]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error onAttach(CodeHolder* code) noexcept override;
-  ASMJIT_API virtual Error onDetach(CodeHolder* code) noexcept override;
+  ASMJIT_API Error onAttach(CodeHolder* code) noexcept override;
+  ASMJIT_API Error onDetach(CodeHolder* code) noexcept override;
 
   // --------------------------------------------------------------------------
   // [Code-Buffer]
@@ -84,22 +85,47 @@ public:
   // [Code-Generation]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Label newLabel() override;
-  ASMJIT_API virtual Label newNamedLabel(
+  ASMJIT_API Label newLabel() override;
+  ASMJIT_API Label newNamedLabel(
     const char* name,
     size_t nameLength = Globals::kInvalidIndex,
     uint32_t type = Label::kTypeGlobal,
     uint32_t parentId = 0) override;
-  ASMJIT_API virtual Error bind(const Label& label) override;
-  ASMJIT_API virtual Error embed(const void* data, uint32_t size) override;
-  ASMJIT_API virtual Error embedLabel(const Label& label) override;
-  ASMJIT_API virtual Error embedConstPool(const Label& label, const ConstPool& pool) override;
-  ASMJIT_API virtual Error comment(const char* s, size_t len = Globals::kInvalidIndex) override;
+  ASMJIT_API Error bind(const Label& label) override;
+  ASMJIT_API Error embed(const void* data, uint32_t size) override;
+  ASMJIT_API Error embedLabel(const Label& label) override;
+  ASMJIT_API Error embedConstPool(const Label& label, const ConstPool& pool) override;
+  ASMJIT_API Error comment(const char* s, size_t len = Globals::kInvalidIndex) override;
+
+  // --------------------------------------------------------------------------
+  // [Emit-Helpers]
+  // --------------------------------------------------------------------------
+
+protected:
+#if !defined(ASMJIT_DISABLE_LOGGING)
+  void _emitLog(
+    uint32_t instId, uint32_t options, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3,
+    uint32_t relSize, uint32_t imLen, uint8_t* afterCursor);
+
+  Error _emitFailed(
+    Error err,
+    uint32_t instId, uint32_t options, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3);
+#else
+  ASMJIT_INLINE _emitFailed(
+    uint32_t err,
+    uint32_t instId, uint32_t options, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) {
+
+    resetOptions();
+    resetInlineComment();
+    return setLastError(err);
+  }
+#endif
 
   // --------------------------------------------------------------------------
   // [Members]
   // --------------------------------------------------------------------------
 
+public:
   SectionEntry* _section;                //!< Current section where the assembling happens.
   uint8_t* _bufferData;                  //!< Start of the CodeBuffer of the current section.
   uint8_t* _bufferEnd;                   //!< End (first invalid byte) of the current section.

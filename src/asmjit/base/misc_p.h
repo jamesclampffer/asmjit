@@ -27,7 +27,6 @@ namespace asmjit {
                                 DEF(I +  8), DEF(I +  9), DEF(I + 10), DEF(I + 11), \
                                 DEF(I + 12), DEF(I + 13), DEF(I + 14), DEF(I + 15)
 
-
 #define ASMJIT_TABLE_T_8(TABLE, VALUE, I) \
   TABLE< I + 0 >::VALUE, TABLE< I + 1 >::VALUE, \
   TABLE< I + 2 >::VALUE, TABLE< I + 3 >::VALUE, \

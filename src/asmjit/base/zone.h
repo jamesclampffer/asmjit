@@ -9,6 +9,7 @@
 #define _ASMJIT_BASE_ZONE_H
 
 // [Dependencies]
+#include "../base/debugutils.h"
 #include "../base/utils.h"
 
 // [Api-Begin]
@@ -192,6 +193,23 @@ public:
     return static_cast<T*>(allocZeroed(size));
   }
 
+  //! Like `new(std::nothrow) T(...)`, but allocated by `Zone`.
+  template<typename T>
+  ASMJIT_INLINE T* newT() noexcept {
+    void* p = alloc(sizeof(T));
+    if (ASMJIT_UNLIKELY(!p))
+      return nullptr;
+    return new(p) T();
+  }
+  //! Like `new(std::nothrow) T(...)`, but allocated by `Zone`.
+  template<typename T, typename P1>
+  ASMJIT_INLINE T* newT(P1 p1) noexcept {
+    void* p = alloc(sizeof(T));
+    if (ASMJIT_UNLIKELY(!p))
+      return nullptr;
+    return new(p) T(p1);
+  }
+
   //! \internal
   ASMJIT_API void* _alloc(size_t size) noexcept;
 
@@ -307,6 +325,13 @@ class ZoneHeap {
   //! is attached (if any). Reset optionally attaches a new `zone` passed, or
   //! keeps the `ZoneHeap` in an uninitialized state, if `zone` is null.
   ASMJIT_API void reset(Zone* zone = nullptr) noexcept;
+
+  // --------------------------------------------------------------------------
+  // [Accessors]
+  // --------------------------------------------------------------------------
+
+  //! Get the `Zone` the `ZoneHeap` is using, or null if it's not initialized.
+  ASMJIT_INLINE Zone* getZone() const noexcept { return _zone; }
 
   // --------------------------------------------------------------------------
   // [Utilities]
@@ -713,6 +738,17 @@ public:
     return kErrorOk;
   }
 
+  Error concat(const ZoneVector<T>& other) noexcept {
+    size_t count = other._length;
+    if (_capacity - _length < count)
+      ASMJIT_PROPAGATE(grow(count));
+
+    ::memcpy(static_cast<T*>(_data) + _length, other._data, count * sizeof(T));
+
+    _length += count;
+    return kErrorOk;
+  }
+
   //! Prepend `item` to the vector (unsafe case).
   //!
   //! Can only be used together with `willGrow()`. If `willGrow(N)` returns
@@ -736,10 +772,18 @@ public:
   //! if there is a place for them. Used mostly internally.
   ASMJIT_INLINE void appendUnsafe(const T& item) noexcept {
     ASMJIT_ASSERT(_length < _capacity);
-    T* data = static_cast<T*>(_data);
 
-    ::memcpy(data + _length, &item, sizeof(T));
+    ::memcpy(static_cast<T*>(_data) + _length, &item, sizeof(T));
     _length++;
+  }
+
+  //! Concatenate all items of `other` at the end of the vector.
+  ASMJIT_INLINE void concatUnsafe(const ZoneVector<T>& other) noexcept {
+    size_t count = other._length;
+    ASMJIT_ASSERT(_capacity - _length >= count);
+
+    ::memcpy(static_cast<T*>(_data) + _length, other._data, count * sizeof(T));
+    _length += count;
   }
 
   //! Get index of `val` or `kInvalidIndex` if not found.
@@ -797,14 +841,14 @@ public:
 };
 
 // ============================================================================
-// [asmjit::ZoneBits]
+// [asmjit::ZoneBitVector]
 // ============================================================================
 
-class ZoneBits {
+class ZoneBitVector {
 public:
-  ASMJIT_NONCOPYABLE(ZoneBits)
+  ASMJIT_NONCOPYABLE(ZoneBitVector)
 
-  //! Storage used to store a pack of bits (should by compatible to a machine word).
+  //! Storage used to store a pack of bits (should by compatible with a machine word).
   typedef uintptr_t BitWord;
   enum {
     kBitsPerWord = static_cast<int>(sizeof(BitWord)) * 8
@@ -826,18 +870,18 @@ public:
   // [Construction / Destruction]
   // --------------------------------------------------------------------------
 
-  explicit ASMJIT_INLINE ZoneBits(ZoneHeap* heap) noexcept :
+  explicit ASMJIT_INLINE ZoneBitVector(ZoneHeap* heap) noexcept :
     _heap(heap),
     _data(nullptr),
     _length(0),
     _capacity(0) {}
-  ASMJIT_INLINE ~ZoneBits() noexcept { reset(nullptr); }
+  ASMJIT_INLINE ~ZoneBitVector() noexcept { reset(nullptr); }
 
   // --------------------------------------------------------------------------
   // [Init / Reset]
   // --------------------------------------------------------------------------
 
-  //! Get if this `ZoneBits` has been initialized.
+  //! Get if this `ZoneBitVector` has been initialized.
   ASMJIT_INLINE bool isInitialized() const noexcept { return _heap != nullptr; }
   //! Reset this vector and initialize to use the given ZoneHeap (can be null).
   ASMJIT_API void reset(ZoneHeap* heap) noexcept;
@@ -909,7 +953,7 @@ public:
       _data[idx] &= ~(static_cast<BitWord>(1) << bit);
   }
 
-  ASMJIT_INLINE void flipAt(size_t index) noexcept {
+  ASMJIT_INLINE void toggleAt(size_t index) noexcept {
     ASMJIT_ASSERT(isInitialized());
     ASMJIT_ASSERT(index < _length);
 
@@ -922,6 +966,45 @@ public:
   ASMJIT_INLINE Error fill(size_t from, size_t to, bool value) noexcept {
     ASMJIT_ASSERT(isInitialized());
     return _fill(from, to, value);
+  }
+
+  ASMJIT_INLINE void _clearUnusedBits() noexcept {
+    size_t idx = _length / kBitsPerWord;
+    size_t bit = _length % kBitsPerWord;
+
+    if (!bit)
+      return;
+    _data[idx] &= (static_cast<BitWord>(1) << bit) - 1U;
+  }
+
+  ASMJIT_INLINE void and_(const ZoneBitVector& other) noexcept {
+    BitWord* dst = _data;
+    const BitWord* src = other._data;
+
+    size_t numWords = (Utils::iMin(_length, other._length) + kBitsPerWord - 1) / kBitsPerWord;
+    for (size_t i = 0; i < numWords; i++)
+      dst[i] = dst[i] & src[i];
+    _clearUnusedBits();
+  }
+
+  ASMJIT_INLINE void andNot(const ZoneBitVector& other) noexcept {
+    BitWord* dst = _data;
+    const BitWord* src = other._data;
+
+    size_t numWords = (Utils::iMin(_length, other._length) + kBitsPerWord - 1) / kBitsPerWord;
+    for (size_t i = 0; i < numWords; i++)
+      dst[i] = dst[i] & ~src[i];
+    _clearUnusedBits();
+  }
+
+  ASMJIT_INLINE void or_(const ZoneBitVector& other) noexcept {
+    BitWord* dst = _data;
+    const BitWord* src = other._data;
+
+    size_t numWords = (Utils::iMin(_length, other._length) + kBitsPerWord - 1) / kBitsPerWord;
+    for (size_t i = 0; i < numWords; i++)
+      dst[i] = dst[i] | src[i];
+    _clearUnusedBits();
   }
 
   // --------------------------------------------------------------------------
@@ -970,9 +1053,7 @@ public:
 
     template<typename T>
     ASMJIT_INLINE T* getData() const noexcept {
-      return static_cast<T*>(
-        static_cast<void*>(
-          (uint8_t*)this + sizeof(Block)));
+      return static_cast<T*>(static_cast<void*>((uint8_t*)this + sizeof(Block)));
     }
 
     template<typename T>

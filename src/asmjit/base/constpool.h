@@ -9,6 +9,7 @@
 #define _ASMJIT_BASE_CONSTPOOL_H
 
 // [Dependencies]
+#include "../base/debugutils.h"
 #include "../base/zone.h"
 
 // [Api-Begin]

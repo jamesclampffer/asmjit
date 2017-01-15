@@ -10,8 +10,10 @@
 
 // [Dependencies]
 #include "../base/arch.h"
+#include "../base/debugutils.h"
 #include "../base/operand.h"
 #include "../base/utils.h"
+#include "../arm/armglobals.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
@@ -44,8 +46,22 @@ typedef ArmGpW ArmGpR;
 //! Memory operand (ARM/AArch64).
 class ArmMem : public Mem {
 public:
-  //! ARM/AArch64 memory-operand flags layout:
-  ASMJIT_ENUM(MemFlags) {
+  //! Additional bits of operand's signature used by `ArmMem`.
+  ASMJIT_ENUM(AdditionalBits) {
+    kSignatureMemShiftShift   = 16,
+    kSignatureMemShiftBits    = 0x1FU,
+    kSignatureMemShiftMask    = kSignatureMemShiftBits << kSignatureMemShiftShift,
+
+    kSignatureMemModeShift    = 21,
+    kSignatureMemModeBits     = 0x03U,
+    kSignatureMemModeMask     = kSignatureMemSegmentBits << kSignatureMemSegmentShift,
+  };
+
+  //! Memory addressing mode.
+  ASMJIT_ENUM(Mode) {
+    kModeOffset               = 0,       //!< Address + offset "[BASE, #Offset]".
+    kModePreInc               = 1,       //!< Pre-increment    "[BASE, #Offset]!".
+    kModePostInc              = 2        //!< Post-increment   "[BASE], #Offset".
   };
 
   // --------------------------------------------------------------------------
@@ -55,7 +71,6 @@ public:
   //! Construct a default `ArmMem` operand, that points to [0].
   ASMJIT_INLINE ArmMem() noexcept : Mem(NoInit) { reset(); }
   ASMJIT_INLINE ArmMem(const ArmMem& other) noexcept : Mem(other) {}
-
   explicit ASMJIT_INLINE ArmMem(const _NoInit&) noexcept : Mem(NoInit) {}
 
   // --------------------------------------------------------------------------
@@ -66,6 +81,57 @@ public:
   ASMJIT_INLINE ArmMem clone() const noexcept { return ArmMem(*this); }
 
   using Mem::setIndex;
+
+  ASMJIT_INLINE void setIndex(const Reg& index, uint32_t shift) noexcept {
+    setIndex(index);
+    setShift(shift);
+  }
+
+  //! Get if the memory operand has shift (aka scale) constant.
+  ASMJIT_INLINE bool hasShift() const noexcept { return _hasSignatureData(kSignatureMemShiftMask); }
+  //! Get the memory operand's shift (aka scale) constant.
+  ASMJIT_INLINE uint32_t getShift() const noexcept { return _getSignatureData(kSignatureMemShiftBits, kSignatureMemShiftShift); }
+  //! Set the memory operand's shift (aka scale) constant.
+  ASMJIT_INLINE void setShift(uint32_t shift) noexcept { _setSignatureData(shift, kSignatureMemShiftBits, kSignatureMemShiftShift); }
+  //! Reset the memory operand's shift (aka scale) constant to zero.
+  ASMJIT_INLINE void resetShift() noexcept { _signature &= ~kSignatureMemShiftMask; }
+
+  //! Get the addressing mode, see \ref ArmMem::Mode.
+  ASMJIT_INLINE uint32_t getMode() const noexcept { return _getSignatureData(kSignatureMemModeBits, kSignatureMemModeShift); }
+  //! Set the addressing mode, see \ref ArmMem::Mode.
+  ASMJIT_INLINE void setMode(uint32_t mode) noexcept { _setSignatureData(mode, kSignatureMemModeBits, kSignatureMemModeShift); }
+  //! Reset the addressing mode to \ref ArmMem::kModeOffset.
+  ASMJIT_INLINE void resetMode() noexcept { _signature &= ~kSignatureMemModeMask; }
+
+  ASMJIT_INLINE bool isOffsetMode() const noexcept { return getMode() == kModeOffset; }
+  ASMJIT_INLINE bool isPreIncMode() const noexcept { return getMode() == kModePreInc; }
+  ASMJIT_INLINE bool isPostIncMode() const noexcept { return getMode() == kModePostInc; }
+
+  ASMJIT_INLINE ArmMem pre() const noexcept {
+    ArmMem result(*this);
+    result.setMode(kModePreInc);
+    return result;
+  }
+
+  ASMJIT_INLINE ArmMem pre(int64_t off) const noexcept {
+    ArmMem result(*this);
+    result.setMode(kModePreInc);
+    result.addOffset(off);
+    return result;
+  }
+
+  ASMJIT_INLINE ArmMem post() const noexcept {
+    ArmMem result(*this);
+    result.setMode(kModePreInc);
+    return result;
+  }
+
+  ASMJIT_INLINE ArmMem post(int64_t off) const noexcept {
+    ArmMem result(*this);
+    result.setMode(kModePostInc);
+    result.addOffset(off);
+    return result;
+  }
 
   //! Get new memory operand adjusted by `off`.
   ASMJIT_INLINE ArmMem adjusted(int64_t off) const noexcept {

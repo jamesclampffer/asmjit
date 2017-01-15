@@ -58,14 +58,7 @@ public:
   ASMJIT_INLINE operator const X86Emitter&() const noexcept { return *asEmitter(); }
 
   // --------------------------------------------------------------------------
-  // [Events]
-  // --------------------------------------------------------------------------
-
-  ASMJIT_API virtual Error onAttach(CodeHolder* code) noexcept override;
-  ASMJIT_API virtual Error onDetach(CodeHolder* code) noexcept override;
-
-  // --------------------------------------------------------------------------
-  // [Code-Generation]
+  // [Accessors]
   // --------------------------------------------------------------------------
 
   // NOTE: X86Assembler uses _privateData to store 'address-override' bit that
@@ -75,8 +68,19 @@ public:
   ASMJIT_INLINE uint32_t _getAddressOverrideMask() const noexcept { return _privateData; }
   ASMJIT_INLINE void _setAddressOverrideMask(uint32_t m) noexcept { _privateData = m; }
 
-  ASMJIT_API virtual Error _emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) override;
-  ASMJIT_API virtual Error align(uint32_t mode, uint32_t alignment) override;
+  // --------------------------------------------------------------------------
+  // [Events]
+  // --------------------------------------------------------------------------
+
+  ASMJIT_API Error onAttach(CodeHolder* code) noexcept override;
+  ASMJIT_API Error onDetach(CodeHolder* code) noexcept override;
+
+  // --------------------------------------------------------------------------
+  // [Code-Generation]
+  // --------------------------------------------------------------------------
+
+  ASMJIT_API Error _emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) override;
+  ASMJIT_API Error align(uint32_t mode, uint32_t alignment) override;
 };
 
 //! \}

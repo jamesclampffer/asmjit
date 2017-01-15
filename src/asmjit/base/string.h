@@ -9,6 +9,7 @@
 #define _ASMJIT_BASE_STRING_H
 
 // [Dependencies]
+#include "../base/debugutils.h"
 #include "../base/globals.h"
 
 // [Api-Begin]

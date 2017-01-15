@@ -11,6 +11,7 @@
 // [Dependencies]
 #include "../base/arch.h"
 #include "../base/codeholder.h"
+#include "../base/debugutils.h"
 #include "../base/operand.h"
 
 // [Api-Begin]
@@ -460,6 +461,13 @@ public:
   ASMJIT_INLINE Error emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3, const Operand_& o4, uint64_t o5) {
     return emit(instId, o0, o1, o2, o3, o4, static_cast<int64_t>(o5));
   }
+
+  // --------------------------------------------------------------------------
+  // [Validation]
+  // --------------------------------------------------------------------------
+
+  //! Validate instruction with current options, called by `_emit()` if validation is enabled.
+  ASMJIT_API Error _validate(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) const noexcept;
 
   // --------------------------------------------------------------------------
   // [Members]

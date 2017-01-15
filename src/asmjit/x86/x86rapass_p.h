@@ -30,12 +30,6 @@ namespace asmjit {
 // [asmjit::X86RAPass]
 // ============================================================================
 
-#if defined(ASMJIT_DEBUG)
-# define ASMJIT_X86_CHECK_STATE _checkState();
-#else
-# define ASMJIT_X86_CHECK_STATE
-#endif // ASMJIT_DEBUG
-
 //! \internal
 //!
 //! X86 register allocation pass.
@@ -55,16 +49,17 @@ public:
   virtual ~X86RAPass() noexcept;
 
   // --------------------------------------------------------------------------
-  // [Prepare / Cleanup]
+  // [Init / Done]
   // --------------------------------------------------------------------------
 
-  virtual Error prepare(CCFunc* func) noexcept override;
+  void onInit() noexcept override;
+  void onDone() noexcept override;
 
   // --------------------------------------------------------------------------
   // [Steps]
   // --------------------------------------------------------------------------
 
-  virtual Error constructCFG() noexcept override;
+  Error constructCFG() noexcept override;
 
   // --------------------------------------------------------------------------
   // [Accessors]
@@ -80,7 +75,7 @@ public:
   // --------------------------------------------------------------------------
 
   ASMJIT_INLINE RAData* newRAData(uint32_t tiedTotal) noexcept {
-    return new(_zone->alloc(sizeof(RAData) + tiedTotal * sizeof(RATiedReg))) RAData(tiedTotal);
+    return new(getZone()->alloc(sizeof(RAData) + tiedTotal * sizeof(TiedReg))) RAData(tiedTotal);
   }
 
   // --------------------------------------------------------------------------

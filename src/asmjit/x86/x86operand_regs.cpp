@@ -26,10 +26,7 @@ namespace asmjit {
 // ============================================================================
 
 // Register Operand {
-//   uint8_t opType;
-//   uint8_t regType;
-//   uint8_t kind;
-//   uint8_t size;
+//   uint32_t signature;
 //   uint32_t id;
 //   uint32_t reserved8_4;
 //   uint32_t reserved12_4;

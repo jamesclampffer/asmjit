@@ -116,9 +116,10 @@ cxx_add_source(asmjit ASMJIT_SRC asmjit/base
   constpool.h
   cpuinfo.cpp
   cpuinfo.h
+  debugutils.cpp
+  debugutils.h
   func.cpp
   func.h
-  globals.cpp
   globals.h
   logging.cpp
   logging.h
@@ -148,8 +149,8 @@ cxx_add_source(asmjit ASMJIT_SRC asmjit/arm
   armbuilder.h
   armcompiler.cpp
   armcompiler.h
-  armdefs.h
   armemitter.h
+  armglobals.h
   arminternal.cpp
   arminternal_p.h
   arminst.cpp
@@ -171,6 +172,7 @@ cxx_add_source(asmjit ASMJIT_SRC asmjit/x86
   x86compiler.cpp
   x86compiler.h
   x86emitter.h
+  x86globals.h
   x86internal.cpp
   x86internal_p.h
   x86inst.cpp

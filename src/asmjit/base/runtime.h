@@ -10,6 +10,7 @@
 
 // [Dependencies]
 #include "../base/codeholder.h"
+#include "../base/debugutils.h"
 #include "../base/vmem.h"
 
 // [Api-Begin]
@@ -176,8 +177,8 @@ public:
   // [Interface]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error _add(void** dst, CodeHolder* code) noexcept override;
-  ASMJIT_API virtual Error _release(void* p) noexcept override;
+  ASMJIT_API Error _add(void** dst, CodeHolder* code) noexcept override;
+  ASMJIT_API Error _release(void* p) noexcept override;
 
   // --------------------------------------------------------------------------
   // [Members]

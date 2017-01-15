@@ -74,7 +74,7 @@ struct TypeIdElementOf_T {
                    TMPL<I + 12>::kValue, TMPL<I + 13>::kValue, \
                    TMPL<I + 14>::kValue, TMPL<I + 15>::kValue
 ASMJIT_API const TypeId::Info TypeId::_info = {
-  // SizeOd[128]
+  // SizeOf[128]
   {
     R(TypeIdSizeOf_T,  0), R(TypeIdSizeOf_T,  16),
     R(TypeIdSizeOf_T, 32), R(TypeIdSizeOf_T,  48),

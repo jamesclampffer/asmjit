@@ -81,7 +81,7 @@ static void generateAlphaBlend(asmjit::X86Compiler& cc) {
   cc.psrlw(a0, 8);
   cc.punpcklbw(x0, cZero);
 
-  cc.pshuflw(a0, a0, X86Inst::shufImm(1, 1, 1, 1));
+  cc.pshuflw(a0, a0, x86::shufImm(1, 1, 1, 1));
   cc.punpcklbw(y0, cZero);
 
   cc.pmullw(x0, a0);
@@ -129,8 +129,8 @@ static void generateAlphaBlend(asmjit::X86Compiler& cc) {
   cc.punpckhbw(x1, cZero);
   cc.punpckhwd(a1, a1);
 
-  cc.pshufd(a0, a0, X86Inst::shufImm(3, 3, 1, 1));
-  cc.pshufd(a1, a1, X86Inst::shufImm(3, 3, 1, 1));
+  cc.pshufd(a0, a0, x86::shufImm(3, 3, 1, 1));
+  cc.pshufd(a1, a1, x86::shufImm(3, 3, 1, 1));
 
   cc.pmullw(x0, a0);
   cc.pmullw(x1, a1);

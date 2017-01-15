@@ -10,6 +10,7 @@
 
 // [Dependencies]
 #include "../base/arch.h"
+#include "../base/debugutils.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
@@ -118,17 +119,18 @@ public:
     kX86FeatureRTM,                      //!< CPU has RTM.
     kX86FeatureERMS,                     //!< CPU has ERMS (enhanced REP MOVSB/STOSB).
     kX86FeatureFSGSBASE,                 //!< CPU has FSGSBASE.
-    kX86FeatureAVX512F,                  //!< CPU has AVX-512F (foundation).
-    kX86FeatureAVX512CDI,                //!< CPU has AVX-512CDI (conflict detection).
-    kX86FeatureAVX512PFI,                //!< CPU has AVX-512PFI (prefetch instructions).
-    kX86FeatureAVX512ERI,                //!< CPU has AVX-512ERI (exponential and reciprocal).
-    kX86FeatureAVX512DQ,                 //!< CPU has AVX-512DQ (DWORD/QWORD).
-    kX86FeatureAVX512BW,                 //!< CPU has AVX-512BW (BYTE/WORD).
-    kX86FeatureAVX512VL,                 //!< CPU has AVX VL (vector length extensions).
-    kX86FeatureAVX512IFMA,               //!< CPU has AVX IFMA (integer fused-multiply-add using 52-bit precision).
-    kX86FeatureAVX512VBMI,               //!< CPU has AVX VBMI (vector byte manipulation).
-    kX86FeatureAVX512_4VNNIW,            //!< CPU has AVX VNNIW (vector NN instructions word variable precision).
-    kX86FeatureAVX512_4FMAPS,            //!< CPU has AVX FMAPS (FMA packed single).
+    kX86FeatureAVX512_F,                 //!< CPU has AVX512-F (foundation).
+    kX86FeatureAVX512_CDI,               //!< CPU has AVX512-CDI (conflict detection).
+    kX86FeatureAVX512_PFI,               //!< CPU has AVX512-PFI (prefetch instructions).
+    kX86FeatureAVX512_ERI,               //!< CPU has AVX512-ERI (exponential and reciprocal).
+    kX86FeatureAVX512_DQ,                //!< CPU has AVX512-DQ (DWORD/QWORD).
+    kX86FeatureAVX512_BW,                //!< CPU has AVX512-BW (BYTE/WORD).
+    kX86FeatureAVX512_VL,                //!< CPU has AVX512-VL (vector length extensions).
+    kX86FeatureAVX512_IFMA,              //!< CPU has AVX512-IFMA (integer fused-multiply-add using 52-bit precision).
+    kX86FeatureAVX512_VBMI,              //!< CPU has AVX512-VBMI (vector byte manipulation).
+    kX86FeatureAVX512_VPOPCNTDQ,         //!< CPU has AVX512-VPOPCNTDQ (VPOPCNT[D|Q] instructions).
+    kX86FeatureAVX512_4VNNIW,            //!< CPU has AVX512-VNNIW (vector NN instructions word variable precision).
+    kX86FeatureAVX512_4FMAPS,            //!< CPU has AVX512-FMAPS (FMA packed single).
 
     kX86FeaturesCount                    //!< Count of X86/X64 CPU features.
   };

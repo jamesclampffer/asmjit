@@ -453,10 +453,10 @@ Error ZoneVectorBase::_resize(size_t sizeOfT, size_t n) noexcept {
 }
 
 // ============================================================================
-// [asmjit::ZoneBits - Init / Reset]
+// [asmjit::ZoneBitVector - Init / Reset]
 // ============================================================================
 
-void ZoneBits::reset(ZoneHeap* heap) noexcept {
+void ZoneBitVector::reset(ZoneHeap* heap) noexcept {
   if (_data) {
     ASMJIT_ASSERT(_heap != nullptr);
     _heap->release(_data, _capacity / 8);
@@ -469,10 +469,10 @@ void ZoneBits::reset(ZoneHeap* heap) noexcept {
 }
 
 // ============================================================================
-// [asmjit::ZoneBits - Ops]
+// [asmjit::ZoneBitVector - Ops]
 // ============================================================================
 
-Error ZoneBits::_resize(size_t newLength, bool newBitsValue) noexcept {
+Error ZoneBitVector::_resize(size_t newLength, bool newBitsValue) noexcept {
   ASMJIT_ASSERT(isInitialized());
 
   if (newLength <= _length) {
@@ -573,7 +573,7 @@ Error ZoneBits::_resize(size_t newLength, bool newBitsValue) noexcept {
   return kErrorOk;
 }
 
-Error ZoneBits::_fill(size_t from, size_t to, bool value) noexcept {
+Error ZoneBitVector::_fill(size_t from, size_t to, bool value) noexcept {
   if (ASMJIT_UNLIKELY(from >= to)) {
     if (from > to)
       return DebugUtils::errored(kErrorInvalidArgument);
@@ -584,7 +584,7 @@ Error ZoneBits::_fill(size_t from, size_t to, bool value) noexcept {
   ASMJIT_ASSERT(from <= _length);
   ASMJIT_ASSERT(to <= _length);
 
-  // This is very similar to `ZoneBits::_fill()`, however, since we
+  // This is very similar to `ZoneBitVector::_fill()`, however, since we
   // actually set bits that are already part of the container we need to
   // special case filiing to zeros and ones.
   size_t idx = from / kBitsPerWord;
@@ -876,18 +876,18 @@ UNIT(base_zonevector) {
   EXPECT(vec.indexOf(kMax - 1) == static_cast<size_t>(kMax - 1));
 }
 
-UNIT(base_zonebits) {
+UNIT(base_ZoneBitVector) {
   Zone zone(8096 - Zone::kZoneOverhead);
   ZoneHeap heap(&zone);
 
   size_t i, count;
   size_t kMaxCount = 100;
 
-  ZoneBits vec(&heap);
+  ZoneBitVector vec(&heap);
   EXPECT(vec.isEmpty());
   EXPECT(vec.getLength() == 0);
 
-  INFO("ZoneBits::resize()");
+  INFO("ZoneBitVector::resize()");
   for (count = 1; count < kMaxCount; count++) {
     vec.clear();
     EXPECT(vec.resize(count, false) == kErrorOk);
@@ -904,7 +904,7 @@ UNIT(base_zonebits) {
       EXPECT(vec.getAt(i) == true);
   }
 
-  INFO("ZoneBits::fill()");
+  INFO("ZoneBitVector::fill()");
   for (count = 1; count < kMaxCount; count += 2) {
     vec.clear();
     EXPECT(vec.resize(count) == kErrorOk);

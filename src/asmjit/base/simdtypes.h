@@ -9,6 +9,7 @@
 #define _ASMJIT_BASE_SIMDTYPES_H
 
 // [Dependencies]
+#include "../base/debugutils.h"
 #include "../base/globals.h"
 
 // [Api-Begin]

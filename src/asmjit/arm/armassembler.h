@@ -27,8 +27,6 @@ namespace asmjit {
 // ============================================================================
 
 //! ARM32 assembler.
-//!
-//! This class implements shared functionality between A32 and A64.
 class ASMJIT_VIRTAPI A32Assembler
   : public Assembler,
     public A32EmitterT<A32Assembler> {
@@ -58,18 +56,32 @@ public:
   ASMJIT_INLINE operator const A32Emitter&() const noexcept { return *asEmitter(); }
 
   // --------------------------------------------------------------------------
+  // [Accessors]
+  // --------------------------------------------------------------------------
+
+  //! Get if the current ARM mode is THUMB (only available on A32).
+  ASMJIT_INLINE bool isInThumbMode() const noexcept {
+    return _archInfo.getSubType() == ArchInfo::kSubTypeA32_Thumb;
+  }
+
+  //! Get the current code alignment of the current mode (ARM vs THUMB).
+  ASMJIT_INLINE uint32_t getCodeAlignment() const noexcept {
+    return isInThumbMode() ? 2 : 4;
+  }
+
+  // --------------------------------------------------------------------------
   // [Events]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error onAttach(CodeHolder* code) noexcept override;
-  ASMJIT_API virtual Error onDetach(CodeHolder* code) noexcept override;
+  ASMJIT_API Error onAttach(CodeHolder* code) noexcept override;
+  ASMJIT_API Error onDetach(CodeHolder* code) noexcept override;
 
   // --------------------------------------------------------------------------
   // [Code-Generation]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error _emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) override;
-  ASMJIT_API virtual Error align(uint32_t mode, uint32_t alignment) override;
+  ASMJIT_API Error _emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) override;
+  ASMJIT_API Error align(uint32_t mode, uint32_t alignment) override;
 };
 
 //! \}

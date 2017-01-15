@@ -64,13 +64,13 @@ public:
   // [Events]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error onAttach(CodeHolder* code) noexcept override;
+  ASMJIT_API Error onAttach(CodeHolder* code) noexcept override;
 
   // --------------------------------------------------------------------------
   // [Finalize]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error finalize() override;
+  ASMJIT_API Error finalize() override;
 
   // --------------------------------------------------------------------------
   // [VirtReg]

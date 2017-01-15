@@ -879,7 +879,7 @@ NOTE: All nodes that have **CB** prefix are used by both **CodeBuilder** and **C
 
 ### Using CodeBuilder
 
-**CodeBuilder** was designed to be used as an **Assembler** replacement in case that post-processing of the generated code is required. The code can be modified during or after code generation. The post processing can be done manually or through **CBPass** (Code-Builder Pass) object. **CodeBuilder** stores the emitted code as a double-linked list, which allows O(1) insertion and removal.
+**CodeBuilder** was designed to be used as an **Assembler** replacement in case that post-processing of the generated code is required. The code can be modified during or after code generation. The post processing can be done manually or through **Pass** (Code-Builder Pass) object. **CodeBuilder** stores the emitted code as a double-linked list, which allows O(1) insertion and removal.
 
 The code representation used by **CodeBuilder** is compatible with everything AsmJit provides. Each instruction is stored as **CBInst**, which contains instruction id, options, and operands. Each instruction emitted will create a new **CBInst** instance and add it to the current cursor in the double-linked list of nodes. Since the instruction stream used by **CodeBuilder** can be manipulated, we can rewrite the **SumInts** example into the following:
 

@@ -26,14 +26,14 @@ namespace asmjit {
 // ============================================================================
 
 X86SseToAvxPass::X86SseToAvxPass() noexcept
-  : Pass("SseToAvx"),
+  : CBPass("X86SseToAvxPass"),
     _translated(false) {}
 
 // ============================================================================
-// [asmjit::X86SseToAvxPass - Process]
+// [asmjit::X86SseToAvxPass - Run]
 // ============================================================================
 
-Error X86SseToAvxPass::process(Zone* zone) noexcept {
+Error X86SseToAvxPass::run(Zone* zone) noexcept {
   ZoneHeap heap(zone);
   ZoneStack<CBInst*> insts;
   ASMJIT_PROPAGATE(insts.init(&heap));

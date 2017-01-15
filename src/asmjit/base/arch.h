@@ -9,6 +9,7 @@
 #define _ASMJIT_BASE_ARCH_H
 
 // [Dependencies]
+#include "../base/debugutils.h"
 #include "../base/globals.h"
 #include "../base/operand.h"
 
@@ -51,18 +52,21 @@ public:
     kSubTypeNone         = 0,            //!< Default mode (or no specific mode).
 
     // X86 sub-types.
-    kSubTypeX86_AVX      = 1,            //!< Code generation uses AVX|AVX2    by default (VEC instructions).
-    kSubTypeX86_AVX512   = 2,            //!< Code generation uses AVX-512F    by default (+32 vector regs).
-    kSubTypeX86_AVX512VL = 3,            //!< Code generation uses AVX-512F-VL by default (+VL extensions).
+    kSubTypeX86_AVX      = 1,            //!< Code generation uses AVX         by default (VEC instructions).
+    kSubTypeX86_AVX2     = 2,            //!< Code generation uses AVX2        by default (VEC instructions).
+    kSubTypeX86_AVX512   = 3,            //!< Code generation uses AVX-512F    by default (+32 vector regs).
+    kSubTypeX86_AVX512VL = 4,            //!< Code generation uses AVX-512F-VL by default (+VL extensions).
 
     // ARM sub-types.
-    kSubTypeA32_Thumb    = 8,            //!< THUMB|THUMB2 sub-type (only in 32-bit mode).
+    kSubTypeA32_Thumb    = 8,            //!< THUMB|THUMB2 sub-type (only ARM in 32-bit mode).
 
-#if   (ASMJIT_ARCH_X86 || ASMJIT_ARCH_X64) && (defined(__AVX512VL__))
+#if   (ASMJIT_ARCH_X86 || ASMJIT_ARCH_X64) && defined(__AVX512VL__)
     kSubTypeHost = kSubTypeX86_AVX512VL
-#elif (ASMJIT_ARCH_X86 || ASMJIT_ARCH_X64) && (defined(__AVX512F__))
+#elif (ASMJIT_ARCH_X86 || ASMJIT_ARCH_X64) && defined(__AVX512F__)
     kSubTypeHost = kSubTypeX86_AVX512
-#elif (ASMJIT_ARCH_X86 || ASMJIT_ARCH_X64) && (defined(__AVX__) || defined(__AVX2__))
+#elif (ASMJIT_ARCH_X86 || ASMJIT_ARCH_X64) && defined(__AVX2__)
+    kSubTypeHost = kSubTypeX86_AVX2
+#elif (ASMJIT_ARCH_X86 || ASMJIT_ARCH_X64) && defined(__AVX__)
     kSubTypeHost = kSubTypeX86_AVX
 #elif (ASMJIT_ARCH_ARM32) && (defined(_M_ARMT) || defined(__thumb__) || defined(__thumb2__))
     kSubTypeHost = kSubTypeA32_Thumb

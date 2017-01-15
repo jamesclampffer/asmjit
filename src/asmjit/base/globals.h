@@ -20,16 +20,10 @@ namespace asmjit {
 //! \{
 
 // ============================================================================
-// [asmjit::TypeDefs]
-// ============================================================================
-
-//! AsmJit error core (uint32_t).
-typedef uint32_t Error;
-
-// ============================================================================
 // [asmjit::Globals]
 // ============================================================================
 
+//! AsmJit globals.
 namespace Globals {
 
 //! Invalid index
@@ -69,12 +63,32 @@ ASMJIT_ENUM(Limits) {
   //! NOTE: The distribution of these registers is architecture specific.
   kMaxPhysRegs = 64,
 
+  //! Maximum alignment.
+  kMaxAlignment = 64,
+
   //! Maximum label or symbol length in bytes (take into consideration that a
   //! single UTF-8 character can take more than single byte to encode it).
   kMaxLabelLength = 2048
 };
 
 } // Globals namespace
+
+// ============================================================================
+// [asmjit::AnyInst]
+// ============================================================================
+
+//! Definitions and utilities related to instructions used by all architectures.
+namespace AnyInst {
+
+ASMJIT_ENUM(JumpType) {
+  kJumpTypeNone        = 0,              //!< Instruction doesn't jump (regular instruction).
+  kJumpTypeDirect      = 1,              //!< Instruction is a unconditional (direct) jump.
+  kJumpTypeConditional = 2,              //!< Instruction is a conditional jump.
+  kJumpTypeCall        = 3,              //!< Instruction is a function call.
+  kJumpTypeReturn      = 4               //!< Instruction is a function return.
+};
+
+} // AnyInst namespace
 
 // ============================================================================
 // [asmjit::ptr_as_func / func_as_ptr]
@@ -95,8 +109,11 @@ template<typename Func>
 static ASMJIT_INLINE void* func_as_ptr(Func func) noexcept { return Internal::ptr_cast<void*, Func>(func); }
 
 // ============================================================================
-// [asmjit::ErrorCode]
+// [asmjit::Error]
 // ============================================================================
+
+//! AsmJit error type (uint32_t).
+typedef uint32_t Error;
 
 //! AsmJit error codes.
 ASMJIT_ENUM(ErrorCode) {
@@ -238,69 +255,9 @@ struct _NoInit {};
 static const _NoInit NoInit = {};
 #endif // !ASMJIT_DOCGEN
 
-// ============================================================================
-// [asmjit::DebugUtils]
-// ============================================================================
-
-namespace DebugUtils {
-
-//! Returns the error `err` passed.
-//!
-//! Provided for debugging purposes. Putting a breakpoint inside `errored` can
-//! help with tracing the origin of any error reported / returned by AsmJit.
-static ASMJIT_INLINE Error errored(Error err) noexcept { return err; }
-
-//! Get a printable version of `asmjit::Error` code.
-ASMJIT_API const char* errorAsString(Error err) noexcept;
-
-//! Called to output debugging message(s).
-ASMJIT_API void debugOutput(const char* str) noexcept;
-
-//! Called on assertion failure.
-//!
-//! \param file Source file name where it happened.
-//! \param line Line in the source file.
-//! \param msg Message to display.
-//!
-//! If you have problems with assertions put a breakpoint at assertionFailed()
-//! function (asmjit/base/globals.cpp) and check the call stack to locate the
-//! failing code.
-ASMJIT_API void ASMJIT_NORETURN assertionFailed(const char* file, int line, const char* msg) noexcept;
-
-#if defined(ASMJIT_DEBUG)
-# define ASMJIT_ASSERT(exp)                                          \
-  do {                                                               \
-    if (ASMJIT_LIKELY(exp))                                          \
-      break;                                                         \
-    ::asmjit::DebugUtils::assertionFailed(__FILE__, __LINE__, #exp); \
-  } while (0)
-# define ASMJIT_NOT_REACHED()                                        \
-  do {                                                               \
-    ::asmjit::DebugUtils::assertionFailed(__FILE__, __LINE__,        \
-      "ASMJIT_NOT_REACHED has been reached");                        \
-    ASMJIT_ASSUME(0);                                                \
-  } while (0)
-#else
-# define ASMJIT_ASSERT(exp) ASMJIT_NOP
-# define ASMJIT_NOT_REACHED() ASMJIT_ASSUME(0)
-#endif // DEBUG
-
-//! \internal
-//!
-//! Used by AsmJit to propagate a possible `Error` produced by `...` to the caller.
-#define ASMJIT_PROPAGATE(...)                                \
-  do {                                                       \
-    ::asmjit::Error _err = __VA_ARGS__;                      \
-    if (ASMJIT_UNLIKELY(_err)) return _err;                  \
-  } while (0)
-
-} // DebugUtils namespace
-
 //! \}
 
 } // asmjit namespace
-
-//! \}
 
 // [Api-End]
 #include "../asmjit_apiend.h"

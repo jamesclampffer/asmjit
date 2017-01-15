@@ -15,14 +15,6 @@
 #include "../base/codebuilder.h"
 #include "../base/logging.h"
 
-#if defined(ASMJIT_BUILD_X86)
-#include "../x86/x86inst.h"
-#endif // ASMJIT_BUILD_X86
-
-#if defined(ASMJIT_BUILD_ARM)
-#include "../arm/arminst.h"
-#endif // ASMJIT_BUILD_ARM
-
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
 
@@ -40,7 +32,6 @@ CodeBuilder::CodeBuilder() noexcept
     _cbHeap(&_cbBaseZone),
     _cbPasses(&_cbHeap),
     _cbLabels(&_cbHeap),
-    _nodeFlowId(0),
     _nodeFlags(0),
     _firstNode(nullptr),
     _lastNode(nullptr),
@@ -64,7 +55,6 @@ Error CodeBuilder::onDetach(CodeHolder* code) noexcept {
   _cbDataZone.reset(false);
   _cbPassZone.reset(false);
 
-  _nodeFlowId = 0;
   _nodeFlags = 0;
 
   _firstNode = nullptr;
@@ -211,8 +201,7 @@ Error CodeBuilder::_emit(uint32_t instId, const Operand_& o0, const Operand_& o1
 #endif // ASMJIT_DISABLE_VALIDATION
 
     // Clear flags that should not be added to `CBInst`.
-    options &= ~(kOptionMaybeFailureCase |
-                 kOptionStrictValidation);
+    options &= ~(kOptionMaybeFailureCase | kOptionStrictValidation);
   }
 
   resetOptions();
@@ -237,7 +226,7 @@ Error CodeBuilder::_emit(uint32_t instId, const Operand_& o0, const Operand_& o1
   node->setOp(3, o3);
 
   if (CBInst::kBaseOpCapacity > 4) {
-    // Compile-time (capacity of 5 operands by default in 32-bit mode).
+    // Compile-time: Capacity of 5 operands by default in 32-bit mode.
     node->resetOp(4);
     if (opCapacity > 5) node->resetOp(5);
   }
@@ -522,9 +511,9 @@ CBNode* CodeBuilder::setCursor(CBNode* node) noexcept {
 // [asmjit::CodeBuilder - Passes]
 // ============================================================================
 
-ASMJIT_FAVOR_SIZE Pass* CodeBuilder::getPassByName(const char* name) const noexcept {
+ASMJIT_FAVOR_SIZE CBPass* CodeBuilder::getPassByName(const char* name) const noexcept {
   for (size_t i = 0, len = _cbPasses.getLength(); i < len; i++) {
-    Pass* pass = _cbPasses[i];
+        CBPass* pass = _cbPasses[i];
     if (::strcmp(pass->getName(), name) == 0)
       return pass;
   }
@@ -532,7 +521,7 @@ ASMJIT_FAVOR_SIZE Pass* CodeBuilder::getPassByName(const char* name) const noexc
   return nullptr;
 }
 
-ASMJIT_FAVOR_SIZE Error CodeBuilder::addPass(Pass* pass) noexcept {
+ASMJIT_FAVOR_SIZE Error CodeBuilder::addPass(CBPass* pass) noexcept {
   if (ASMJIT_UNLIKELY(pass == nullptr)) {
     // Since this is directly called by `addPassT()` we treat `null` argument
     // as out-of-memory condition. Otherwise it would be API misuse.
@@ -550,7 +539,7 @@ ASMJIT_FAVOR_SIZE Error CodeBuilder::addPass(Pass* pass) noexcept {
   return kErrorOk;
 }
 
-ASMJIT_FAVOR_SIZE Error CodeBuilder::deletePass(Pass* pass) noexcept {
+ASMJIT_FAVOR_SIZE Error CodeBuilder::deletePass(CBPass* pass) noexcept {
   if (ASMJIT_UNLIKELY(pass == nullptr))
     return DebugUtils::errored(kErrorInvalidArgument);
 
@@ -565,48 +554,12 @@ ASMJIT_FAVOR_SIZE Error CodeBuilder::deletePass(Pass* pass) noexcept {
     _cbPasses.removeAt(index);
   }
 
-  pass->~Pass();
+  pass->~CBPass();
   return kErrorOk;
 }
 
 // ============================================================================
-// [asmjit::CodeBuilder - Validate]
-// ============================================================================
-
-Error CodeBuilder::_validate(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) const noexcept {
-#if !defined(ASMJIT_DISABLE_VALIDATION)
-  Operand_ opArray[6];
-  opArray[0].copyFrom(o0);
-  opArray[1].copyFrom(o1);
-  opArray[2].copyFrom(o2);
-  opArray[3].copyFrom(o3);
-  opArray[4].copyFrom(_op4);
-  opArray[5].copyFrom(_op5);
-
-  uint32_t archType = getArchType();
-  uint32_t options = getGlobalOptions() | getOptions();
-
-  if (!(options & CodeEmitter::kOptionOp4)) opArray[4].reset();
-  if (!(options & CodeEmitter::kOptionOp5)) opArray[5].reset();
-
-#if defined(ASMJIT_BUILD_X86)
-  if (ArchInfo::isX86Family(archType))
-    return X86Inst::validate(archType, instId, options, _opExtra, opArray, 6);
-#endif
-
-#if defined(ASMJIT_BUILD_ARM)
-  if (ArchInfo::isArmFamily(archType))
-    return X86Inst::validate(archType, instId, options, _opExtra, opArray, 6);
-#endif
-
-  return DebugUtils::errored(kErrorInvalidArch);
-#else
-  return DebugUtils::errored(kErrorFeatureNotEnabled);
-#endif // !ASMJIT_DISABLE_VALIDATION
-}
-
-// ============================================================================
-// [asmjit::CodeBuilder - RunPasses / Serialize]
+// [asmjit::CodeBuilder - RunPasses]
 // ============================================================================
 
 Error CodeBuilder::runPasses() {
@@ -614,18 +567,22 @@ Error CodeBuilder::runPasses() {
   if (ASMJIT_UNLIKELY(err))
     return err;
 
-  ZoneVector<Pass*>& passes = _cbPasses;
+  ZoneVector<CBPass*>& passes = _cbPasses;
   for (size_t i = 0, len = passes.getLength(); i < len; i++) {
-    Pass* pass = passes[i];
+        CBPass* pass = passes[i];
 
     _cbPassZone.reset();
-    err = pass->process(&_cbPassZone);
+    err = pass->run(&_cbPassZone);
     if (err) break;
   }
 
   _cbPassZone.reset();
   return err ? setLastError(err) : err;
 }
+
+// ============================================================================
+// [asmjit::CodeBuilder - Serialize]
+// ============================================================================
 
 Error CodeBuilder::serialize(CodeEmitter* dst) {
   Error err = kErrorOk;
@@ -724,13 +681,13 @@ Error CodeBuilder::dump(StringBuilder& sb, uint32_t logOptions) const noexcept {
 #endif // !ASMJIT_DISABLE_LOGGING
 
 // ============================================================================
-// [asmjit::Pass]
+// [asmjit::CBPass - Construction / Destruction]
 // ============================================================================
 
-Pass::Pass(const char* name) noexcept
+CBPass::CBPass(const char* name) noexcept
   : _cb(nullptr),
     _name(name) {}
-Pass::~Pass() noexcept {}
+CBPass::~CBPass() noexcept {}
 
 } // asmjit namespace
 

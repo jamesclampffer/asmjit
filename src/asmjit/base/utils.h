@@ -9,6 +9,7 @@
 #define _ASMJIT_BASE_UTILS_H
 
 // [Dependencies]
+#include "../base/debugutils.h"
 #include "../base/globals.h"
 
 #if ASMJIT_CC_MSC_GE(14, 0, 0)

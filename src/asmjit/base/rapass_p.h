@@ -10,13 +10,26 @@
 
 #include "../asmjit_build.h"
 #if !defined(ASMJIT_DISABLE_COMPILER)
-//
+
 // [Dependencies]
 #include "../base/codecompiler.h"
 #include "../base/zone.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
+
+#if !defined(ASMJIT_DISABLE_LOGGING)
+# define ASMJIT_RA_LOG_INIT(LOGGER) \
+  Logger* logger = LOGGER;
+# define ASMJIT_RA_LOG_FORMAT(...) \
+  do {                             \
+    if (logger)                    \
+      logger->logf(__VA_ARGS__);   \
+  } while (0)
+#else
+# define ASMJIT_RA_LOG_INIT(LOGGER) do {} while (0)
+# define ASMJIT_RA_LOG_FORMAT(...)    do {} while (0)
+#endif
 
 namespace asmjit {
 
@@ -28,10 +41,10 @@ namespace asmjit {
 // ============================================================================
 
 class RABlock;
-class RALocal;
+class WorkReg;
 
 typedef ZoneVector<RABlock*> RABlocks;
-typedef ZoneVector<RALocal*> RALocals;
+typedef ZoneVector<WorkReg*> WorkRegs;
 
 // ============================================================================
 // [asmjit::RABits]
@@ -320,49 +333,63 @@ struct RARegMask {
 };
 
 // ============================================================================
-// [asmjit::RALiveRange]
+// [asmjit::LiveBits]
 // ============================================================================
 
-class RALiveRange {
+typedef ZoneBitVector LiveBits;
+
+// ============================================================================
+// [asmjit::LiveSpan]
+// ============================================================================
+
+class LiveSpan {
 public:
-  ASMJIT_NONCOPYABLE(RALiveRange)
+  ASMJIT_INLINE LiveSpan() noexcept : a(0), b(0) {}
+  ASMJIT_INLINE LiveSpan(const LiveSpan& other) noexcept : a(other.a), b(other.b) {}
+  ASMJIT_INLINE LiveSpan(uint32_t a, uint32_t b) noexcept : a(a), b(b) {}
 
-  class Segment {
-  public:
-    ASMJIT_INLINE Segment() noexcept : a(0), b(0) {}
-    ASMJIT_INLINE Segment(const Segment& other) noexcept : a(other.a), b(other.b) {}
-    ASMJIT_INLINE Segment(uint32_t a, uint32_t b) noexcept : a(a), b(b) {}
+  uint32_t a, b;
+};
 
-    uint32_t a, b;
-  };
+// ============================================================================
+// [asmjit::LiveRange]
+// ============================================================================
+
+class LiveRange {
+public:
+  ASMJIT_NONCOPYABLE(LiveRange)
 
   // --------------------------------------------------------------------------
   // [Construction / Destruction]
   // --------------------------------------------------------------------------
 
-  explicit ASMJIT_INLINE RALiveRange(ZoneHeap* heap) noexcept
-    : _segments(heap) {}
+  explicit ASMJIT_INLINE LiveRange(ZoneHeap* heap) noexcept
+    : _spans(heap) {}
 
   // --------------------------------------------------------------------------
   // [Reset]
   // --------------------------------------------------------------------------
 
+  ASMJIT_INLINE bool isInitialized() const noexcept {
+    return _spans.isInitialized();
+  }
+
   ASMJIT_INLINE void reset(ZoneHeap* heap) noexcept {
-    _segments.reset(heap);
+    _spans.reset(heap);
   }
 
   // --------------------------------------------------------------------------
   // [Interface]
   // --------------------------------------------------------------------------
 
-  ASMJIT_INLINE bool isEmpty() const noexcept { return _segments.isEmpty(); }
-  ASMJIT_INLINE size_t getLength() const noexcept { return _segments.getLength(); }
+  ASMJIT_INLINE bool isEmpty() const noexcept { return _spans.isEmpty(); }
+  ASMJIT_INLINE size_t getLength() const noexcept { return _spans.getLength(); }
 
   // --------------------------------------------------------------------------
   // [Members]
   // --------------------------------------------------------------------------
 
-  ZoneVector<Segment> _segments;
+  ZoneVector<LiveSpan> _spans;
 };
 
 // ============================================================================
@@ -424,8 +451,9 @@ public:
   ASMJIT_ENUM(Flags) {
     kFlagIsConstructed    = 0x00000001U, //!< Block has been constructed from nodes.
     kFlagIsSinglePass     = 0x00000002U, //!< Executed only once (initialization code).
+    kFlagHasLiveness      = 0x00000004U, //!< Used during liveness analysis.
     kFlagHasFixedRegs     = 0x00000010U, //!< Block contains fixed registers (precolored).
-    kFlagHasFuncCalls     = 0x00000020U  //!< Block contains function call(s).
+    kFlagHasFuncCalls     = 0x00000020U  //!< Block contains function calls.
   };
 
   // --------------------------------------------------------------------------
@@ -435,13 +463,18 @@ public:
   ASMJIT_INLINE RABlock(ZoneHeap* heap, uint32_t blockId = 0) noexcept
     : _blockId(blockId),
       _flags(0),
+      _first(nullptr),
+      _last(nullptr),
       _weight(1),
       _povOrder(0xFFFFFFFFU),
+      _regKindsUsed(0x0),
       _lastMark(0),
       _predecessors(heap),
       _successors(heap),
-      _first(nullptr),
-      _last(nullptr),
+      _in(heap),
+      _out(heap),
+      _gen(heap),
+      _kill(heap),
       _idom(nullptr) {}
 
   // --------------------------------------------------------------------------
@@ -455,10 +488,15 @@ public:
   ASMJIT_INLINE uint32_t addFlags(uint32_t flags) noexcept { return _flags |= flags; }
 
   ASMJIT_INLINE bool isConstructed() const noexcept { return hasFlag(kFlagIsConstructed); }
-  ASMJIT_INLINE void makeConstructed() noexcept { addFlags(kFlagIsConstructed); }
+  ASMJIT_INLINE void makeConstructed(uint32_t regKindsUsed) noexcept {
+    _flags |= kFlagIsConstructed;
+    // Restrict `regKindsUsed` to register kinds that can have virtual registers.
+    _regKindsUsed |= regKindsUsed & Utils::bits(Globals::kMaxVRegKinds);
+  }
+
+  ASMJIT_INLINE uint32_t getRegKindsUsed() const noexcept { return _regKindsUsed; }
 
   ASMJIT_INLINE bool isSinglePass() const noexcept { return hasFlag(kFlagIsSinglePass); }
-
   ASMJIT_INLINE bool isEntryBlock() const noexcept { return _predecessors.isEmpty(); }
   ASMJIT_INLINE bool isExitBlock() const noexcept { return _successors.isEmpty(); }
 
@@ -483,6 +521,14 @@ public:
   ASMJIT_INLINE const RABlock* getIDom() const noexcept { return _idom; }
   ASMJIT_INLINE void setIDom(RABlock* block) noexcept { _idom = block; }
 
+  ASMJIT_INLINE Error resizeLiveBits(size_t size) noexcept {
+    ASMJIT_PROPAGATE(_in.resize(size));
+    ASMJIT_PROPAGATE(_out.resize(size));
+    ASMJIT_PROPAGATE(_gen.resize(size));
+    ASMJIT_PROPAGATE(_kill.resize(size));
+    return kErrorOk;
+  }
+
   // --------------------------------------------------------------------------
   // [Ops]
   // --------------------------------------------------------------------------
@@ -506,35 +552,45 @@ public:
 
   uint32_t _blockId;                     //!< Block id (indexed from zero).
   uint32_t _flags;                       //!< Block flags, see \ref Flags.
-  uint32_t _weight;                      //!< Weight of this block (default 1).
-
-  uint32_t _povOrder;                    //!< POV (post-order view) order.
-  mutable uint64_t _lastMark;            //!< Last mark (used by block visitors).
-
-  RABlocks _predecessors;                //!< Blocks predecessors.
-  RABlocks _successors;                  //!< Block successors.
 
   CBNode* _first;                        //!< First `CBNode` of this block (inclusive).
   CBNode* _last;                         //!< Last `CBNode` of this block (inclusive).
 
-  RABlock* _idom;                        //!< Immediate dominator.
+  uint32_t _weight;                      //!< Weight of this block (default 1).
+  uint32_t _povOrder;                    //!< Post-order view order, used during computing.
+  uint32_t _regKindsUsed;                //!< Mask of all register kinds used by the block.
+
+  mutable uint64_t _lastMark;            //!< Last mark (used by block visitors).
+  RABlock* _idom;                        //!< Immediate dominator of this block.
+
+  RABlocks _predecessors;                //!< Block predecessors.
+  RABlocks _successors;                  //!< Block successors.
+
+  LiveBits _in;                          //!< Liveness in.
+  LiveBits _out;                         //!< Liveness out.
+  LiveBits _gen;                         //!< Liveness gen.
+  LiveBits _kill;                        //!< Liveness kill.
 };
 
 // ============================================================================
-// [asmjit::RALocal]
+// [asmjit::WorkReg]
 // ============================================================================
 
-class RALocal {
+class WorkReg {
 public:
-  ASMJIT_NONCOPYABLE(RALocal)
+  ASMJIT_NONCOPYABLE(WorkReg)
 
   // --------------------------------------------------------------------------
   // [Construction / Destruction]
   // --------------------------------------------------------------------------
 
-  ASMJIT_INLINE RALocal(ZoneHeap* heap, VirtReg* vReg, uint32_t localId) noexcept
-    : _localId(localId),
-      _vReg(vReg),
+  ASMJIT_INLINE WorkReg(ZoneHeap* heap, VirtReg* vReg, uint32_t workId) noexcept
+    : _workId(workId),
+      _virtId(vReg->getId()),
+      _kind(vReg->getKind()),
+      _virtReg(vReg),
+      _liveIn(heap),
+      _liveOut(heap),
       _liveRange(heap),
       _refs(heap) {}
 
@@ -542,24 +598,40 @@ public:
   // [Accessors]
   // --------------------------------------------------------------------------
 
-  ASMJIT_INLINE uint32_t getLocalId() const noexcept { return _localId; }
-  ASMJIT_INLINE VirtReg* getVirtReg() const noexcept { return _vReg; }
+  ASMJIT_INLINE uint32_t getWorkId() const noexcept { return _workId; }
+  ASMJIT_INLINE uint32_t getVirtId() const noexcept { return _virtId; }
+  ASMJIT_INLINE uint32_t getKind() const noexcept { return _kind; }
 
-  ASMJIT_INLINE RALiveRange& getLiveRange() noexcept { return _liveRange; }
-  ASMJIT_INLINE const RALiveRange& getLiveRange() const noexcept { return _liveRange; }
+  ASMJIT_INLINE VirtReg* getVirtReg() const noexcept { return _virtReg; }
+
+  ASMJIT_INLINE LiveBits& getLiveIn() noexcept { return _liveIn; }
+  ASMJIT_INLINE const LiveBits& getLiveIn() const noexcept { return _liveIn; }
+
+  ASMJIT_INLINE LiveBits& getLiveOut() noexcept { return _liveOut; }
+  ASMJIT_INLINE const LiveBits& getLiveOut() const noexcept { return _liveOut; }
+
+  ASMJIT_INLINE LiveRange& getLiveRange() noexcept { return _liveRange; }
+  ASMJIT_INLINE const LiveRange& getLiveRange() const noexcept { return _liveRange; }
 
   // --------------------------------------------------------------------------
   // [Members]
   // --------------------------------------------------------------------------
 
-  uint32_t _localId;                     //!< Local id used during register allocation.
-  VirtReg* _vReg;                        //!< VirtReg associated with this RALocal.
-  RALiveRange _liveRange;                //!< Live range of the VirtReg.
-  ZoneVector<CBNode*> _refs;             //!< All nodes this VirtReg is used by.
+  uint32_t _workId;                      //!< Work id, used during register allocation.
+  uint32_t _virtId;                      //!< Virtual id as used by `VirtReg`.
+
+  uint8_t _kind;                         //!< Register kind.
+
+  VirtReg* _virtReg;                     //!< `VirtReg` associated with this `WorkReg`.
+
+  LiveBits _liveIn;                      //!< Live-in bits, each bit per node-id.
+  LiveBits _liveOut;                     //!< Live-out bits, each bit per node-id.
+  LiveRange _liveRange;                  //!< Live range of the `VirtReg`.
+  ZoneVector<CBNode*> _refs;             //!< All nodes that use this `VirtReg`.
 };
 
 // ============================================================================
-// [asmjit::RATiedReg]
+// [asmjit::TiedReg]
 // ============================================================================
 
 //! Tied register (CodeCompiler).
@@ -567,7 +639,7 @@ public:
 //! Tied register is used to describe one ore more register operands that share
 //! the same virtual register. Tied register contains all the data that is
 //! essential for register allocation.
-struct RATiedReg {
+struct TiedReg {
   //! Flags.
   ASMJIT_ENUM(Flags) {
     kRReg        = 0x00000001U,          //!< Register read.
@@ -589,8 +661,8 @@ struct RATiedReg {
   // [Init / Reset]
   // --------------------------------------------------------------------------
 
-  ASMJIT_INLINE void init(VirtReg* vreg, uint32_t flags, uint32_t allocableRegs, uint32_t rPhysId, uint32_t wPhysId) noexcept {
-    this->vreg = vreg;
+  ASMJIT_INLINE void init(VirtReg* vReg, uint32_t flags, uint32_t allocableRegs, uint32_t rPhysId, uint32_t wPhysId) noexcept {
+    this->vreg = vReg;
     this->flags = flags;
     this->allocableRegs = allocableRegs;
     this->refCount = 1;
@@ -602,6 +674,13 @@ struct RATiedReg {
   // --------------------------------------------------------------------------
   // [Accessors]
   // --------------------------------------------------------------------------
+
+  //! Get allocation flags, see \ref Flags.
+  ASMJIT_INLINE uint32_t getFlags() const noexcept { return flags; }
+
+  ASMJIT_INLINE bool isReadOnly() const noexcept { return (flags & kXReg) == kRReg; }
+  ASMJIT_INLINE bool isWriteOnly() const noexcept { return (flags & kXReg) == kWReg; }
+  ASMJIT_INLINE bool isReadWrite() const noexcept { return (flags & kXReg) == kXReg; }
 
   //! Get whether the variable has to be allocated in a specific input register.
   ASMJIT_INLINE uint32_t hasRPhysId() const noexcept { return rPhysId != Globals::kInvalidRegId; }
@@ -617,8 +696,8 @@ struct RATiedReg {
   // [Operator Overload]
   // --------------------------------------------------------------------------
 
-  ASMJIT_INLINE RATiedReg& operator=(const RATiedReg& other) noexcept {
-    ::memcpy(this, &other, sizeof(RATiedReg));
+  ASMJIT_INLINE TiedReg& operator=(const TiedReg& other) noexcept {
+    ::memcpy(this, &other, sizeof(TiedReg));
     return *this;
   }
 
@@ -645,13 +724,13 @@ struct RATiedReg {
     struct {
       //! How many times the variable is referenced by the instruction / node.
       uint8_t refCount;
-      //! Input register index or `Globals::kInvalidRegId` if it's not given.
+      //! Input register id or `Globals::kInvalidRegId` if it's not given.
       //!
-      //! Even if the input register index is not given (i.e. it may by any
-      //! register), register allocator should assign an index that will be
-      //! used to persist a variable into this specific index. It's helpful
-      //! in situations where one variable has to be allocated in multiple
-      //! registers to determine the register which will be persistent.
+      //! Even if the input register id is not given (i.e. it may by any
+      //! register), register allocator should assign some id that will be
+      //! used to persist a virtual register into this specific id. It's
+      //! helpful in situations where one virtual register has to be allocated
+      //! in multiple registers to determine the register which will be persistent.
       uint8_t rPhysId;
       //! Output register index or `Globals::kInvalidRegId` if it's not given.
       //!
@@ -687,39 +766,44 @@ struct RAData {
   // [Accessors]
   // --------------------------------------------------------------------------
 
-  //! Get RATiedReg array.
-  ASMJIT_INLINE RATiedReg* getTiedArray() const noexcept {
-    return const_cast<RATiedReg*>(tiedArray);
+  //! Get `TiedReg` array.
+  ASMJIT_INLINE TiedReg* getTiedArray() const noexcept {
+    return const_cast<TiedReg*>(tiedArray);
   }
 
-  //! Get RATiedReg array for a given register `kind`.
-  ASMJIT_INLINE RATiedReg* getTiedArrayByKind(uint32_t kind) const noexcept {
-    return const_cast<RATiedReg*>(tiedArray) + tiedIndex.get(kind);
+  //! Get `TiedReg` array for a given register `kind`.
+  ASMJIT_INLINE TiedReg* getTiedArrayByKind(uint32_t kind) const noexcept {
+    return const_cast<TiedReg*>(tiedArray) + tiedIndex.get(kind);
   }
 
-  //! Get RATiedReg index for a given register `kind`.
+  //! Get `TiedReg` index for a given register `kind`.
   ASMJIT_INLINE uint32_t getTiedStart(uint32_t kind) const noexcept {
     return tiedIndex.get(kind);
   }
 
-  //! Get RATiedReg count for a given register `kind`.
+  //! Get count of all tied registers.
+  ASMJIT_INLINE uint32_t getTiedCount() const noexcept {
+    return tiedTotal;
+  }
+
+  //! Get count of tied registers of a given `kind`.
   ASMJIT_INLINE uint32_t getTiedCountByKind(uint32_t kind) const noexcept {
     return tiedCount.get(kind);
   }
 
-  //! Get RATiedReg at the specified `index`.
-  ASMJIT_INLINE RATiedReg* getTiedAt(uint32_t index) const noexcept {
+  //! Get `TiedReg` at the specified `index`.
+  ASMJIT_INLINE TiedReg* getTiedAt(uint32_t index) const noexcept {
     ASMJIT_ASSERT(index < tiedTotal);
     return getTiedArray() + index;
   }
 
-  //! Get RATiedReg at the specified index for a given register `kind`.
-  ASMJIT_INLINE RATiedReg* getTiedAtByKind(uint32_t kind, uint32_t index) const noexcept {
+  //! Get TiedReg at the specified index for a given register `kind`.
+  ASMJIT_INLINE TiedReg* getTiedAtByKind(uint32_t kind, uint32_t index) const noexcept {
     ASMJIT_ASSERT(index < tiedCount._regs[kind]);
     return getTiedArrayByKind(kind) + index;
   }
 
-  ASMJIT_INLINE void setTiedAt(uint32_t index, RATiedReg& tied) noexcept {
+  ASMJIT_INLINE void setTiedAt(uint32_t index, TiedReg& tied) noexcept {
     ASMJIT_ASSERT(index < tiedTotal);
     tiedArray[index] = tied;
   }
@@ -728,25 +812,25 @@ struct RAData {
   // [Utils]
   // --------------------------------------------------------------------------
 
-  //! Find RATiedReg.
-  ASMJIT_INLINE RATiedReg* findTied(VirtReg* vreg) const noexcept {
-    RATiedReg* tiedArray = getTiedArray();
+  //! Find TiedReg.
+  ASMJIT_INLINE TiedReg* findTied(VirtReg* vReg) const noexcept {
+    TiedReg* tiedArray = getTiedArray();
     uint32_t tiedCount = tiedTotal;
 
     for (uint32_t i = 0; i < tiedCount; i++)
-      if (tiedArray[i].vreg == vreg)
+      if (tiedArray[i].vreg == vReg)
         return &tiedArray[i];
 
     return nullptr;
   }
 
-  //! Find RATiedReg (by class).
-  ASMJIT_INLINE RATiedReg* findTiedByKind(uint32_t kind, VirtReg* vreg) const noexcept {
-    RATiedReg* tiedArray = getTiedArrayByKind(kind);
+  //! Find TiedReg (by class).
+  ASMJIT_INLINE TiedReg* findTiedByKind(uint32_t kind, VirtReg* vReg) const noexcept {
+    TiedReg* tiedArray = getTiedArrayByKind(kind);
     uint32_t tiedCount = getTiedCountByKind(kind);
 
     for (uint32_t i = 0; i < tiedCount; i++)
-      if (tiedArray[i].vreg == vreg)
+      if (tiedArray[i].vreg == vReg)
         return &tiedArray[i];
 
     return nullptr;
@@ -756,7 +840,7 @@ struct RAData {
   // [Members]
   // --------------------------------------------------------------------------
 
-  uint32_t tiedTotal;                    //!< Total count of \ref RATiedReg regs.
+  uint32_t tiedTotal;                    //!< Total count of \ref TiedReg regs.
 
   //! Special registers on input.
   //!
@@ -771,19 +855,19 @@ struct RAData {
   //!
   //! Special register(s) used on output. Each variable can have only one
   //! special register on the output, 'RAData' contains all registers from
-  //! all 'RATiedReg's.
+  //! all 'TiedReg's.
   RARegMask outRegs;
 
   //! Clobbered registers (by a function call).
   RARegMask clobberedRegs;
 
-  //! Start indexes of `RATiedReg`s per register kind.
+  //! Start indexes of `TiedReg`s per register kind.
   RARegCount tiedIndex;
   //! Count of variables per register kind.
   RARegCount tiedCount;
 
   //! Linked registers.
-  RATiedReg tiedArray[1];
+  TiedReg tiedArray[1];
 };
 
 // ============================================================================
@@ -841,10 +925,10 @@ struct RAState {
 //! \internal
 //!
 //! Register allocation pass (abstract) used by \ref CodeCompiler.
-class RAPass : public Pass {
+class RAPass : public CCFuncPass {
 public:
   ASMJIT_NONCOPYABLE(RAPass)
-  typedef Pass Base;
+  typedef CCFuncPass Base;
 
   enum Limits {
     kMaxVRegKinds = Globals::kMaxVRegKinds
@@ -869,6 +953,15 @@ public:
   //! Get the associated `CodeCompiler`.
   ASMJIT_INLINE CodeCompiler* cc() const noexcept { return static_cast<CodeCompiler*>(_cb); }
 
+  //! Get if the logging is enabled, in that case `getLogger()` returns a valid `Logger` instance.
+  ASMJIT_INLINE bool hasLogger() const noexcept { return _logger != nullptr; }
+
+  //! Get `Logger` instance or null.
+  ASMJIT_INLINE Logger* getLogger() const noexcept { return _logger; }
+
+  //! Get `Zone` passed to `runOnFunction()`.
+  ASMJIT_INLINE Zone* getZone() const { return _heap.getZone(); }
+
   //! Get function.
   ASMJIT_INLINE CCFunc* getFunc() const noexcept { return _func; }
   //! Get stop node.
@@ -891,27 +984,24 @@ public:
   ASMJIT_INLINE uint64_t nextMark() const noexcept { return ++_lastMark; }
 
   // --------------------------------------------------------------------------
-  // [Process]
+  // [Run]
   // --------------------------------------------------------------------------
-
-  //! Executes `compile()` for each function it finds.
-  virtual Error process(Zone* zone) noexcept override;
 
   //! Run the register allocator for the given `func`.
-  virtual Error compile(CCFunc* func) noexcept;
+  Error runOnFunction(Zone* zone, CCFunc* func) noexcept override;
 
   // --------------------------------------------------------------------------
-  // [Prepare / Cleanup]
+  // [Init / Done]
   // --------------------------------------------------------------------------
 
-  //! Called by `compile()` to prepare the register allocator to process the
-  //! given function. It should reset and set-up everything (i.e. there should
-  //! be no garbage from the previous compilation).
-  virtual Error prepare(CCFunc* func) noexcept;
+  //! Called by `runOnFunction()` to initialize an architecture-specific data
+  //! used by the register allocator. It initialize everything as it's called
+  //! per function.
+  virtual void onInit() noexcept = 0;
 
   //! Called after `compile()` to clean everything up, no matter if `compile()`
   //! succeeded or failed.
-  virtual void cleanup() noexcept;
+  virtual void onDone() noexcept = 0;
 
   // --------------------------------------------------------------------------
   // [Steps]
@@ -932,6 +1022,11 @@ public:
 
   //! STEP 2:
   //!
+  //! Construct post-order-view (POV).
+  Error constructPOV() noexcept;
+
+  //! STEP 3:
+  //!
   //! Construct a dominator-tree from CFG.
   //!
   //! Terminology:
@@ -941,18 +1036,24 @@ public:
   //!     of the graph has to go through `Z`.
   Error constructDOM() noexcept;
 
+  //! STEP 4:
+  //!
+  //! Perform liveness analysis and construct live intervals.
+  Error constructLiveness() noexcept;
+
   // --------------------------------------------------------------------------
-  // [Local Registers]
+  // [Work Registers]
   // --------------------------------------------------------------------------
 
-  Error _makeLocal(VirtReg* vReg) noexcept;
+  Error _addToWorkRegs(VirtReg* vReg) noexcept;
 
-  //! Creates a `RALocal` data for the given `vReg`. The function does
-  //! nothing if `vReg` already contains link to `RALocal`. Called by
-  //! `constructCFG()`.
-  ASMJIT_INLINE Error makeLocal(VirtReg* vReg) noexcept {
+  //! Creates a `WorkReg` data for the given `vReg`. The function does nothing
+  //! if `vReg` already contains link to `WorkReg`. Called by `constructCFG()`.
+  ASMJIT_INLINE Error addToWorkRegs(VirtReg* vReg) noexcept {
     // Likely as one virtual register should be used more than once.
-    return ASMJIT_LIKELY(vReg->_local) ? static_cast<uint32_t>(kErrorOk) : _makeLocal(vReg);
+    if (ASMJIT_LIKELY(vReg->_workReg))
+      return kErrorOk;
+    return _addToWorkRegs(vReg);
   }
 
   // --------------------------------------------------------------------------
@@ -1002,29 +1103,27 @@ public:
   }
 
   // --------------------------------------------------------------------------
-  // [Bits]
+  // [Logging]
   // --------------------------------------------------------------------------
 
-  ASMJIT_INLINE RABits* newBits(uint32_t len) noexcept {
-    return static_cast<RABits*>(
-      _zone->allocZeroed(static_cast<size_t>(len) * RABits::kEntitySize));
-  }
+#if !defined(ASMJIT_DISABLE_LOGGING)
+  Error _logBlockIds(const RABlocks& blocks) noexcept;
 
-  ASMJIT_INLINE RABits* dupBits(const RABits* src, uint32_t len) noexcept {
-    return static_cast<RABits*>(
-      _zone->dup(src, static_cast<size_t>(len) * RABits::kEntitySize));
+  ASMJIT_INLINE Error logSuccessors(const RABlock* block) noexcept {
+    return hasLogger() ? _logBlockIds(block->getSuccessors()) : static_cast<Error>(kErrorOk);
   }
+#else
+  ASMJIT_INLINE Error logSuccessors(const RABlock* block) noexcept {
+    return kErrorOk;
+  }
+#endif
 
   // --------------------------------------------------------------------------
   // [Members]
   // --------------------------------------------------------------------------
 
-  Zone* _zone;                           //!< Zone passed to `process()`.
-  ZoneHeap _heap;                        //!< ZoneHeap that uses `_zone`.
-
-  RARegCount _archRegCount;              //!< Count of machine registers.
-  RARegMask _allocableRegs;              //!< Allocable registers (global).
-  RARegMask _clobberedRegs;              //!< Clobbered registers of all blocks.
+  ZoneHeap _heap;                        //!< ZoneHeap that uses zone passed to `runOnFunction()`.
+  Logger* _logger;                       //!< Pass loggins is enabled and logger valid if non-null.
 
   CCFunc* _func;                         //!< Function being processed.
   CBNode* _stop;                         //!< Stop node.
@@ -1032,10 +1131,15 @@ public:
 
   RABlocks _blocks;                      //!< Blocks (first block is the entry, always exists).
   RABlocks _exits;                       //!< Function exit blocks (usually one, but can contain more).
-  mutable uint64_t _lastMark;            //!< Mark counter for mutable block visiting.
-
-  RALocals _localRegs[kMaxVRegKinds];    //!< Local registers (referenced by the function).
+  RABlocks _pov;                         //!< Post order view (POV) of all `_blocks`.
+  WorkRegs _workRegs;                    //!< Work registers (referenced by the function).
   RAStackManager _stack;                 //!< Stack manager.
+
+  RARegCount _archRegCount;              //!< Count of machine registers.
+  RARegMask _allocableRegs;              //!< Allocable registers (global).
+  RARegMask _clobberedRegs;              //!< Clobbered registers of all blocks.
+  uint32_t _nodesCount;                  //!< Count of nodes, for allocating liveness bits.
+  mutable uint64_t _lastMark;            //!< Mark counter for mutable block visiting.
 };
 
 // ============================================================================
@@ -1048,9 +1152,17 @@ public:
 
   enum { kAnyReg = Globals::kInvalidRegId };
 
+  // --------------------------------------------------------------------------
+  // [Construction / Destruction]
+  // --------------------------------------------------------------------------
+
   ASMJIT_INLINE RATiedBuilder(RAPass* pass) noexcept {
     reset(pass);
   }
+
+  // --------------------------------------------------------------------------
+  // [Reset / Done]
+  // --------------------------------------------------------------------------
 
   ASMJIT_INLINE void reset(RAPass* pass) noexcept {
     this->pass = pass;
@@ -1063,45 +1175,81 @@ public:
     index.indexFromRegCount(count);
   }
 
+  // --------------------------------------------------------------------------
+  // [Accessors]
+  // --------------------------------------------------------------------------
+
   ASMJIT_INLINE uint32_t getTotal() const noexcept {
     return static_cast<uint32_t>((size_t)(cur - tmp));
   }
 
+  // --------------------------------------------------------------------------
+  // [Add]
+  // --------------------------------------------------------------------------
+
   ASMJIT_INLINE Error add(VirtReg* vReg, uint32_t flags, uint32_t allocable, uint32_t rPhysId, uint32_t wPhysId) noexcept {
-    RATiedReg* tied = vReg->getTied();
-    if (!tied) {
-      // Happens when the builder is not reset after each instruction.
+    TiedReg* tReg = vReg->getTiedReg();
+    if (!tReg) {
+      // Could happen when the builder is not reset properly after each instruction.
       ASMJIT_ASSERT(getTotal() < ASMJIT_ARRAY_SIZE(tmp));
 
-      ASMJIT_PROPAGATE(pass->makeLocal(vReg));
-      tied = cur++;
-      tied->init(vReg, flags, allocable, rPhysId, wPhysId);
+      ASMJIT_PROPAGATE(pass->addToWorkRegs(vReg));
+      tReg = cur++;
+      tReg->init(vReg, flags, allocable, rPhysId, wPhysId);
       return kErrorOk;
     }
     else {
       // Already used by this node.
-      ASMJIT_ASSERT(vReg->hasLocal());
+      ASMJIT_ASSERT(vReg->hasWorkReg());
 
       if (ASMJIT_UNLIKELY(wPhysId != kAnyReg)) {
-        if (ASMJIT_UNLIKELY(tied->wPhysId != kAnyReg))
+        if (ASMJIT_UNLIKELY(tReg->wPhysId != kAnyReg))
           return DebugUtils::errored(kErrorOverlappedRegs);
-        tied->wPhysId = static_cast<uint8_t>(wPhysId);
+        tReg->wPhysId = static_cast<uint8_t>(wPhysId);
       }
 
-      tied->refCount++;
-      tied->flags |= flags;
-      tied->allocableRegs &= allocable;
+      tReg->refCount++;
+      tReg->flags |= flags;
+      tReg->allocableRegs &= allocable;
       return kErrorOk;
     }
   }
+
+  // --------------------------------------------------------------------------
+  // [Store]
+  // --------------------------------------------------------------------------
+
+  ASMJIT_INLINE Error storeTo(CBNode* node) noexcept {
+    uint32_t total = getTotal();
+    size_t size = sizeof(RAData) - sizeof(TiedReg) + total * sizeof(TiedReg);
+    RAData* raData = pass->getZone()->allocT<RAData>(size);
+
+    if (ASMJIT_UNLIKELY(!raData))
+      return kErrorNoHeapMemory;
+
+    raData->tiedTotal = total;
+    raData->inRegs.reset();
+    raData->outRegs.reset();
+    raData->clobberedRegs.reset();
+    raData->tiedIndex = index;
+    raData->tiedCount = count;
+    ::memcpy(raData->tiedArray, tmp, total * sizeof(TiedReg));
+
+    node->setPassData<RAData>(raData);
+    return kErrorOk;
+  }
+
+  // --------------------------------------------------------------------------
+  // [Members]
+  // --------------------------------------------------------------------------
 
   RAPass* pass;
 
   RARegCount index;                      //!< Index of tied registers per kind.
   RARegCount count;                      //!< Count of tied registers per kind.
 
-  RATiedReg* cur;                        //!< Current tied register.
-  RATiedReg tmp[80];                     //!< Array of tied registers (temporary).
+  TiedReg* cur;                          //!< Current tied register.
+  TiedReg tmp[80];                       //!< Array of tied registers (temporary).
 };
 
 // ============================================================================
@@ -1111,6 +1259,280 @@ public:
 template<typename This>
 class RACFGBuilder {
 public:
+  ASMJIT_INLINE RACFGBuilder(RAPass* pass) noexcept
+    : _pass(pass) {}
+
+  ASMJIT_INLINE Error run() noexcept {
+    ASMJIT_RA_LOG_INIT(_pass->getLogger());
+    ASMJIT_RA_LOG_FORMAT("[RA::ConstructCFG]\n");
+
+    CodeCompiler* cc = _pass->cc();
+    CCFunc* func = _pass->getFunc();
+    CBNode* node = func;
+
+    // Create the first (entry) block.
+    RABlock* currentBlock = _pass->newBlock(node);
+    if (ASMJIT_UNLIKELY(!currentBlock))
+      return DebugUtils::errored(kErrorNoHeapMemory);
+
+    bool hasCode = false;
+    size_t blockIndex = 0;
+    uint32_t position = 0;
+    uint32_t kindsUsed = 0;
+
+#if !defined(ASMJIT_DISABLE_LOGGING)
+    StringBuilderTmp<256> sb;
+    RABlock* lastPrintedBlock = nullptr;
+
+    if (logger) {
+      lastPrintedBlock = currentBlock;
+      logger->logf("{Block #%u}\n", lastPrintedBlock->getBlockId());
+    }
+#endif // !ASMJIT_DISABLE_LOGGING
+
+    for (;;) {
+      for (;;) {
+        ASMJIT_ASSERT(!node->hasPosition());
+        node->setPosition(++position);
+
+        if (node->getType() == CBNode::kNodeLabel) {
+          if (!currentBlock) {
+            // If the current code is unreachable the label makes it reachable again.
+            currentBlock = node->as<CBLabel>()->getBlock();
+            if (currentBlock) {
+              // If the label has a block assigned we can either continue with
+              // it or skip it if the block has been constructed already.
+              if (currentBlock->isConstructed())
+                break;
+            }
+            else {
+              // Only create a new block if the label doesn't have assigned one.
+              currentBlock = _pass->newBlock(node);
+              if (ASMJIT_UNLIKELY(!currentBlock))
+                return DebugUtils::errored(kErrorNoHeapMemory);
+
+              node->as<CBLabel>()->setBlock(currentBlock);
+              hasCode = false;
+              kindsUsed = 0;
+            }
+          }
+          else {
+            // Label makes the current block constructed. There is a chance that the
+            // Label is not used, but we don't know that at this point. Later, when
+            // we have enough information we will be able to merge continuous blocks
+            // into a single one if it's beneficial.
+            currentBlock->setLast(node->getPrev());
+            currentBlock->makeConstructed(kindsUsed);
+
+            if (node->as<CBLabel>()->hasBlock()) {
+              RABlock* successor = node->as<CBLabel>()->getBlock();
+              if (currentBlock == successor) {
+                // The label currently processed is part of the current block. This
+                // is only possible for multiple labels that are right next to each
+                // other, or are separated by .align directives and/or comments.
+                if (hasCode)
+                  return DebugUtils::errored(kErrorInvalidState);
+              }
+              else {
+                ASMJIT_PROPAGATE(currentBlock->appendSuccessor(successor));
+                _pass->logSuccessors(currentBlock);
+
+                currentBlock = successor;
+                hasCode = false;
+                kindsUsed = 0;
+              }
+            }
+            else {
+              // First time we see this label.
+              if (hasCode) {
+                // Cannot continue the current block if it already contains some
+                // code. We need to create a new block and make it a successor.
+                currentBlock->setLast(node->getPrev());
+                currentBlock->makeConstructed(kindsUsed);
+
+                RABlock* successor = _pass->newBlock(node);
+                if (ASMJIT_UNLIKELY(!successor))
+                  return DebugUtils::errored(kErrorNoHeapMemory);
+
+                ASMJIT_PROPAGATE(currentBlock->appendSuccessor(successor));
+                _pass->logSuccessors(currentBlock);
+
+                currentBlock = successor;
+                hasCode = false;
+                kindsUsed = 0;
+              }
+
+              node->as<CBLabel>()->setBlock(currentBlock);
+            }
+          }
+#if !defined(ASMJIT_DISABLE_LOGGING)
+          if (logger) {
+            if (lastPrintedBlock != currentBlock) {
+              lastPrintedBlock = currentBlock;
+              logger->logf("{Block #%u}\n", lastPrintedBlock->getBlockId());
+            }
+
+            sb.clear();
+            Logging::formatNode(sb, 0, cc, node);
+            logger->logf("  %s\n", sb.getData());
+          }
+#endif // !ASMJIT_DISABLE_LOGGING
+        }
+        else {
+#if !defined(ASMJIT_DISABLE_LOGGING)
+          if (logger) {
+            sb.clear();
+            Logging::formatNode(sb, 0, cc, node);
+            logger->logf("  %s\n", sb.getData());
+          }
+#endif // !ASMJIT_DISABLE_LOGGING
+
+          if (node->actsAsInst()) {
+            if (ASMJIT_UNLIKELY(!currentBlock)) {
+              // If this code is unreachable then it has to be removed.
+              CBNode* next = node->getNext();
+              cc->removeNode(node);
+              node = next;
+
+              position--;
+              continue;
+            }
+            else {
+              // Handle `CBInst`, `CCFuncCall`, and `CCFuncRet`. All of
+              // these share the `CBInst` interface and contain operands.
+              hasCode = true;
+
+              CBInst* inst = node->as<CBInst>();
+              uint32_t jumpType = AnyInst::kJumpTypeNone;
+
+              static_cast<This*>(this)->onInst(inst, jumpType, kindsUsed);
+
+              // Support for conditional and unconditional jumps.
+              if (jumpType == AnyInst::kJumpTypeDirect || jumpType == AnyInst::kJumpTypeConditional) {
+                // Jmp/Jcc/Call/Loop/etc...
+                uint32_t opCount = inst->getOpCount();
+                const Operand* opArray = inst->getOpArray();
+
+                // The last operand must be label (this supports also instructions
+                // like jecx in explicit form).
+                if (opCount == 0 || !opArray[opCount - 1].isLabel())
+                  return DebugUtils::errored(kErrorInvalidState);
+
+                CBLabel* cbLabel;
+                ASMJIT_PROPAGATE(cc->getCBLabel(&cbLabel, opArray[opCount - 1].as<Label>()));
+
+                RABlock* jumpSuccessor = _pass->newBlockOrMergeWith(cbLabel);
+                if (ASMJIT_UNLIKELY(!jumpSuccessor))
+                  return DebugUtils::errored(kErrorNoHeapMemory);
+
+                currentBlock->setLast(node);
+                currentBlock->makeConstructed(kindsUsed);
+                ASMJIT_PROPAGATE(currentBlock->appendSuccessor(jumpSuccessor));
+
+                if (jumpType == AnyInst::kJumpTypeDirect) {
+                  // Unconditional jump makes the code after the jump unreachable,
+                  // which will be removed instantly during the CFG construction;
+                  // as we cannot allocate registers for instructions that are not
+                  // part of any block. Of course we can leave these instructions
+                  // as they are, however, that would only postpone the problem as
+                  // assemblers can't encode instructions that use virtual registers.
+                  _pass->logSuccessors(currentBlock);
+                  currentBlock = nullptr;
+                }
+                else {
+                  node = node->getNext();
+                  if (ASMJIT_UNLIKELY(!node))
+                    return DebugUtils::errored(kErrorInvalidState);
+
+                  RABlock* flowSuccessor;
+                  if (node->getType() == CBNode::kNodeLabel) {
+                    if (node->as<CBLabel>()->hasBlock()) {
+                      flowSuccessor = node->as<CBLabel>()->getBlock();
+                    }
+                    else {
+                      flowSuccessor = _pass->newBlock(node);
+                      if (ASMJIT_UNLIKELY(!flowSuccessor))
+                        return DebugUtils::errored(kErrorNoHeapMemory);
+                      node->as<CBLabel>()->setBlock(flowSuccessor);
+                    }
+                  }
+                  else {
+                    flowSuccessor = _pass->newBlock(node);
+                    if (ASMJIT_UNLIKELY(!flowSuccessor))
+                      return DebugUtils::errored(kErrorNoHeapMemory);
+                  }
+
+                  ASMJIT_PROPAGATE(currentBlock->prependSuccessor(flowSuccessor));
+                  _pass->logSuccessors(currentBlock);
+
+                  currentBlock = flowSuccessor;
+                  hasCode = false;
+                  kindsUsed = 0;
+
+                  if (currentBlock->isConstructed())
+                    break;
+
+                  lastPrintedBlock = currentBlock;
+                  ASMJIT_RA_LOG_FORMAT("{Block #%u}\n", lastPrintedBlock->getBlockId());
+                  continue;
+                }
+              }
+            }
+          }
+          else if (node->getType() == CBNode::kNodeSentinel) {
+            // Sentinel could be anything, however, if this is the end of function
+            // marker it's the function's exit. This means this node must be added
+            // to `_exits`.
+            if (node == func->getEnd()) {
+              // Only add the current block to exists if it's reachable.
+              if (currentBlock) {
+                currentBlock->setLast(node);
+                currentBlock->makeConstructed(kindsUsed);
+                ASMJIT_PROPAGATE(_pass->_exits.append(currentBlock));
+              }
+              break;
+            }
+          }
+          else if (node->getType() == CBNode::kNodeFunc) {
+            // CodeCompiler can only compile single function at a time. If we
+            // encountered a function it must be the current one, bail if not.
+            if (ASMJIT_UNLIKELY(node != func))
+              return DebugUtils::errored(kErrorInvalidState);
+            // PASS if this is the first node.
+          }
+          else {
+            // PASS if this is a non-interesting or unknown node.
+          }
+        }
+
+        // Advance to the next node.
+        node = node->getNext();
+
+        // NOTE: We cannot encounter a NULL node, because every function must be
+        // terminated by a `stop` node. If we encountered a NULL node it means that
+        // something went wrong and this node list is corrupted; bail in such case.
+        if (ASMJIT_UNLIKELY(!node))
+          return DebugUtils::errored(kErrorInvalidState);
+      }
+
+      // We finalized the current block so find another to process or return if
+      // there are no more blocks.
+      do {
+        if (++blockIndex >= _pass->_blocks.getLength()) {
+          _pass->_nodesCount = position;
+          return kErrorOk;
+        }
+
+        currentBlock = _pass->_blocks[blockIndex];
+      } while (currentBlock->isConstructed());
+
+      node = currentBlock->getLast();
+      hasCode = false;
+      kindsUsed = 0;
+    }
+  }
+
+  RAPass* _pass;
 };
 
 //! \}

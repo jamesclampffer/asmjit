@@ -11,6 +11,7 @@
 #include "../asmjit_build.h"
 
 // [Dependencies]
+#include "../base/debugutils.h"
 #include "../base/string.h"
 #include <stdarg.h>
 
@@ -44,7 +45,7 @@ class CBNode;
 //! Abstract logging interface and helpers.
 //!
 //! This class can be inherited and reimplemented to fit into your logging
-//! subsystem. When reimplementing use `Logger::log()` method to log into
+//! subsystem. When reimplementing use `Logger::_log()` method to log into
 //! a custom stream.
 //!
 //! There are two \ref Logger implementations offered by AsmJit:
@@ -79,12 +80,17 @@ public:
   // [Logging]
   // --------------------------------------------------------------------------
 
-  //! Log output.
-  virtual Error log(const char* buf, size_t len = Globals::kInvalidIndex) noexcept = 0;
+  //! Log `str` - must be reimplemented.
+  virtual Error _log(const char* str, size_t len) noexcept = 0;
 
-  //! Format the message by using "sprintf()" and then send to `log()`.
+  //! Log a string `str`, which is either null terminated or having `len` length.
+  ASMJIT_INLINE Error log(const char* str, size_t len = Globals::kInvalidIndex) noexcept { return _log(str, len); }
+  //! Log a content of a `StringBuilder` `str`.
+  ASMJIT_INLINE Error log(const StringBuilder& str) noexcept { return _log(str.getData(), str.getLength()); }
+
+  //! Format the message by using `sprintf()` and then send to `log()`.
   ASMJIT_API Error logf(const char* fmt, ...) noexcept;
-  //! Format the message by using "vsprintf()" and then send to `log()`.
+  //! Format the message by using `vsprintf()` and then send to `log()`.
   ASMJIT_API Error logv(const char* fmt, va_list ap) noexcept;
   //! Log binary data.
   ASMJIT_API Error logBinary(const void* data, size_t size) noexcept;
@@ -158,7 +164,7 @@ public:
   // [Logging]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error log(const char* buf, size_t len = Globals::kInvalidIndex) noexcept override;
+  ASMJIT_API Error _log(const char* buf, size_t len = Globals::kInvalidIndex) noexcept override;
 
   // --------------------------------------------------------------------------
   // [Members]
@@ -204,7 +210,7 @@ public:
   // [Logging]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error log(const char* buf, size_t len = Globals::kInvalidIndex) noexcept override;
+  ASMJIT_API Error _log(const char* buf, size_t len = Globals::kInvalidIndex) noexcept override;
 
   // --------------------------------------------------------------------------
   // [Members]

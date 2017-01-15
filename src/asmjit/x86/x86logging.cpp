@@ -540,10 +540,10 @@ ASMJIT_FAVOR_SIZE Error X86Logging::formatRegister(
       const CodeCompiler* cc = static_cast<const CodeCompiler*>(emitter);
 
       if (cc->isVirtRegValid(rId)) {
-        VirtReg* vreg = cc->getVirtRegById(rId);
-        ASMJIT_ASSERT(vreg != nullptr);
+        VirtReg* vReg = cc->getVirtRegById(rId);
+        ASMJIT_ASSERT(vReg != nullptr);
 
-        const char* name = vreg->getName();
+        const char* name = vReg->getName();
         if (name && name[0] != '\0')
           return sb.appendString(name);
         else
@@ -562,7 +562,6 @@ ASMJIT_FAVOR_SIZE Error X86Logging::formatRegister(
 
       if (rId < rfi.count)
         return sb.appendFormat(x86RegFormatStrings + rfi.formatIndex, static_cast<unsigned int>(rId));
-      return sb.appendFormat("PhysReg<Type=%u Id=%u COUNT=%u>", rType, rId, rfi.count);
     }
 
     return sb.appendFormat("PhysReg<Type=%u Id=%u>", rType, rId);

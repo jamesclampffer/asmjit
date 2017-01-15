@@ -126,7 +126,7 @@ FileLogger::~FileLogger() noexcept {}
 // [asmjit::FileLogger - Logging]
 // ============================================================================
 
-Error FileLogger::log(const char* buf, size_t len) noexcept {
+Error FileLogger::_log(const char* buf, size_t len) noexcept {
   if (!_stream)
     return kErrorOk;
 
@@ -148,7 +148,7 @@ StringLogger::~StringLogger() noexcept {}
 // [asmjit::StringLogger - Logging]
 // ============================================================================
 
-Error StringLogger::log(const char* buf, size_t len) noexcept {
+Error StringLogger::_log(const char* buf, size_t len) noexcept {
   return _stringBuilder.appendString(buf, len);
 }
 
@@ -253,11 +253,10 @@ static Error formatTypeId(StringBuilder& sb, uint32_t typeId) noexcept {
   if (!TypeId::isValid(typeId))
     return sb.appendString("unknown");
 
-  uint32_t typeSize = TypeId::sizeOf(typeId);
-  uint32_t elementId = TypeId::elementOf(typeId);
-  uint32_t elementSize = TypeId::sizeOf(elementId);
-
   const char* typeName = "unknown";
+  uint32_t typeSize = TypeId::sizeOf(typeId);
+
+  uint32_t elementId = TypeId::elementOf(typeId);
   switch (elementId) {
     case TypeId::kIntPtr : typeName = "intptr" ; break;
     case TypeId::kUIntPtr: typeName = "uintptr"; break;
@@ -280,6 +279,7 @@ static Error formatTypeId(StringBuilder& sb, uint32_t typeId) noexcept {
     case TypeId::kMmx64  : typeName = "mmx64"  ; break;
   }
 
+  uint32_t elementSize = TypeId::sizeOf(elementId);
   if (typeSize > elementSize) {
     unsigned int numElements = typeSize / elementSize;
     return sb.appendFormat("%sx%u", typeName, numElements);
@@ -315,7 +315,7 @@ static Error formatFuncRets(
   uint32_t logOptions,
   const CodeEmitter* emitter,
   const FuncDetail& fd,
-  VirtReg* const* vregs) noexcept {
+  VirtReg* const* vRegs) noexcept {
 
   if (!fd.hasRet())
     return sb.appendString("void");
@@ -324,8 +324,8 @@ static Error formatFuncRets(
     if (i) ASMJIT_PROPAGATE(sb.appendString(", "));
     ASMJIT_PROPAGATE(formatFuncDetailValue(sb, logOptions, emitter, fd.getRet(i)));
 
-    if (vregs)
-      ASMJIT_PROPAGATE(sb.appendFormat(" {%s}", vregs[i]->getName()));
+    if (vRegs)
+      ASMJIT_PROPAGATE(sb.appendFormat(" {%s}", vRegs[i]->getName()));
   }
 
   return kErrorOk;
@@ -336,14 +336,14 @@ static Error formatFuncArgs(
   uint32_t logOptions,
   const CodeEmitter* emitter,
   const FuncDetail& fd,
-  VirtReg* const* vregs) noexcept {
+  VirtReg* const* vRegs) noexcept {
 
   for (uint32_t i = 0; i < fd.getArgCount(); i++) {
     if (i) ASMJIT_PROPAGATE(sb.appendString(", "));
     ASMJIT_PROPAGATE(formatFuncDetailValue(sb, logOptions, emitter, fd.getArg(i)));
 
-    if (vregs)
-      ASMJIT_PROPAGATE(sb.appendFormat(" {%s}", vregs[i]->getName()));
+    if (vRegs)
+      ASMJIT_PROPAGATE(sb.appendFormat(" {%s}", vRegs[i]->getName()));
   }
 
   return kErrorOk;
@@ -443,7 +443,7 @@ Error Logging::formatNode(
       break;
     }
   }
-  
+
   return kErrorOk;
 }
 #endif // !ASMJIT_DISABLE_BUILDER

@@ -135,7 +135,7 @@ static int rbAssert(RbNode* root) noexcept {
   RbNode* rn = root->node[1];
 
   // Red violation.
-  ASMJIT_ASSERT( !(rbIsRed(root) && (rbIsRed(ln) || rbIsRed(rn))) );
+  ASMJIT_ASSERT(!(rbIsRed(root) && (rbIsRed(ln) || rbIsRed(rn))));
 
   int lh = rbAssert(ln);
   int rh = rbAssert(rn);

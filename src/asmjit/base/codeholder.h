@@ -10,6 +10,7 @@
 
 // [Dependencies]
 #include "../base/arch.h"
+#include "../base/debugutils.h"
 #include "../base/func.h"
 #include "../base/logging.h"
 #include "../base/operand.h"
@@ -37,11 +38,12 @@ class CodeHolder;
 // [asmjit::AlignMode]
 // ============================================================================
 
-//! Code/Data align-mode.
+//! Align mode.
 ASMJIT_ENUM(AlignMode) {
   kAlignCode = 0,                        //!< Align executable code.
   kAlignData = 1,                        //!< Align non-executable code.
-  kAlignZero = 2                         //!< Align by a sequence of zeros.
+  kAlignZero = 2,                        //!< Align by a sequence of zeros.
+  kAlignCount                            //!< Count of alignment modes.
 };
 
 // ============================================================================
@@ -406,7 +408,7 @@ public:
   uint8_t _type;                         //!< Label type, see Label::Type.
   uint8_t _flags;                        //!< Must be zero.
   uint16_t _reserved16;                  //!< Reserved.
-  uint32_t _parentId;                    //!< Label parent id or `kInvalidValue`.
+  uint32_t _parentId;                    //!< Label parent id or zero.
   uint32_t _sectionId;                   //!< Section id or `SectionEntry::kInvalidId`.
   uint32_t _reserved32;                  //!< Reserved.
   intptr_t _offset;                      //!< Label offset.

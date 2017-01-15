@@ -61,142 +61,126 @@ Error RABlock::prependSuccessor(RABlock* successor) noexcept {
 // ============================================================================
 
 RAPass::RAPass() noexcept
-  : Pass("RA"),
-    _zone(nullptr),
+  : CCFuncPass("RAPass"),
     _heap(),
-    _archRegCount(),
-    _allocableRegs(),
-    _clobberedRegs(),
+    _logger(nullptr),
     _func(nullptr),
     _stop(nullptr),
     _extraBlock(nullptr),
+    _archRegCount(),
+    _allocableRegs(),
+    _clobberedRegs(),
+    _nodesCount(0),
     _lastMark(0) {}
 RAPass::~RAPass() noexcept {}
 
 // ============================================================================
-// [asmjit::RAPass - Process]
+// [asmjit::RAPass - Run]
 // ============================================================================
 
-Error RAPass::process(Zone* zone) noexcept {
-  _zone = zone;
-  _heap.reset(zone);
+static void RAPass_reset(RAPass* self, ZoneHeap* heap) noexcept {
+  self->_blocks.reset(heap);
+  self->_exits.reset(heap);
+  self->_pov.reset(heap);
+  self->_workRegs.reset(heap);
+  self->_stack.reset();
 
-  Error err = kErrorOk;
-  CBNode* node = cc()->getFirstNode();
-
-  if (!node)
-    return err;
-
-  do {
-    if (node->getType() == CBNode::kNodeFunc) {
-      CCFunc* func = node->as<CCFunc>();
-      node = func->getEnd();
-
-      err = compile(func);
-      if (err) break;
-    }
-
-    // Find a function by skipping all nodes that are not `kNodeFunc`.
-    do {
-      node = node->getNext();
-    } while (node && node->getType() != CBNode::kNodeFunc);
-  } while (node);
-
-  _heap.reset(nullptr);
-  _zone = nullptr;
-  return err;
+  self->_archRegCount.reset();
+  self->_allocableRegs.reset();
+  self->_clobberedRegs.reset();
+  self->_nodesCount = 0;
+  self->_lastMark = 0;
 }
 
-Error RAPass::compile(CCFunc* func) noexcept {
-  ASMJIT_PROPAGATE(prepare(func));
+static void RAPass_resetVirtRegData(RAPass* self) noexcept {
+  WorkRegs& wRegs = self->_workRegs;
+  size_t count = wRegs.getLength();
+
+  for (size_t i = 0; i < count; i++) {
+    WorkReg* wReg = wRegs[i];
+    VirtReg* vReg = wReg->getVirtReg();
+
+    // Zero everything so it cannot be used by mistake.
+    vReg->_tiedReg = nullptr;
+    vReg->_workReg = nullptr;
+    vReg->_stackSlot = nullptr;
+  }
+}
+
+Error RAPass::runOnFunction(Zone* zone, CCFunc* func) noexcept {
+  // Initialize all core structures to use `zone` and `func`.
+  CBNode* end = func->getEnd();
+
+  _heap.reset(zone);
+  _logger = cc()->getCode()->getLogger();
+
+  _func = func;
+  _stop = end->getNext();
+  _extraBlock = end;
+  RAPass_reset(this, &_heap);
+
+  // Initialize architecture-specific members.
+  onInit();
 
   // Not a real loop, just to make error handling easier.
   Error err;
   for (;;) {
+    // STEP 1: Construct control-flow graph (CFG).
     err = constructCFG();
     if (err) break;
 
+    // STEP 2: Construct post-order-view (POV)
+    err = constructPOV();
+    if (err) break;
+
+    // STEP 3: Construct dominance tree (DOM).
     err = constructDOM();
+    if (err) break;
+
+    // STEP 4: Construct liveness analysis.
+    err = constructLiveness();
     if (err) break;
 
     // TODO:
     break;
   }
 
-  cleanup();
+  // Regardless of the status this must be called.
+  onDone();
+
+  // Reset possible connections introduced by the register allocator.
+  RAPass_resetVirtRegData(this);
+
+  // Reset all core structures and everything that depends on the passed `Zone`.
+  RAPass_reset(this, nullptr);
+  _heap.reset(nullptr);
+  _logger = nullptr;
+
+  _func = nullptr;
+  _stop = nullptr;
+  _extraBlock = nullptr;
+
+  // Reset `Zone` as nothing should persist between `runOnFunction()` calls.
+  zone->reset();
 
   // We alter the compiler cursor, because it doesn't make sense to reference
-  // it after compilation - some nodes may disappear and it's forbidden to add
-  // new code after the compilation is done.
+  // it after the compilation - some nodes may disappear and it's forbidden to
+  // add new code after the compilation is done.
   cc()->_setCursor(cc()->getLastNode());
 
   return err;
 }
 
 // ============================================================================
-// [asmjit::RAPass - Prepare / Cleanup]
+// [asmjit::RAPass - ConstructPOV]
 // ============================================================================
 
-Error RAPass::prepare(CCFunc* func) noexcept {
-  CBNode* end = func->getEnd();
+Error RAPass::constructPOV() noexcept {
+  ASMJIT_RA_LOG_INIT(getLogger());
+  ASMJIT_RA_LOG_FORMAT("[RA::ConstructPOV]\n");
 
-  _func = func;
-  _stop = end->getNext();
-  _extraBlock = end;
-
-  _blocks.reset(&_heap);
-  _exits.reset(&_heap);
-  _lastMark = 0;
-
-  for (uint32_t kind = 0; kind < kMaxVRegKinds; kind++) {
-    RALocals& lRegs = _localRegs[kind];
-    lRegs.reset(&_heap);
-  }
-
-  _stack.reset();
-
-  return kErrorOk;
-}
-
-void RAPass::cleanup() noexcept {
-  _archRegCount.reset();
-  _allocableRegs.reset();
-  _clobberedRegs.reset();
-
-  _func = nullptr;
-  _stop = nullptr;
-  _extraBlock = nullptr;
-
-  _blocks.reset(nullptr);
-  _exits.reset(nullptr);
-
-  for (uint32_t kind = 0; kind < kMaxVRegKinds; kind++) {
-    RALocals& lRegs = _localRegs[kind];
-    RALocal** vRegs = lRegs.getData();
-
-    size_t count = lRegs.getLength();
-    for (size_t i = 0; i < count; i++) {
-      RALocal* lReg = vRegs[i];
-      VirtReg* vReg = lReg->getVirtReg();
-
-      // Zero everything so it cannot be not used by mistake.
-      vReg->_tied = nullptr;
-      vReg->_local = nullptr;
-      vReg->_stackSlot = nullptr;
-    }
-
-    _localRegs[kind].reset(nullptr);
-  }
-
-  _stack.reset();
-}
-
-// ============================================================================
-// [asmjit::RAPass - Steps]
-// ============================================================================
-
-static Error constructPostOrderView(RABlocks& output, RABlocks& input) noexcept {
-  printf("[RA::ConstructPOV]\n");
+  RABlocks& input = _blocks;
+  RABlocks& output = _pov;
 
   size_t count = input.getLength();
   if (ASMJIT_UNLIKELY(!count))
@@ -225,7 +209,7 @@ static Error constructPostOrderView(RABlocks& output, RABlocks& input) noexcept 
   ZoneStack<POVStackItem> stack;
   ASMJIT_PROPAGATE(stack.init(heap));
 
-  ZoneBits visited(heap);
+  ZoneBitVector visited(heap);
   ASMJIT_PROPAGATE(visited.resize(count, false));
 
   RABlock* current = input[0];
@@ -241,7 +225,7 @@ static Error constructPostOrderView(RABlocks& output, RABlocks& input) noexcept 
       if (visited.getAt(child->getBlockId()))
         continue;
 
-      // Mark visited to prevent visiting the same node multiple times.
+      // Mark as visited to prevent visiting the same node multiple times.
       visited.setAt(child->getBlockId(), true);
 
       // Add the current node on the stack, we will get back to it later.
@@ -263,7 +247,11 @@ static Error constructPostOrderView(RABlocks& output, RABlocks& input) noexcept 
   return kErrorOk;
 }
 
-static RABlock* intersectBlocks(RABlock* b1, RABlock* b2) noexcept {
+// ============================================================================
+// [asmjit::RAPass - ConstructDOM]
+// ============================================================================
+
+static ASMJIT_INLINE RABlock* intersectBlocks(RABlock* b1, RABlock* b2) noexcept {
   while (b1 != b2) {
     while (b2->getPovOrder() > b1->getPovOrder())
       b1 = b1->getIDom();
@@ -275,10 +263,9 @@ static RABlock* intersectBlocks(RABlock* b1, RABlock* b2) noexcept {
 
 Error RAPass::constructDOM() noexcept {
   // Based on "A Simple, Fast Dominance Algorithm".
-  RABlocks pov(&_heap);
-  ASMJIT_PROPAGATE(constructPostOrderView(pov, _blocks));
+  ASMJIT_RA_LOG_INIT(getLogger());
+  ASMJIT_RA_LOG_FORMAT("[RA::ConstructDOM]\n");
 
-  printf("[RA::ConstructDOM]\n");
   if (_blocks.isEmpty())
     return kErrorOk;
 
@@ -286,14 +273,15 @@ Error RAPass::constructDOM() noexcept {
   entryBlock->setIDom(entryBlock);
 
   bool changed = true;
-  uint32_t nIter = 0;
+  uint32_t nIters = 0;
+
   while (changed) {
-    nIter++;
+    nIters++;
     changed = false;
 
-    size_t i = pov.getLength();
+    size_t i = _pov.getLength();
     while (i) {
-      RABlock* block = pov[--i];
+      RABlock* block = _pov[--i];
       if (block == entryBlock)
         continue;
 
@@ -309,14 +297,184 @@ Error RAPass::constructDOM() noexcept {
       }
 
       if (block->getIDom() != iDom) {
-        printf("  IDom of #%u -> #%u\n", block->getBlockId(), iDom->getBlockId());
+        ASMJIT_RA_LOG_FORMAT("  IDom of #%u -> #%u\n", block->getBlockId(), iDom->getBlockId());
         block->setIDom(iDom);
         changed = true;
       }
     }
   }
 
-  printf("  Done (%u iterations)\n", static_cast<unsigned int>(nIter));
+  ASMJIT_RA_LOG_FORMAT("  Done (%u iterations)\n", static_cast<unsigned int>(nIters));
+  return kErrorOk;
+}
+
+// ============================================================================
+// [asmjit::RAPass - ConstructLiveness]
+// ============================================================================
+
+namespace LiveOps {
+  typedef LiveBits::BitWord BitWord;
+
+  struct Or  { static ASMJIT_INLINE BitWord op(BitWord dst, BitWord a) noexcept { return dst | a; } };
+  struct And { static ASMJIT_INLINE BitWord op(BitWord dst, BitWord a) noexcept { return dst & a; } };
+  struct Xor { static ASMJIT_INLINE BitWord op(BitWord dst, BitWord a) noexcept { return dst ^ a; } };
+
+  struct LiveIn {
+    static ASMJIT_INLINE BitWord op(BitWord dst, BitWord out, BitWord gen, BitWord kill) noexcept { return (out | gen) & ~kill; }
+  };
+
+  template<typename CustomOp>
+  static ASMJIT_INLINE bool op(BitWord* dst, const BitWord* a, uint32_t n) noexcept {
+    BitWord changed = 0;
+
+    for (uint32_t i = 0; i < n; i++) {
+      BitWord before = dst[i];
+      BitWord after = CustomOp::op(before, a[i]);
+
+      dst[i] = after;
+      changed |= (before ^ after);
+    }
+
+    return changed != 0;
+  }
+
+  template<typename CustomOp>
+  static ASMJIT_INLINE bool op(BitWord* dst, const BitWord* a, const BitWord* b, uint32_t n) noexcept {
+    BitWord changed = 0;
+
+    for (uint32_t i = 0; i < n; i++) {
+      BitWord before = dst[i];
+      BitWord after = CustomOp::op(before, a[i], b[i]);
+
+      dst[i] = after;
+      changed |= (before ^ after);
+    }
+
+    return changed != 0;
+  }
+
+  template<typename CustomOp>
+  static ASMJIT_INLINE bool op(BitWord* dst, const BitWord* a, const BitWord* b, const BitWord* c, uint32_t n) noexcept {
+    BitWord changed = 0;
+
+    for (uint32_t i = 0; i < n; i++) {
+      BitWord before = dst[i];
+      BitWord after = CustomOp::op(before, a[i], b[i], c[i]);
+
+      dst[i] = after;
+      changed |= (before ^ after);
+    }
+
+    return changed != 0;
+  }
+}
+
+Error RAPass::constructLiveness() noexcept {
+  ASMJIT_RA_LOG_INIT(getLogger());
+  ASMJIT_RA_LOG_FORMAT("[RA::ConstructLiveness]\n");
+
+  uint32_t numBlocks = static_cast<uint32_t>(_blocks.getLength());
+  uint32_t numWorkRegs = static_cast<uint32_t>(_workRegs.getLength());
+  uint32_t numBitWords = (numWorkRegs + LiveBits::kBitsPerWord - 1) / LiveBits::kBitsPerWord;
+
+  if (!numWorkRegs) {
+    ASMJIT_RA_LOG_FORMAT("  Done (no virtual registers)\n");
+    return kErrorOk;
+  }
+
+  ZoneStack<RABlock*> workList;
+  ASMJIT_PROPAGATE(workList.init(&_heap));
+
+  // 1. Calculate `DEF` and `KILL`.
+  uint32_t blockId = numBlocks;
+  while (blockId) {
+    RABlock* block = _pov[--blockId];
+
+    ASMJIT_PROPAGATE(block->resizeLiveBits(numWorkRegs));
+    ASMJIT_PROPAGATE(workList.append(block));
+
+    CBNode* node = block->getLast();
+    CBNode* stop = block->getFirst();
+
+    for (;;) {
+      if (node->actsAsInst()) {
+        CBInst* inst = node->as<CBInst>();
+        RAData* data = inst->getPassData<RAData>();
+        ASMJIT_ASSERT(data != nullptr);
+
+        const TiedReg* tRegs = data->getTiedArray();
+        uint32_t count = data->getTiedCount();
+
+        for (uint32_t i = 0; i < count; i++) {
+          const TiedReg& tReg = tRegs[i];
+          const WorkReg* wReg = tReg.vreg->getWorkReg();
+
+          uint32_t workId = wReg->getWorkId();
+          if (tReg.isWriteOnly()) {
+            // KILL.
+            block->_kill.setAt(workId, true);
+          }
+          else {
+            // GEN.
+            block->_kill.setAt(workId, false);
+            block->_gen.setAt(workId, true);
+          }
+        }
+      }
+
+      if (node == stop)
+        break;
+
+      node = node->getPrev();
+      ASMJIT_ASSERT(node != nullptr);
+    }
+  }
+
+  // 2. Calculate `IN` and `OUT`.
+  uint32_t nVisits = numBlocks * 2;
+  while (!workList.isEmpty()) {
+    RABlock* block = workList.pop();
+
+    // Always changed if visited first time.
+    bool changed = !block->hasFlag(RABlock::kFlagHasLiveness);
+    if (changed)
+      block->addFlags(RABlock::kFlagHasLiveness);
+
+    // Calculate `OUT` based on `IN` of all successors.
+    const RABlocks& successors = block->getSuccessors();
+    size_t numSuccessors = successors.getLength();
+
+    for (size_t i = 0; i < numSuccessors; i++) {
+      changed |= LiveOps::op<LiveOps::Or>(
+        block->_out.getData(),
+        successors[i]->_in.getData(), numBitWords);
+    }
+
+    // Calculate `IN` based on `OUT`, `GEN`, and `KILL` bits.
+    if (changed) {
+      changed = LiveOps::op<LiveOps::LiveIn>(
+        block->_in.getData(),
+        block->_out.getData(),
+        block->_gen.getData(),
+        block->_kill.getData(), numBitWords);
+
+      // Add all predecessors to the `workList` if liveness of this block changed.
+      if (changed) {
+        const RABlocks& predecessors = block->getPredecessors();
+        size_t numPredecessors = predecessors.getLength();
+
+        for (size_t i = 0; i < numPredecessors; i++) {
+          RABlock* pred = predecessors[i];
+          if (pred->hasFlag(RABlock::kFlagHasLiveness)) {
+            ASMJIT_PROPAGATE(workList.append(pred));
+            nVisits++;
+          }
+        }
+      }
+    }
+  }
+
+  ASMJIT_RA_LOG_FORMAT("  Done (%u visits)\n", static_cast<unsigned int>(nVisits));
   return kErrorOk;
 }
 
@@ -328,7 +486,7 @@ RABlock* RAPass::newBlock(CBNode* initialNode) noexcept {
   if (ASMJIT_UNLIKELY(_blocks.willGrow() != kErrorOk))
     return nullptr;
 
-  RABlock* block = _zone->allocT<RABlock>();
+  RABlock* block = getZone()->allocT<RABlock>();
   if (ASMJIT_UNLIKELY(!block))
     return nullptr;
 
@@ -463,30 +621,55 @@ const RABlock* RAPass::_nearestCommonDominator(const RABlock* a, const RABlock* 
 }
 
 // ============================================================================
-// [asmjit::RAPass - LocalRegs]
+// [asmjit::RAPass - Work Registers]
 // ============================================================================
 
-Error RAPass::_makeLocal(VirtReg* vReg) noexcept {
-  // Checked by `makeLocal()` - must be true.
-  ASMJIT_ASSERT(vReg->_local == nullptr);
+Error RAPass::_addToWorkRegs(VirtReg* vReg) noexcept {
+  // Checked by `::addToWorkRegs()` - must be true.
+  ASMJIT_ASSERT(vReg->_workReg == nullptr);
 
-  uint32_t kind = vReg->getKind();
-  if (ASMJIT_UNLIKELY(kind >= Globals::kMaxVRegKinds))
-    return DebugUtils::errored(kErrorInvalidRegKind);
+  WorkRegs& workRegs = _workRegs;
+  ASMJIT_PROPAGATE(workRegs.willGrow());
 
-  RALocals& localRegs = _localRegs[kind];
-  ASMJIT_PROPAGATE(localRegs.willGrow());
-
-  RALocal* localReg = _zone->allocT<RALocal>();
-  if (ASMJIT_UNLIKELY(!localReg))
+  WorkReg* workReg = getZone()->allocT<WorkReg>();
+  if (ASMJIT_UNLIKELY(!workReg))
     return DebugUtils::errored(kErrorNoHeapMemory);
 
-  uint32_t localId = static_cast<uint32_t>(localRegs.getLength());
-  vReg->setLocal(new(localReg) RALocal(&_heap, vReg, localId));
+  uint32_t workId = static_cast<uint32_t>(workRegs.getLength());
+  vReg->setWorkReg(new(workReg) WorkReg(&_heap, vReg, workId));
 
-  localRegs.appendUnsafe(localReg);
+  workRegs.appendUnsafe(workReg);
   return kErrorOk;
 }
+
+// ============================================================================
+// [asmjit::RAPass - Logging]
+// ============================================================================
+
+#if !defined(ASMJIT_DISABLE_LOGGING)
+Error RAPass::_logBlockIds(const RABlocks& blocks) noexcept {
+  // Can only be called if the `Logger` is present.
+  ASMJIT_ASSERT(hasLogger());
+
+  StringBuilderTmp<1024> sb;
+  sb.appendString("  => { ");
+
+  if (blocks.isEmpty()) {
+    sb.appendString("none");
+  }
+  else {
+    for (size_t i = 0, len = blocks.getLength(); i < len; i++) {
+      const RABlock* block = blocks[i];
+      if (i != 0)
+        sb.appendString(", ");
+      sb.appendFormat("#%u", static_cast<unsigned int>(block->getBlockId()));
+    }
+  }
+
+  sb.appendString(" }\n");
+  return getLogger()->log(sb.getData(), sb.getLength());
+}
+#endif
 
 } // asmjit namespace
 

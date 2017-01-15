@@ -13,6 +13,14 @@
 #include "../base/vmem.h"
 #include <stdarg.h>
 
+#if defined(ASMJIT_BUILD_X86)
+#include "../x86/x86inst.h"
+#endif // ASMJIT_BUILD_X86
+
+#if defined(ASMJIT_BUILD_ARM)
+#include "../arm/arminst.h"
+#endif // ASMJIT_BUILD_ARM
+
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
 
@@ -244,6 +252,41 @@ Error CodeEmitter::emit(uint32_t instId, OP o0, OP o1, OP o2, OP o3, OP o4, int6
 #undef NO
 #undef OP
 
+// ============================================================================
+// [asmjit::CodeEmitter - Validation]
+// ============================================================================
+
+Error CodeEmitter::_validate(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) const noexcept {
+#if !defined(ASMJIT_DISABLE_VALIDATION)
+  Operand_ opArray[6];
+  opArray[0].copyFrom(o0);
+  opArray[1].copyFrom(o1);
+  opArray[2].copyFrom(o2);
+  opArray[3].copyFrom(o3);
+  opArray[4].copyFrom(_op4);
+  opArray[5].copyFrom(_op5);
+
+  uint32_t archType = getArchType();
+  uint32_t options = getGlobalOptions() | getOptions();
+
+  if (!(options & CodeEmitter::kOptionOp4)) opArray[4].reset();
+  if (!(options & CodeEmitter::kOptionOp5)) opArray[5].reset();
+
+#if defined(ASMJIT_BUILD_X86)
+  if (ArchInfo::isX86Family(archType))
+    return X86Inst::validate(archType, instId, options, _opExtra, opArray, 6);
+#endif
+
+#if defined(ASMJIT_BUILD_ARM)
+  if (ArchInfo::isArmFamily(archType))
+    return ArmInst::validate(archType, instId, options, _opExtra, opArray, 6);
+#endif
+
+  return DebugUtils::errored(kErrorInvalidArch);
+#else
+  return DebugUtils::errored(kErrorFeatureNotEnabled);
+#endif // !ASMJIT_DISABLE_VALIDATION
+}
 } // asmjit namespace
 
 // [Api-End]

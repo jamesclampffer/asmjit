@@ -9,6 +9,7 @@
 #define _ASMJIT_BASE_OPERAND_H
 
 // [Dependencies]
+#include "../base/debugutils.h"
 #include "../base/utils.h"
 
 // [Api-Begin]
@@ -237,6 +238,7 @@ struct Operand_ {
   //! operand checking as it's much faster to check 4 bytes at once than having
   //! to check these bytes individually.
   ASMJIT_INLINE uint32_t getSignature() const noexcept { return _signature; }
+
   //! Set the operand signature (see \ref getSignature).
   //!
   //! Improper use of `setSignature()` can lead to hard-to-debug errors.
@@ -260,6 +262,8 @@ struct Operand_ {
     ASMJIT_ASSERT(value <= bits);
     _signature = (_signature & ~(bits << shift)) | (value << shift);
   }
+
+  ASMJIT_INLINE void _addSignatureData(uint32_t data) noexcept { _signature |= data; }
 
   //! Get type of the operand, see \ref OpType.
   ASMJIT_INLINE uint32_t getOp() const noexcept { return _getSignatureData(kSignatureOpBits, kSignatureOpShift); }

@@ -12,6 +12,7 @@
 
 // [Dependencies]
 #include "../base/arch.h"
+#include "../base/debugutils.h"
 #include "../base/operand.h"
 #include "../base/utils.h"
 

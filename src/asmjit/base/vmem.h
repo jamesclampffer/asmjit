@@ -9,6 +9,7 @@
 #define _ASMJIT_BASE_VMEM_H
 
 // [Dependencies]
+#include "../base/debugutils.h"
 #include "../base/globals.h"
 #include "../base/osutils.h"
 

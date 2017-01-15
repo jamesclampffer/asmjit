@@ -13,6 +13,7 @@
 
 // [Dependencies]
 #include "../base/logging.h"
+#include "../x86/x86globals.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"

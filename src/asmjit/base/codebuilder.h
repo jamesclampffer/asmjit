@@ -15,6 +15,7 @@
 #include "../base/assembler.h"
 #include "../base/codeholder.h"
 #include "../base/constpool.h"
+#include "../base/debugutils.h"
 #include "../base/operand.h"
 #include "../base/utils.h"
 #include "../base/zone.h"
@@ -28,7 +29,7 @@ namespace asmjit {
 // [Forward Declarations]
 // ============================================================================
 
-class Pass;
+class CBPass;
 class RABlock;
 
 class CBNode;
@@ -66,15 +67,15 @@ public:
   // [Events]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error onAttach(CodeHolder* code) noexcept override;
-  ASMJIT_API virtual Error onDetach(CodeHolder* code) noexcept override;
+  ASMJIT_API Error onAttach(CodeHolder* code) noexcept override;
+  ASMJIT_API Error onDetach(CodeHolder* code) noexcept override;
 
   // --------------------------------------------------------------------------
   // [Accessors]
   // --------------------------------------------------------------------------
 
-  //! Get a vector of Pass objects that will be executed by `process()`.
-  ASMJIT_INLINE const ZoneVector<Pass*>& getPasses() const noexcept { return _cbPasses; }
+  //! Get a vector of Pass objects that will be executed by `runPasses()`.
+  ASMJIT_INLINE const ZoneVector<CBPass*>& getPasses() const noexcept { return _cbPasses; }
 
   //! Get a vector of CBLabel nodes.
   //!
@@ -128,19 +129,19 @@ public:
   // [Code-Emitter]
   // --------------------------------------------------------------------------
 
-  ASMJIT_API virtual Error _emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) override;
-  ASMJIT_API virtual Label newLabel() override;
-  ASMJIT_API virtual Label newNamedLabel(
+  ASMJIT_API Error _emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) override;
+  ASMJIT_API Label newLabel() override;
+  ASMJIT_API Label newNamedLabel(
     const char* name,
     size_t nameLength = Globals::kInvalidIndex,
     uint32_t type = Label::kTypeGlobal,
     uint32_t parentId = 0) override;
-  ASMJIT_API virtual Error bind(const Label& label) override;
-  ASMJIT_API virtual Error align(uint32_t mode, uint32_t alignment) override;
-  ASMJIT_API virtual Error embed(const void* data, uint32_t size) override;
-  ASMJIT_API virtual Error embedLabel(const Label& label) override;
-  ASMJIT_API virtual Error embedConstPool(const Label& label, const ConstPool& pool) override;
-  ASMJIT_API virtual Error comment(const char* s, size_t len = Globals::kInvalidIndex) override;
+  ASMJIT_API Error bind(const Label& label) override;
+  ASMJIT_API Error align(uint32_t mode, uint32_t alignment) override;
+  ASMJIT_API Error embed(const void* data, uint32_t size) override;
+  ASMJIT_API Error embedLabel(const Label& label) override;
+  ASMJIT_API Error embedConstPool(const Label& label, const ConstPool& pool) override;
+  ASMJIT_API Error comment(const char* s, size_t len = Globals::kInvalidIndex) override;
 
   // --------------------------------------------------------------------------
   // [Node-Management]
@@ -185,28 +186,25 @@ public:
   template<typename T, typename P0, typename P1>
   ASMJIT_INLINE Error addPassT(P0 p0, P1 p1) noexcept { return addPass(newPassT<P0, P1>(p0, p1)); }
 
-  //! Get a `Pass` by name.
-  ASMJIT_API Pass* getPassByName(const char* name) const noexcept;
+  //! Get a `CBPass` by name.
+  ASMJIT_API CBPass* getPassByName(const char* name) const noexcept;
   //! Add `pass` to the list of passes.
-  ASMJIT_API Error addPass(Pass* pass) noexcept;
+  ASMJIT_API Error addPass(CBPass* pass) noexcept;
   //! Remove `pass` from the list of passes and delete it.
-  ASMJIT_API Error deletePass(Pass* pass) noexcept;
+  ASMJIT_API Error deletePass(CBPass* pass) noexcept;
 
   // --------------------------------------------------------------------------
-  // [Validate]
-  // --------------------------------------------------------------------------
-
-  //! Validate instruction to be emitted, called by `_emit()`.
-  ASMJIT_API Error _validate(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) const noexcept;
-
-  // --------------------------------------------------------------------------
-  // [RunPasses / Serialize]
+  // [RunPasses]
   // --------------------------------------------------------------------------
 
   //! Run all passes in order.
   ASMJIT_API Error runPasses();
 
-  //! Serialize everything theis `CodeBuilder` or `CodeCompiler` contains to
+  // --------------------------------------------------------------------------
+  // [Serialize]
+  // --------------------------------------------------------------------------
+
+  //! Serialize everything theis `CodeBuilder` or `::CodeCompiler` contains to
   //! another `CodeEmitter`, which is usually an `Assembler` instance.
   ASMJIT_API Error serialize(CodeEmitter* dst);
 
@@ -222,65 +220,19 @@ public:
   // [Members]
   // --------------------------------------------------------------------------
 
-  Zone _cbBaseZone;                      //!< Base zone used to allocate nodes and `Pass`.
+  Zone _cbBaseZone;                      //!< Base zone used to allocate nodes and `CBPass`.
   Zone _cbDataZone;                      //!< Data zone used to allocate data and names.
-  Zone _cbPassZone;                      //!< Zone passed to `Pass::process()`.
+  Zone _cbPassZone;                      //!< Zone passed to `Pass::run()`.
   ZoneHeap _cbHeap;                      //!< ZoneHeap that uses `_cbBaseZone`.
 
-  ZoneVector<Pass*> _cbPasses;         //!< Array of `Pass` objects.
+  ZoneVector<CBPass*> _cbPasses;         //!< Array of `CBPass` objects.
   ZoneVector<CBLabel*> _cbLabels;        //!< Maps label indexes to `CBLabel` nodes.
 
   CBNode* _firstNode;                    //!< First node of the current section.
   CBNode* _lastNode;                     //!< Last node of the current section.
   CBNode* _cursor;                       //!< Current node (cursor).
 
-  uint32_t _nodeFlowId;                  //!< Flow-id assigned to each new node.
   uint32_t _nodeFlags;                   //!< Flags assigned to each new node.
-};
-
-// ============================================================================
-// [asmjit::Pass]
-// ============================================================================
-
-//! `CodeBuilder` pass is used to implement code transformations, analysis,
-//! and lowering.
-class ASMJIT_VIRTAPI Pass {
-public:
-  ASMJIT_NONCOPYABLE(Pass);
-
-  // --------------------------------------------------------------------------
-  // [Construction / Destruction]
-  // --------------------------------------------------------------------------
-
-  ASMJIT_API Pass(const char* name) noexcept;
-  ASMJIT_API virtual ~Pass() noexcept;
-
-  // --------------------------------------------------------------------------
-  // [Interface]
-  // --------------------------------------------------------------------------
-
-  //! Process the code stored in CodeBuffer `cb`.
-  //!
-  //! This is the only function that is called by the `CodeBuilder` to process
-  //! the code. It passes the CodeBuilder itself (`cb`) and also a zone memory
-  //! allocator `zone`, which will be reset after the `process()` returns. The
-  //! allocator should be used for all allocations as it's fast and everything
-  //! it allocates will be released at once when `process()` returns.
-  virtual Error process(Zone* zone) noexcept = 0;
-
-  // --------------------------------------------------------------------------
-  // [Accessors]
-  // --------------------------------------------------------------------------
-
-  ASMJIT_INLINE const CodeBuilder* cb() const noexcept { return _cb; }
-  ASMJIT_INLINE const char* getName() const noexcept { return _name; }
-
-  // --------------------------------------------------------------------------
-  // [Members]
-  // --------------------------------------------------------------------------
-
-  CodeBuilder* _cb;                      //!< CodeBuilder this pass is assigned to.
-  const char* _name;                     //!< Name of the pass.
 };
 
 // ============================================================================
@@ -353,9 +305,9 @@ public:
     _any._flags = static_cast<uint8_t>(flags | cb->_nodeFlags);
     _any._reserved0 = 0;
     _any._reserved1 = 1;
-    _position = cb->_nodeFlowId;
-    _inlineComment = nullptr;
+    _position = 0;
     _passData = nullptr;
+    _inlineComment = nullptr;
   }
   //! Destroy the `CBNode` instance (NEVER CALLED).
   ASMJIT_INLINE ~CBNode() noexcept {}
@@ -426,15 +378,6 @@ public:
   //! Set node position.
   ASMJIT_INLINE void setPosition(uint32_t position) noexcept { _position = position; }
 
-  //! Get if the node has an inline comment.
-  ASMJIT_INLINE bool hasInlineComment() const noexcept { return _inlineComment != nullptr; }
-  //! Get an inline comment string.
-  ASMJIT_INLINE const char* getInlineComment() const noexcept { return _inlineComment; }
-  //! Set an inline comment string to `s`.
-  ASMJIT_INLINE void setInlineComment(const char* s) noexcept { _inlineComment = s; }
-  //! Set an inline comment string to null.
-  ASMJIT_INLINE void resetInlineComment() noexcept { _inlineComment = nullptr; }
-
   //! Get if the node has associated work-data.
   ASMJIT_INLINE bool hasPassData() const noexcept { return _passData != nullptr; }
   //! Get work-data - data used during processing & transformations.
@@ -445,6 +388,15 @@ public:
   ASMJIT_INLINE void setPassData(T* data) noexcept { _passData = (void*)data; }
   //! Reset work-data to null.
   ASMJIT_INLINE void resetPassData() noexcept { _passData = nullptr; }
+
+  //! Get if the node has an inline comment.
+  ASMJIT_INLINE bool hasInlineComment() const noexcept { return _inlineComment != nullptr; }
+  //! Get an inline comment string.
+  ASMJIT_INLINE const char* getInlineComment() const noexcept { return _inlineComment; }
+  //! Set an inline comment string to `s`.
+  ASMJIT_INLINE void setInlineComment(const char* s) noexcept { _inlineComment = s; }
+  //! Set an inline comment string to null.
+  ASMJIT_INLINE void resetInlineComment() noexcept { _inlineComment = nullptr; }
 
   //! Cast this node to `T*`.
   template<typename T>
@@ -479,9 +431,8 @@ public:
   };
 
   uint32_t _position;                    //!< Node position in code (should be unique).
-
+  void* _passData;                       //!< Data used exclusively by the current `CBPass`.
   const char* _inlineComment;            //!< Inline comment or null if not used.
-  void* _passData;                       //!< Data used exclusively by the current `Pass`.
 };
 
 // ============================================================================
@@ -649,7 +600,7 @@ public:
   // [Members]
   // --------------------------------------------------------------------------
 
-  uint32_t _instId;                      //!< Instruction id and modifiers (architecture dependent).
+  uint32_t _instId;                      //!< Instruction id and attributes (architecture dependent).
   uint32_t _options;                     //!< Instruction options.
   Operand_ _opExtra;                     //!< Extra operand.
   Operand_ _opArray[kBaseOpCapacity];    //!< First 4 or 5 operands (indexed from 0).
@@ -962,6 +913,51 @@ public:
 
   //! Destroy the `CBSentinel` instance (NEVER CALLED).
   ASMJIT_INLINE ~CBSentinel() noexcept {}
+};
+
+// ============================================================================
+// [asmjit::CBPass]
+// ============================================================================
+
+//! `CodeBuilder` pass is used to implement code transformations, analysis,
+//! and lowering.
+class ASMJIT_VIRTAPI CBPass {
+public:
+  ASMJIT_NONCOPYABLE(CBPass);
+
+  // --------------------------------------------------------------------------
+  // [Construction / Destruction]
+  // --------------------------------------------------------------------------
+
+  ASMJIT_API CBPass(const char* name) noexcept;
+  ASMJIT_API virtual ~CBPass() noexcept;
+
+  // --------------------------------------------------------------------------
+  // [Interface]
+  // --------------------------------------------------------------------------
+
+  //! Process the code stored in CodeBuffer `cb`.
+  //!
+  //! This is the only function that is called by the `CodeBuilder` to process
+  //! the code. It passes the CodeBuilder itself (`cb`) and also a zone memory
+  //! allocator `zone`, which will be reset after the `run()` returns. The
+  //! allocator should be used for all allocations as it's fast and everything
+  //! it allocates will be released at once after `run()` returns.
+  virtual Error run(Zone* zone) noexcept = 0;
+
+  // --------------------------------------------------------------------------
+  // [Accessors]
+  // --------------------------------------------------------------------------
+
+  ASMJIT_INLINE const CodeBuilder* cb() const noexcept { return _cb; }
+  ASMJIT_INLINE const char* getName() const noexcept { return _name; }
+
+  // --------------------------------------------------------------------------
+  // [Members]
+  // --------------------------------------------------------------------------
+
+  CodeBuilder* _cb;                      //!< CodeBuilder this pass is assigned to.
+  const char* _name;                     //!< Name of the pass.
 };
 
 //! \}

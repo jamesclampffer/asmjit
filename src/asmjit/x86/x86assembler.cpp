@@ -15,9 +15,7 @@
 #include "../base/cpuinfo.h"
 #include "../base/logging.h"
 #include "../base/misc_p.h"
-#include "../base/runtime.h"
 #include "../base/utils.h"
-#include "../base/vmem.h"
 #include "../x86/x86assembler.h"
 #include "../x86/x86logging_p.h"
 
@@ -395,116 +393,7 @@ Error X86Assembler::onDetach(CodeHolder* code) noexcept {
 }
 
 // ============================================================================
-// [asmjit::X86Assembler - Emit - Helpers]
-// ============================================================================
-
-#if !defined(ASMJIT_DISABLE_LOGGING)
-static void X86Assembler_logInstruction(X86Assembler* self,
-  uint32_t instId, uint32_t options, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3,
-  uint32_t relSize, uint32_t imLen, uint8_t* afterCursor) {
-
-  Logger* logger = self->_code->getLogger();
-  ASMJIT_ASSERT(logger != nullptr);
-  ASMJIT_ASSERT(options & CodeEmitter::kOptionLoggingEnabled);
-
-  StringBuilderTmp<256> sb;
-  uint32_t logOptions = logger->getOptions();
-
-  uint8_t* beforeCursor = self->_bufferPtr;
-  intptr_t emittedSize = (intptr_t)(afterCursor - beforeCursor);
-
-  sb.appendString(logger->getIndentation());
-
-  Operand_ opArray[6];
-  opArray[0].copyFrom(o0);
-  opArray[1].copyFrom(o1);
-  opArray[2].copyFrom(o2);
-  opArray[3].copyFrom(o3);
-  opArray[4].copyFrom(self->_op4);
-  opArray[5].copyFrom(self->_op5);
-  if (!(options & CodeEmitter::kOptionOp4)) opArray[4].reset();
-  if (!(options & CodeEmitter::kOptionOp5)) opArray[5].reset();
-
-  X86Logging::formatInstruction(
-    sb, logOptions,
-    self, self->getArchType(),
-    instId, options, self->_opExtra, opArray, 6);
-
-  if ((logOptions & Logger::kOptionBinaryForm) != 0)
-    Logging::formatLine(sb, self->_bufferPtr, emittedSize, relSize, imLen, self->getInlineComment());
-  else
-    Logging::formatLine(sb, nullptr, Globals::kInvalidIndex, 0, 0, self->getInlineComment());
-
-  logger->log(sb.getData(), sb.getLength());
-}
-
-static Error X86Assembler_failedInstruction(
-  X86Assembler* self,
-  Error err,
-  uint32_t instId, uint32_t options, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) {
-
-  StringBuilderTmp<256> sb;
-  sb.appendString(DebugUtils::errorAsString(err));
-  sb.appendString(": ");
-
-  Operand_ opArray[6];
-  opArray[0].copyFrom(o0);
-  opArray[1].copyFrom(o1);
-  opArray[2].copyFrom(o2);
-  opArray[3].copyFrom(o3);
-  opArray[4].copyFrom(self->_op4);
-  opArray[5].copyFrom(self->_op5);
-  if (!(options & CodeEmitter::kOptionOp4)) opArray[4].reset();
-  if (!(options & CodeEmitter::kOptionOp5)) opArray[5].reset();
-
-  X86Logging::formatInstruction(
-    sb, 0,
-    self, self->getArchType(),
-    instId, options, self->_opExtra, opArray, 6);
-  self->resetOptions();
-  self->resetInlineComment();
-  return self->setLastError(err, sb.getData());
-}
-#else
-static ASMJIT_INLINE Error X86Assembler_failedInstruction(
-  X86Assembler* self,
-  uint32_t err,
-  uint32_t instId, uint32_t options, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) {
-
-  self->resetOptions();
-  self->resetInlineComment();
-
-  return self->setLastError(err);
-}
-#endif
-
-#if !defined(ASMJIT_DISABLE_VALIDATION)
-static Error X86Assembler_validateInstruction(X86Assembler* self, uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) noexcept {
-  Operand_ opArray[6];
-
-  opArray[0].copyFrom(o0);
-  opArray[1].copyFrom(o1);
-  opArray[2].copyFrom(o2);
-  opArray[3].copyFrom(o3);
-  opArray[4].copyFrom(self->_op4);
-  opArray[5].copyFrom(self->_op5);
-
-  uint32_t options = self->getGlobalOptions() | self->getOptions();
-  if (!(options & CodeEmitter::kOptionOp4)) opArray[4].reset();
-  if (!(options & CodeEmitter::kOptionOp5)) opArray[5].reset();
-
-  Error err = X86Inst::validate(
-    self->getArchType(), instId, options, self->_opExtra, opArray, 6);
-
-  if (ASMJIT_UNLIKELY(err != kErrorOk))
-    return X86Assembler_failedInstruction(self, err, instId, options, o0, o1, o2, o3);
-
-  return kErrorOk;
-}
-#endif // !ASMJIT_DISABLE_VALIDATION
-
-// ============================================================================
-// [asmjit::X86Assembler - Emit - Macros]
+// [asmjit::X86Assembler - Helpers]
 // ============================================================================
 
 #define EMIT_BYTE(VAL)                               \
@@ -513,14 +402,14 @@ static Error X86Assembler_validateInstruction(X86Assembler* self, uint32_t instI
     cursor += 1;                                     \
   } while (0)
 
-#define EMIT_WORD(VAL)                               \
+#define EMIT_16(VAL)                                 \
   do {                                               \
     Utils::writeU16uLE(cursor,                       \
       static_cast<uint32_t>((VAL) & 0xFFFFU));       \
     cursor += 2;                                     \
   } while (0)
 
-#define EMIT_DWORD(VAL)                              \
+#define EMIT_32(VAL)                                 \
   do {                                               \
     Utils::writeU32uLE(cursor,                       \
       static_cast<uint32_t>((VAL) & 0xFFFFFFFFU));   \
@@ -609,10 +498,9 @@ static Error X86Assembler_validateInstruction(X86Assembler* self, uint32_t instI
 #define ENC_OPS2(OP0, OP1)                ((Operand::kOp##OP0) + ((Operand::kOp##OP1) << 3))
 #define ENC_OPS3(OP0, OP1, OP2)           ((Operand::kOp##OP0) + ((Operand::kOp##OP1) << 3) + ((Operand::kOp##OP2) << 6))
 #define ENC_OPS4(OP0, OP1, OP2, OP3)      ((Operand::kOp##OP0) + ((Operand::kOp##OP1) << 3) + ((Operand::kOp##OP2) << 6) + ((Operand::kOp##OP3) << 9))
-#define ENC_OPS5(OP0, OP1, OP2, OP3, OP4) ((Operand::kOp##OP0) + ((Operand::kOp##OP1) << 3) + ((Operand::kOp##OP2) << 6) + ((Operand::kOp##OP3) << 9) + ((Operand::kOp##OP4) << 12))
 
 // ============================================================================
-// [asmjit::X86Assembler - Emit - Implementation]
+// [asmjit::X86Assembler - Emit]
 // ============================================================================
 
 Error X86Assembler::_emit(uint32_t instId, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) {
@@ -646,14 +534,13 @@ Error X86Assembler::_emit(uint32_t instId, const Operand_& o0, const Operand_& o
 
   // Handle failure and rare cases first.
   const uint32_t kErrorsAndSpecialCases =
-    CodeEmitter::kOptionMaybeFailureCase | // Error / Buffer check.
+    CodeEmitter::kOptionMaybeFailureCase | // Error and buffer check.
     CodeEmitter::kOptionStrictValidation | // Strict validation.
     X86Inst::kOptionRep                  | // REP/REPZ prefix.
     X86Inst::kOptionRepnz                | // REPNZ prefix.
     X86Inst::kOptionLock                 ; // LOCK prefix.
 
-  // Signature of the first 3 operands. Instructions that use more operands
-  // create `isign4` and `isign5` on-the-fly.
+  // Signature of the first 3 operands.
   uint32_t isign3 = o0.getOp() + (o1.getOp() << 3) + (o2.getOp() << 6);
 
   if (ASMJIT_UNLIKELY(options & kErrorsAndSpecialCases)) {
@@ -662,7 +549,7 @@ Error X86Assembler::_emit(uint32_t instId, const Operand_& o0, const Operand_& o
 
     if (options & CodeEmitter::kOptionMaybeFailureCase) {
       // Unknown instruction.
-      if (instId >= X86Inst::_kIdCount)
+      if (ASMJIT_UNLIKELY(instId >= X86Inst::_kIdCount))
         goto InvalidArgument;
 
       // Grow request, happens rarely.
@@ -677,7 +564,7 @@ Error X86Assembler::_emit(uint32_t instId, const Operand_& o0, const Operand_& o
     // Strict validation.
 #if !defined(ASMJIT_DISABLE_VALIDATION)
     if (options & CodeEmitter::kOptionStrictValidation)
-      ASMJIT_PROPAGATE(X86Assembler_validateInstruction(this, instId, o0, o1, o2, o3));
+      ASMJIT_PROPAGATE(_validate(instId, o0, o1, o2, o3));
 #endif // !ASMJIT_DISABLE_VALIDATION
 
     uint32_t instFlags = instData->getFlags();
@@ -3639,7 +3526,7 @@ EmitModSib:
           else {
             EMIT_BYTE(mod + 0x80); // <- MOD(2, opReg, rbReg).
             EMIT_BYTE(x86EncodeSib(0, 4, 4));
-            EMIT_DWORD(relOffset);
+            EMIT_32(relOffset);
           }
         }
       }
@@ -3658,7 +3545,7 @@ EmitModSib:
         }
         else {
           EMIT_BYTE(mod + 0x80);
-          EMIT_DWORD(relOffset);
+          EMIT_32(relOffset);
         }
       }
     }
@@ -3667,7 +3554,7 @@ EmitModSib:
       if (is32Bit()) {
         relOffset = rmRel->as<X86Mem>().getOffsetLo32();
         EMIT_BYTE(x86EncodeMod(0, opReg, 5));
-        EMIT_DWORD(relOffset);
+        EMIT_32(relOffset);
       }
       else {
         uint64_t baseAddress = getCodeInfo().getBaseAddress();
@@ -3688,7 +3575,7 @@ EmitModSib:
           uint64_t rel64 = static_cast<uint64_t>(rmRel->as<X86Mem>().getOffset()) - rip64;
           if (Utils::isInt32(static_cast<int64_t>(rel64))) {
             EMIT_BYTE(x86EncodeMod(0, opReg, 5));
-            EMIT_DWORD(static_cast<uint32_t>(rel64 & 0xFFFFFFFFU));
+            EMIT_32(static_cast<uint32_t>(rel64 & 0xFFFFFFFFU));
             if (imLen != 0)
               goto EmitImm;
             else
@@ -3701,7 +3588,7 @@ EmitModSib:
 
         EMIT_BYTE(x86EncodeMod(0, opReg, 4));
         EMIT_BYTE(x86EncodeSib(0, 4, 5));
-        EMIT_DWORD(relOffset);
+        EMIT_32(relOffset);
       }
     }
     // ==========|> [LABEL|RIP + DISP32]
@@ -3728,7 +3615,7 @@ EmitModSib_LabelRip_X86:
           if (label->isBound()) {
             // Bound label.
             re->_data += static_cast<uint64_t>(label->getOffset());
-            EMIT_DWORD(0);
+            EMIT_32(0);
           }
           else {
             // Non-bound label.
@@ -3745,7 +3632,7 @@ EmitModSib_LabelRip_X86:
           re->_sourceOffset = static_cast<uint64_t>((uintptr_t)(cursor - _bufferData));
           re->_data = re->_sourceOffset +
                       static_cast<uint64_t>(static_cast<int64_t>(relOffset));
-          EMIT_DWORD(0);
+          EMIT_32(0);
         }
       }
       else {
@@ -3759,7 +3646,7 @@ EmitModSib_LabelRip_X86:
           if (label->isBound()) {
             // Bound label.
             relOffset += label->getOffset() - static_cast<int32_t>((intptr_t)(cursor - _bufferData));
-            EMIT_DWORD(static_cast<int32_t>(relOffset));
+            EMIT_32(static_cast<int32_t>(relOffset));
           }
           else {
             // Non-bound label.
@@ -3769,7 +3656,7 @@ EmitModSib_LabelRip_X86:
         }
         else {
           // [RIP].
-          EMIT_DWORD(static_cast<int32_t>(relOffset));
+          EMIT_32(static_cast<int32_t>(relOffset));
         }
       }
     }
@@ -3809,7 +3696,7 @@ EmitModVSib:
           // [BASE + INDEX << SHIFT + DISP16|DISP32].
           EMIT_BYTE(mod + 0x80); // <- MOD(2, opReg, 4).
           EMIT_BYTE(sib);
-          EMIT_DWORD(relOffset);
+          EMIT_32(relOffset);
         }
       }
     }
@@ -3820,7 +3707,7 @@ EmitModVSib:
       EMIT_BYTE(x86EncodeSib(rmRel->as<X86Mem>().getShift(), rxReg, 5));
 
       relOffset = rmRel->as<X86Mem>().getOffsetLo32();
-      EMIT_DWORD(relOffset);
+      EMIT_32(relOffset);
     }
     // ==========|> [LABEL|RIP + INDEX + DISP32].
     else {
@@ -3876,7 +3763,7 @@ EmitModVSib:
       }
       else {
         EMIT_BYTE(mod + 0x80);
-        EMIT_WORD(relOffset);
+        EMIT_16(relOffset);
       }
     }
     else {
@@ -3886,7 +3773,7 @@ EmitModVSib:
 
       // ==========|> [DISP16].
       EMIT_BYTE(opReg | 0x06);
-      EMIT_WORD(relOffset);
+      EMIT_16(relOffset);
     }
   }
 
@@ -3934,7 +3821,7 @@ EmitVexEvexOp:
            (0x0FU  << 19) |                              // [........|01111Lpp|1110m0mm|__VEX3__].
            (opCode << 24) ;                              // [_OPCODE_|01111Lpp|1110m0mm|__VEX3__].
 
-      EMIT_DWORD(x);
+      EMIT_32(x);
       goto EmitDone;
     }
     else {
@@ -3990,7 +3877,7 @@ EmitVexEvexR:
                                                          //      _     ____    ____
       x ^= 0x087CF000U | kX86ByteEvex;                   // [zLL.Vaaa|Wvvvv1pp|RBBR00mm|01100010].
 
-      EMIT_DWORD(x);
+      EMIT_32(x);
       EMIT_BYTE(opCode);
 
       rbReg &= 0x7;
@@ -4013,7 +3900,7 @@ EmitVexEvexR:
       x  = (x & (0x4 ^ 0xFFFF)) << 8;                    // [00000000|WvvvvLpp|R0B0m0mm|00000000].
                                                          //            ____    _ _
       x ^= xorMsk;                                       // [_OPCODE_|WvvvvLpp|R1Bmmmmm|VEX3|XOP].
-      EMIT_DWORD(x);
+      EMIT_32(x);
 
       rbReg &= 0x7;
       EMIT_BYTE(x86EncodeMod(3, opReg, rbReg));
@@ -4100,7 +3987,7 @@ EmitVexEvexM:
                                                          //      _     ____    ____
       x ^= 0x087CF000U | kX86ByteEvex;                   // [zLLbVaaa|Wvvvv1pp|RBBR00mm|01100010].
 
-      EMIT_DWORD(x);
+      EMIT_32(x);
       EMIT_BYTE(opCode);
 
       if (opCode & 0x10000000U) {
@@ -4133,7 +4020,7 @@ EmitVexEvexM:
         x  = (x & (0x4 ^ 0xFFFF)) << 8;                  // [00000000|WvvvvLpp|RXB0m0mm|00000000].
                                                          //            ____    ___
         x ^= xorMsk;                                     // [_OPCODE_|WvvvvLpp|RXBmmmmm|VEX3_XOP].
-        EMIT_DWORD(x);
+        EMIT_32(x);
       }
       else {
         // 'mmmmm' must be '00001'.
@@ -4271,7 +4158,7 @@ EmitJmpCall:
           EMIT_BYTE(0x0F);
 
         EMIT_BYTE(opCode);
-        EMIT_DWORD(0);
+        EMIT_32(0);
       }
       else {
         re->_size = 1;
@@ -4304,7 +4191,7 @@ EmitJmpCall_Rel:
       options &= ~X86Inst::kOptionShortForm;
       if (opCode & X86Inst::kOpCode_MM_Mask) EMIT_BYTE(0x0F);
       EMIT_BYTE(opCode);
-      EMIT_DWORD(rel32);
+      EMIT_32(rel32);
       goto EmitDone;
     }
   }
@@ -4332,7 +4219,7 @@ EmitRel:
     if (relSize == 1)
       EMIT_BYTE(0x01);
     else // if (relSize == 4)
-      EMIT_DWORD(0x04040404);
+      EMIT_32(0x04040404);
   }
 
   if (imLen == 0)
@@ -4366,9 +4253,9 @@ EmitImm:
 
 #if ASMJIT_ARCH_64BIT
     imm >>= 8;
-    EMIT_DWORD(static_cast<uint32_t>(imm));
+    EMIT_32(static_cast<uint32_t>(imm));
 #else
-    EMIT_DWORD(static_cast<uint32_t>((static_cast<uint64_t>(imVal) >> 32) & 0xFFFFFFFFU));
+    EMIT_32(static_cast<uint32_t>((static_cast<uint64_t>(imVal) >> 32) & 0xFFFFFFFFU));
 #endif
   }
 
@@ -4380,7 +4267,7 @@ EmitDone:
 #if !defined(ASMJIT_DISABLE_LOGGING)
   // Logging is a performance hit anyway, so make it the unlikely case.
   if (ASMJIT_UNLIKELY(options & CodeEmitter::kOptionLoggingEnabled))
-    X86Assembler_logInstruction(this, instId, options, o0, o1, o2, o3, relSize, imLen, cursor);
+    _emitLog(instId, options, o0, o1, o2, o3, relSize, imLen, cursor);
 #endif // !ASMJIT_DISABLE_LOGGING
 
   resetOptions();
@@ -4393,7 +4280,10 @@ EmitDone:
   // [Error Cases]
   // --------------------------------------------------------------------------
 
-#define ERROR_HANDLER(ERROR) ERROR: err = DebugUtils::errored(kError##ERROR); goto Failed;
+#define ERROR_HANDLER(ERROR)                \
+ERROR:                                      \
+  err = DebugUtils::errored(kError##ERROR); \
+  goto Failed;
 
 ERROR_HANDLER(NoHeapMemory)
 ERROR_HANDLER(InvalidArgument)
@@ -4411,7 +4301,7 @@ ERROR_HANDLER(OperandSizeMismatch)
 ERROR_HANDLER(AmbiguousOperandSize)
 
 Failed:
-  return X86Assembler_failedInstruction(this, err, instId, options, o0, o1, o2, o3);
+  return _emitFailed(err, instId, options, o0, o1, o2, o3);
 }
 
 // ============================================================================
@@ -4424,13 +4314,13 @@ Error X86Assembler::align(uint32_t mode, uint32_t alignment) {
     _code->_logger->logf("%s.align %u\n", _code->_logger->getIndentation(), alignment);
 #endif // !ASMJIT_DISABLE_LOGGING
 
-  if (mode > kAlignZero)
+  if (mode >= kAlignCount)
     return setLastError(DebugUtils::errored(kErrorInvalidArgument));
 
   if (alignment <= 1)
     return kErrorOk;
 
-  if (!Utils::isPowerOf2(alignment) || alignment > 64)
+  if (!Utils::isPowerOf2(alignment) || alignment > Globals::kMaxAlignment)
     return setLastError(DebugUtils::errored(kErrorInvalidArgument));
 
   uint32_t i = static_cast<uint32_t>(Utils::alignDiff<size_t>(getOffset(), alignment));
@@ -4478,8 +4368,13 @@ Error X86Assembler::align(uint32_t mode, uint32_t alignment) {
       break;
     }
 
-    case kAlignData: pattern = 0xCC; break;
-    case kAlignZero: break; // Pattern already set to zero.
+    case kAlignData:
+      pattern = 0xCC;
+      break;
+
+    case kAlignZero:
+      // Pattern already set to zero.
+      break;
   }
 
   while (i) {

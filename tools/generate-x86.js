@@ -88,7 +88,7 @@ class GenUtils {
       if (inst.arch === "X64") x64Arch = true;
     }
 
-    return anyArch || (x86Arch && x64Arch) ? "ANY" : x86Arch ? "X86" : "X64";
+    return anyArch || (x86Arch && x64Arch) ? "[ANY]" : x86Arch ? "[X86]" : "[X64]";
   }
 
   // Calculate a family of a group of instructions.
@@ -205,6 +205,38 @@ class GenUtils {
       case "vpcmpw"  : case "vpcmpuw"  :
       case "vpcmpq"  : case "vpcmpuq"  :
         return "WO";
+
+      default:
+        return "None";
+    }
+  }
+
+  static jumpType(name) {
+    switch (name) {
+      case "jo" :
+      case "jno":
+      case "jb" : case "jnae":
+      case "jae": case "jnb" :
+      case "je" : case "jz"  :
+      case "jne": case "jnz" :
+      case "jbe": case "jna" :
+      case "js" :
+      case "jns":
+      case "jp" : case "jpe" :
+      case "jnp": case "jpo" :
+      case "jl" : case "jnge":
+      case "jge": case "jnl" :
+      case "jle": case "jng" :
+      case "jg" : case "jnle":
+      case "jecxz":
+      case "loop":
+      case "loope":
+      case "loopne":
+        return "Conditional";
+
+      case "jmp" : return "Direct";
+      case "call": return "Call";
+      case "ret" : return "Return";
 
       default:
         return "None";
@@ -840,8 +872,9 @@ class X86Generator extends base.BaseGenerator {
       if (!insts)
         console.log(`INSTRUCTION '${name}' not found in asmdb`);
 
-      const signatures = insts ? this.signaturesFromInsts(insts) : new SignatureArray();
+      const signatures    = insts ? this.signaturesFromInsts(insts) : new SignatureArray();
       const singleRegCase = GenUtils.singleRegCase(name);
+      const jumpType      = GenUtils.jumpType(name);
 
       this.addInst({
         id            : 0,             // Instruction id (numeric value).
@@ -856,6 +889,7 @@ class X86Generator extends base.BaseGenerator {
         writeSize     : writeSize,
         signatures    : signatures,    // Rows containing instruction signatures.
         singleRegCase : singleRegCase,
+        jumpType      : jumpType,
 
         familyType    : "kFamilyNone", // Family type.
         familyIndex   : 0,             // Index to a family-specific data.
@@ -1242,6 +1276,7 @@ class X86Generator extends base.BaseGenerator {
       const eflagsIn      = StringUtils.decToHex(getEFlagsMask(inst.eflags, "RX" ), 2);
       const eflagsOut     = StringUtils.decToHex(getEFlagsMask(inst.eflags, "WXU"), 2);
       const singleRegCase = `SINGLE_REG(${inst.singleRegCase})`;
+      const jumpType      = `JUMP_TYPE(${inst.jumpType})`;
 
       const item = "{ " + StringUtils.padLeft(inst.iflags        , 38) + ", " +
                           StringUtils.padLeft(inst.writeIndex    ,  3) + ", " +
@@ -1251,13 +1286,16 @@ class X86Generator extends base.BaseGenerator {
                           StringUtils.padLeft(inst.altOpCodeIndex,  3) + ", " +
                           StringUtils.padLeft(inst.signatureIndex,  3) + ", " +
                           StringUtils.padLeft(inst.signatureCount,  2) + ", " +
+                          StringUtils.padLeft(jumpType           , 22) + ", " +
                           StringUtils.padLeft(singleRegCase      , 16) + ", " + "0 }";
       inst.commonIndex = table.addIndexed(item);
     }
 
-    var s = `#define SINGLE_REG(CASE) X86Inst::kSingleReg##CASE\n` +
+    var s = `#define JUMP_TYPE(VAL) AnyInst::kJumpType##VAL\n` +
+            `#define SINGLE_REG(VAL) X86Inst::kSingleReg##VAL\n` + 
             `const X86Inst::CommonData X86InstDB::commonData[] = {\n${StringUtils.format(table, kIndent, true)}\n};\n` +
-            `#undef SINGLE_REG\n`;
+            `#undef SINGLE_REG\n` +
+            `#undef JUMP_TYPE\n`;
     return this.inject("commonData", StringUtils.disclaimer(s), table.length * 12);
   }
 
@@ -1296,15 +1334,14 @@ class X86Generator extends base.BaseGenerator {
     var comment = GenUtils.archOf(group);
 
     if (features.length) {
-      if (comment === "ANY")
-        comment = "";
-      else
-        comment += " ";
+      comment += " {";
 
-      const vl = features.indexOf("AVX512VL");
+      const vl = features.indexOf("AVX512_VL");
       if (vl !== -1) features.splice(vl, 1);
       comment += features.join("|");
       if (vl !== -1) comment += " (VL)";
+
+      comment += "}";
     }
 
     return comment;
@@ -1507,12 +1544,12 @@ main();
 
   function genAPI() {
     var asm = fs.readFileSync("../src/asmjit/x86/x86assembler.h", "utf8");
-    var list = ["AVX512F", "AVX512DQ", "AVX512BW", "AVX512CD", "AVX512ER", "AVX512PF", "AVX512IFMA", "AVX512VBMI"];
+    var list = ["AVX512_F", "AVX512_DQ", "AVX512_BW", "AVX512_CD", "AVX512_ER", "AVX512_PF", "AVX512_IFMA", "AVX512_VBMI"];
 
     function getAVX512Flag(inst) {
       for (var cpu in inst.cpu) {
         if (list.indexOf(cpu) !== -1) {
-          return inst.cpu["AVX512VL"] ? cpu + "-VL" : cpu;
+          return inst.cpu["AVX512_VL"] ? cpu + "-VL" : cpu;
         }
       }
       return "";
@@ -1672,12 +1709,12 @@ main();
 
   function genOpcodeH() {
     var asm = fs.readFileSync("../src/asmjit/x86/x86assembler.h", "utf8");
-    var list = ["AVX512F", "AVX512DQ", "AVX512BW", "AVX512CD", "AVX512ER", "AVX512PF", "AVX512IFMA", "AVX512VBMI"];
+    var list = ["AVX512_F", "AVX512_DQ", "AVX512_BW", "AVX512_CD", "AVX512_ER", "AVX512_PF", "AVX512_IFMA", "AVX512_VBMI"];
 
     function getAVX512Flag(inst) {
       for (var cpu in inst.cpu) {
         if (list.indexOf(cpu) !== -1) {
-          return inst.cpu["AVX512VL"] ? cpu + "-VL" : cpu;
+          return inst.cpu["AVX512_VL"] ? cpu + "-VL" : cpu;
         }
       }
       return "";

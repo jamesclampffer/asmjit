@@ -12,6 +12,7 @@
 #include "../base/arch.h"
 #include "../base/operand.h"
 #include "../base/utils.h"
+#include "../x86/x86globals.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"

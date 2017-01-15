@@ -9,7 +9,7 @@
 #define _ASMJIT_BASE_OSUTILS_H
 
 // [Dependencies]
-#include "../base/globals.h"
+#include "../base/debugutils.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"

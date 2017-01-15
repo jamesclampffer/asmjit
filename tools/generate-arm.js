@@ -44,9 +44,14 @@ class GenUtils {
       if (inst.encoding === "A64") a64Arch = true;
     }
 
-    var s = "";
-    s += (!t16Arch && !t32Arch) ? " " : "T";
-    s += (a32Arch) ? "A" : " ";
+    var s = (t16Arch && !t32Arch) ? "T16" :
+            (t32Arch && !t16Arch) ? "T32" :
+            (t16Arch &&  t32Arch) ? "Txx" : "---";
+    s += " ";
+    s += (a32Arch) ? "A32" : "---";
+    s += " ";
+    s += (a64Arch) ? "A64" : "---";
+
     return `[${s}]`;
   }
 }

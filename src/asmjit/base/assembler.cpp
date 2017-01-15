@@ -308,6 +308,80 @@ Error Assembler::embedConstPool(const Label& label, const ConstPool& pool) {
   return kErrorOk;
 }
 
+// ============================================================================
+// [asmjit::Assembler - Emit-Helpers]
+// ============================================================================
+
+#if !defined(ASMJIT_DISABLE_LOGGING)
+void Assembler::_emitLog(
+  uint32_t instId, uint32_t options, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3,
+  uint32_t relSize, uint32_t imLen, uint8_t* afterCursor) {
+
+  Logger* logger = _code->getLogger();
+  ASMJIT_ASSERT(logger != nullptr);
+  ASMJIT_ASSERT(options & CodeEmitter::kOptionLoggingEnabled);
+
+  StringBuilderTmp<256> sb;
+  uint32_t logOptions = logger->getOptions();
+
+  uint8_t* beforeCursor = _bufferPtr;
+  intptr_t emittedSize = (intptr_t)(afterCursor - beforeCursor);
+
+  sb.appendString(logger->getIndentation());
+
+  Operand_ opArray[6];
+  opArray[0].copyFrom(o0);
+  opArray[1].copyFrom(o1);
+  opArray[2].copyFrom(o2);
+  opArray[3].copyFrom(o3);
+  opArray[4].copyFrom(_op4);
+  opArray[5].copyFrom(_op5);
+  if (!(options & CodeEmitter::kOptionOp4)) opArray[4].reset();
+  if (!(options & CodeEmitter::kOptionOp5)) opArray[5].reset();
+
+  Logging::formatInstruction(
+    sb, logOptions,
+    this, getArchType(),
+    instId, options, _opExtra, opArray, 6);
+
+  if ((logOptions & Logger::kOptionBinaryForm) != 0)
+    Logging::formatLine(sb, _bufferPtr, emittedSize, relSize, imLen, getInlineComment());
+  else
+    Logging::formatLine(sb, nullptr, Globals::kInvalidIndex, 0, 0, getInlineComment());
+
+  logger->log(sb.getData(), sb.getLength());
+}
+
+Error Assembler::_emitFailed(
+  Error err,
+  uint32_t instId, uint32_t options, const Operand_& o0, const Operand_& o1, const Operand_& o2, const Operand_& o3) {
+
+  StringBuilderTmp<256> sb;
+  sb.appendString(DebugUtils::errorAsString(err));
+  sb.appendString(": ");
+
+  Operand_ opArray[6];
+  opArray[0].copyFrom(o0);
+  opArray[1].copyFrom(o1);
+  opArray[2].copyFrom(o2);
+  opArray[3].copyFrom(o3);
+  opArray[4].copyFrom(_op4);
+  opArray[5].copyFrom(_op5);
+
+  if (!(options & CodeEmitter::kOptionOp4)) opArray[4].reset();
+  if (!(options & CodeEmitter::kOptionOp5)) opArray[5].reset();
+
+  Logging::formatInstruction(
+    sb, 0,
+    this, getArchType(),
+    instId, options, _opExtra, opArray, 6);
+
+  resetOptions();
+  resetInlineComment();
+  return setLastError(err, sb.getData());
+}
+#endif
+
 } // asmjit namespace
 
 // [Api-End]

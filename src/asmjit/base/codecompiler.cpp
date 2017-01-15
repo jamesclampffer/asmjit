@@ -263,8 +263,8 @@ Error CodeCompiler::setArg(uint32_t argIndex, const Reg& r) {
   if (!isVirtRegValid(r))
     return setLastError(DebugUtils::errored(kErrorInvalidVirtId));
 
-  VirtReg* vr = getVirtReg(r);
-  func->setArg(argIndex, vr);
+  VirtReg* vReg = getVirtReg(r);
+  func->setArg(argIndex, vReg);
 
   return kErrorOk;
 }
@@ -278,30 +278,30 @@ VirtReg* CodeCompiler::newVirtReg(uint32_t typeId, uint32_t signature, const cha
   if (ASMJIT_UNLIKELY(index >= Operand::kPackedIdCount))
     return nullptr;
 
-  VirtReg* vreg;
-  if (_vRegArray.willGrow() != kErrorOk || !(vreg = _vRegZone.allocZeroedT<VirtReg>()))
+  VirtReg* vReg;
+  if (_vRegArray.willGrow() != kErrorOk || !(vReg = _vRegZone.allocZeroedT<VirtReg>()))
     return nullptr;
 
-  vreg->_id = Operand::packId(static_cast<uint32_t>(index));
-  vreg->_regInfo._signature = signature;
-  vreg->_name = noName;
+  vReg->_id = Operand::packId(static_cast<uint32_t>(index));
+  vReg->_regInfo._signature = signature;
+  vReg->_name = noName;
 
 #if !defined(ASMJIT_DISABLE_LOGGING)
   if (name && name[0] != '\0')
-    vreg->_name = static_cast<char*>(_cbDataZone.dup(name, ::strlen(name), true));
+    vReg->_name = static_cast<char*>(_cbDataZone.dup(name, ::strlen(name), true));
 #endif // !ASMJIT_DISABLE_LOGGING
 
-  vreg->_size = TypeId::sizeOf(typeId);
-  vreg->_typeId = typeId;
-  vreg->_alignment = static_cast<uint8_t>(Utils::iMin<uint32_t>(vreg->_size, 64));
-  vreg->_priority = 10;
+  vReg->_size = TypeId::sizeOf(typeId);
+  vReg->_typeId = typeId;
+  vReg->_alignment = static_cast<uint8_t>(Utils::iMin<uint32_t>(vReg->_size, 64));
+  vReg->_priority = 10;
 
   // The following are only used by `RAPass`.
-  vreg->_state = VirtReg::kStateNone;
-  vreg->_physId = Globals::kInvalidRegId;
+  vReg->_state = VirtReg::kStateNone;
+  vReg->_physId = Globals::kInvalidRegId;
 
-  _vRegArray.appendUnsafe(vreg);
-  return vreg;
+  _vRegArray.appendUnsafe(vReg);
+  return vReg;
 }
 
 Error CodeCompiler::_newReg(Reg& out, uint32_t typeId, const char* name) {
@@ -464,10 +464,10 @@ Error CodeCompiler::_newConst(Mem& out, uint32_t scope, const void* data, size_t
 void CodeCompiler::rename(Reg& reg, const char* fmt, ...) {
   if (!reg.isVirtReg()) return;
 
-  VirtReg* vreg = getVirtRegById(reg.getId());
-  if (!vreg) return;
+  VirtReg* vReg = getVirtRegById(reg.getId());
+  if (!vReg) return;
 
-  vreg->_name = noName;
+  vReg->_name = noName;
   if (fmt && fmt[0] != '\0') {
     char buf[64];
 
@@ -477,9 +477,40 @@ void CodeCompiler::rename(Reg& reg, const char* fmt, ...) {
     vsnprintf(buf, ASMJIT_ARRAY_SIZE(buf), fmt, ap);
     buf[ASMJIT_ARRAY_SIZE(buf) - 1] = '\0';
 
-    vreg->_name = static_cast<char*>(_cbDataZone.dup(buf, ::strlen(buf), true));
+    vReg->_name = static_cast<char*>(_cbDataZone.dup(buf, ::strlen(buf), true));
     va_end(ap);
   }
+}
+
+// ============================================================================
+// [asmjit::CCFuncPass - Construction / Destruction]
+// ============================================================================
+
+CCFuncPass::CCFuncPass(const char* name) noexcept
+  : CBPass(name) {}
+
+// ============================================================================
+// [asmjit::CCFuncPass - Run]
+// ============================================================================
+
+Error CCFuncPass::run(Zone* zone) noexcept {
+  CBNode* node = cb()->getFirstNode();
+  if (!node) return kErrorOk;
+
+  do {
+    if (node->getType() == CBNode::kNodeFunc) {
+      CCFunc* func = node->as<CCFunc>();
+      node = func->getEnd();
+      ASMJIT_PROPAGATE(runOnFunction(zone, func));
+    }
+
+    // Find a function by skipping all nodes that are not `kNodeFunc`.
+    do {
+      node = node->getNext();
+    } while (node && node->getType() != CBNode::kNodeFunc);
+  } while (node);
+
+  return kErrorOk;
 }
 
 } // asmjit namespace

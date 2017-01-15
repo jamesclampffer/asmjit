@@ -224,7 +224,7 @@ const X86Inst X86InstDB::instData[] = {
   INST(Btr             , Enc(X86Bt)             , O(000F00,B3,_,_,x,_,_,_  ), O(000F00,BA,6,_,x,_,_,_  ), F(RW)|F(Lock)                         , EF(UU_UUW__), 0 , 0 , kFamilyNone, 0  , 120 , 24 ),
   INST(Bts             , Enc(X86Bt)             , O(000F00,AB,_,_,x,_,_,_  ), O(000F00,BA,5,_,x,_,_,_  ), F(RW)|F(Lock)                         , EF(UU_UUW__), 0 , 0 , kFamilyNone, 0  , 124 , 25 ),
   INST(Bzhi            , Enc(VexRmv_Wx)         , V(000F38,F5,_,0,x,_,_,_  ), 0                         , F(RW)                                 , EF(WWWUUW__), 0 , 0 , kFamilyNone, 0  , 128 , 15 ),
-  INST(Call            , Enc(X86Call)           , O(000000,FF,2,_,_,_,_,_  ), 0                         , F(RW)|F(Flow)|F(Volatile)             , EF(________), 0 , 0 , kFamilyNone, 0  , 133 , 26 ),
+  INST(Call            , Enc(X86Call)           , O(000000,FF,2,_,_,_,_,_  ), 0                         , F(RW)|F(Volatile)                     , EF(________), 0 , 0 , kFamilyNone, 0  , 133 , 26 ),
   INST(Cbw             , Enc(X86Op_xAX)         , O(660000,98,_,_,_,_,_,_  ), 0                         , F(RW)|F(Special)                      , EF(________), 0 , 0 , kFamilyNone, 0  , 138 , 27 ),
   INST(Cdq             , Enc(X86Op_xDX_xAX)     , O(000000,99,_,_,_,_,_,_  ), 0                         , F(RW)|F(Special)                      , EF(________), 0 , 0 , kFamilyNone, 0  , 142 , 28 ),
   INST(Cdqe            , Enc(X86Op_xAX)         , O(000000,98,_,_,1,_,_,_  ), 0                         , F(RW)|F(Special)                      , EF(________), 0 , 0 , kFamilyNone, 0  , 146 , 29 ),
@@ -430,38 +430,38 @@ const X86Inst X86InstDB::instData[] = {
   INST(Int             , Enc(X86Int)            , O(000000,CD,_,_,_,_,_,_  ), 0                         , F(Volatile)                           , EF(___W___W), 0 , 0 , kFamilyNone, 0  , 909 , 107),
   INST(Int3            , Enc(X86Op)             , O(000000,CC,_,_,_,_,_,_  ), 0                         , F(Volatile)                           , EF(___W___W), 0 , 0 , kFamilyNone, 0  , 1122, 108),
   INST(Into            , Enc(X86Op)             , O(000000,CE,_,_,_,_,_,_  ), 0                         , F(Volatile)                           , EF(___W___W), 0 , 0 , kFamilyNone, 0  , 1127, 108),
-  INST(Ja              , Enc(X86Jcc)            , O(000F00,87,_,_,_,_,_,_  ), O(000000,77,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(__R__R__), 0 , 0 , kFamilyNone, 0  , 1132, 109),
-  INST(Jae             , Enc(X86Jcc)            , O(000F00,83,_,_,_,_,_,_  ), O(000000,73,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(_____R__), 0 , 0 , kFamilyNone, 0  , 1135, 110),
-  INST(Jb              , Enc(X86Jcc)            , O(000F00,82,_,_,_,_,_,_  ), O(000000,72,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(_____R__), 0 , 0 , kFamilyNone, 0  , 1139, 111),
-  INST(Jbe             , Enc(X86Jcc)            , O(000F00,86,_,_,_,_,_,_  ), O(000000,76,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(__R__R__), 0 , 0 , kFamilyNone, 0  , 1142, 112),
-  INST(Jc              , Enc(X86Jcc)            , O(000F00,82,_,_,_,_,_,_  ), O(000000,72,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(_____R__), 0 , 0 , kFamilyNone, 0  , 1146, 113),
-  INST(Je              , Enc(X86Jcc)            , O(000F00,84,_,_,_,_,_,_  ), O(000000,74,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(__R_____), 0 , 0 , kFamilyNone, 0  , 1149, 114),
-  INST(Jecxz           , Enc(X86JecxzLoop)      , 0                         , O(000000,E3,_,_,_,_,_,_  ), F(Flow)|F(Volatile)|F(Special)        , EF(________), 0 , 0 , kFamilyNone, 0  , 1152, 115),
-  INST(Jg              , Enc(X86Jcc)            , O(000F00,8F,_,_,_,_,_,_  ), O(000000,7F,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(RRR_____), 0 , 0 , kFamilyNone, 0  , 1158, 116),
-  INST(Jge             , Enc(X86Jcc)            , O(000F00,8D,_,_,_,_,_,_  ), O(000000,7D,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(RR______), 0 , 0 , kFamilyNone, 0  , 1161, 117),
-  INST(Jl              , Enc(X86Jcc)            , O(000F00,8C,_,_,_,_,_,_  ), O(000000,7C,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(RR______), 0 , 0 , kFamilyNone, 0  , 1165, 118),
-  INST(Jle             , Enc(X86Jcc)            , O(000F00,8E,_,_,_,_,_,_  ), O(000000,7E,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(RRR_____), 0 , 0 , kFamilyNone, 0  , 1168, 119),
-  INST(Jmp             , Enc(X86Jmp)            , O(000000,FF,4,_,_,_,_,_  ), O(000000,EB,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(________), 0 , 0 , kFamilyNone, 0  , 1172, 120),
-  INST(Jna             , Enc(X86Jcc)            , O(000F00,86,_,_,_,_,_,_  ), O(000000,76,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(__R__R__), 0 , 0 , kFamilyNone, 0  , 1176, 112),
-  INST(Jnae            , Enc(X86Jcc)            , O(000F00,82,_,_,_,_,_,_  ), O(000000,72,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(_____R__), 0 , 0 , kFamilyNone, 0  , 1180, 111),
-  INST(Jnb             , Enc(X86Jcc)            , O(000F00,83,_,_,_,_,_,_  ), O(000000,73,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(_____R__), 0 , 0 , kFamilyNone, 0  , 1185, 110),
-  INST(Jnbe            , Enc(X86Jcc)            , O(000F00,87,_,_,_,_,_,_  ), O(000000,77,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(__R__R__), 0 , 0 , kFamilyNone, 0  , 1189, 109),
-  INST(Jnc             , Enc(X86Jcc)            , O(000F00,83,_,_,_,_,_,_  ), O(000000,73,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(_____R__), 0 , 0 , kFamilyNone, 0  , 1194, 121),
-  INST(Jne             , Enc(X86Jcc)            , O(000F00,85,_,_,_,_,_,_  ), O(000000,75,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(__R_____), 0 , 0 , kFamilyNone, 0  , 1198, 122),
-  INST(Jng             , Enc(X86Jcc)            , O(000F00,8E,_,_,_,_,_,_  ), O(000000,7E,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(RRR_____), 0 , 0 , kFamilyNone, 0  , 1202, 119),
-  INST(Jnge            , Enc(X86Jcc)            , O(000F00,8C,_,_,_,_,_,_  ), O(000000,7C,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(RR______), 0 , 0 , kFamilyNone, 0  , 1206, 118),
-  INST(Jnl             , Enc(X86Jcc)            , O(000F00,8D,_,_,_,_,_,_  ), O(000000,7D,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(RR______), 0 , 0 , kFamilyNone, 0  , 1211, 117),
-  INST(Jnle            , Enc(X86Jcc)            , O(000F00,8F,_,_,_,_,_,_  ), O(000000,7F,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(RRR_____), 0 , 0 , kFamilyNone, 0  , 1215, 116),
-  INST(Jno             , Enc(X86Jcc)            , O(000F00,81,_,_,_,_,_,_  ), O(000000,71,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(R_______), 0 , 0 , kFamilyNone, 0  , 1220, 123),
-  INST(Jnp             , Enc(X86Jcc)            , O(000F00,8B,_,_,_,_,_,_  ), O(000000,7B,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(____R___), 0 , 0 , kFamilyNone, 0  , 1224, 124),
-  INST(Jns             , Enc(X86Jcc)            , O(000F00,89,_,_,_,_,_,_  ), O(000000,79,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(_R______), 0 , 0 , kFamilyNone, 0  , 1228, 125),
-  INST(Jnz             , Enc(X86Jcc)            , O(000F00,85,_,_,_,_,_,_  ), O(000000,75,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(__R_____), 0 , 0 , kFamilyNone, 0  , 1232, 122),
-  INST(Jo              , Enc(X86Jcc)            , O(000F00,80,_,_,_,_,_,_  ), O(000000,70,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(R_______), 0 , 0 , kFamilyNone, 0  , 1236, 126),
-  INST(Jp              , Enc(X86Jcc)            , O(000F00,8A,_,_,_,_,_,_  ), O(000000,7A,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(____R___), 0 , 0 , kFamilyNone, 0  , 1239, 127),
-  INST(Jpe             , Enc(X86Jcc)            , O(000F00,8A,_,_,_,_,_,_  ), O(000000,7A,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(____R___), 0 , 0 , kFamilyNone, 0  , 1242, 127),
-  INST(Jpo             , Enc(X86Jcc)            , O(000F00,8B,_,_,_,_,_,_  ), O(000000,7B,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(____R___), 0 , 0 , kFamilyNone, 0  , 1246, 124),
-  INST(Js              , Enc(X86Jcc)            , O(000F00,88,_,_,_,_,_,_  ), O(000000,78,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(_R______), 0 , 0 , kFamilyNone, 0  , 1250, 128),
-  INST(Jz              , Enc(X86Jcc)            , O(000F00,84,_,_,_,_,_,_  ), O(000000,74,_,_,_,_,_,_  ), F(Flow)|F(Volatile)                   , EF(__R_____), 0 , 0 , kFamilyNone, 0  , 1253, 114),
+  INST(Ja              , Enc(X86Jcc)            , O(000F00,87,_,_,_,_,_,_  ), O(000000,77,_,_,_,_,_,_  ), F(Volatile)                           , EF(__R__R__), 0 , 0 , kFamilyNone, 0  , 1132, 109),
+  INST(Jae             , Enc(X86Jcc)            , O(000F00,83,_,_,_,_,_,_  ), O(000000,73,_,_,_,_,_,_  ), F(Volatile)                           , EF(_____R__), 0 , 0 , kFamilyNone, 0  , 1135, 110),
+  INST(Jb              , Enc(X86Jcc)            , O(000F00,82,_,_,_,_,_,_  ), O(000000,72,_,_,_,_,_,_  ), F(Volatile)                           , EF(_____R__), 0 , 0 , kFamilyNone, 0  , 1139, 111),
+  INST(Jbe             , Enc(X86Jcc)            , O(000F00,86,_,_,_,_,_,_  ), O(000000,76,_,_,_,_,_,_  ), F(Volatile)                           , EF(__R__R__), 0 , 0 , kFamilyNone, 0  , 1142, 112),
+  INST(Jc              , Enc(X86Jcc)            , O(000F00,82,_,_,_,_,_,_  ), O(000000,72,_,_,_,_,_,_  ), F(Volatile)                           , EF(_____R__), 0 , 0 , kFamilyNone, 0  , 1146, 113),
+  INST(Je              , Enc(X86Jcc)            , O(000F00,84,_,_,_,_,_,_  ), O(000000,74,_,_,_,_,_,_  ), F(Volatile)                           , EF(__R_____), 0 , 0 , kFamilyNone, 0  , 1149, 114),
+  INST(Jecxz           , Enc(X86JecxzLoop)      , 0                         , O(000000,E3,_,_,_,_,_,_  ), F(Volatile)|F(Special)                , EF(________), 0 , 0 , kFamilyNone, 0  , 1152, 115),
+  INST(Jg              , Enc(X86Jcc)            , O(000F00,8F,_,_,_,_,_,_  ), O(000000,7F,_,_,_,_,_,_  ), F(Volatile)                           , EF(RRR_____), 0 , 0 , kFamilyNone, 0  , 1158, 116),
+  INST(Jge             , Enc(X86Jcc)            , O(000F00,8D,_,_,_,_,_,_  ), O(000000,7D,_,_,_,_,_,_  ), F(Volatile)                           , EF(RR______), 0 , 0 , kFamilyNone, 0  , 1161, 117),
+  INST(Jl              , Enc(X86Jcc)            , O(000F00,8C,_,_,_,_,_,_  ), O(000000,7C,_,_,_,_,_,_  ), F(Volatile)                           , EF(RR______), 0 , 0 , kFamilyNone, 0  , 1165, 118),
+  INST(Jle             , Enc(X86Jcc)            , O(000F00,8E,_,_,_,_,_,_  ), O(000000,7E,_,_,_,_,_,_  ), F(Volatile)                           , EF(RRR_____), 0 , 0 , kFamilyNone, 0  , 1168, 119),
+  INST(Jmp             , Enc(X86Jmp)            , O(000000,FF,4,_,_,_,_,_  ), O(000000,EB,_,_,_,_,_,_  ), F(Volatile)                           , EF(________), 0 , 0 , kFamilyNone, 0  , 1172, 120),
+  INST(Jna             , Enc(X86Jcc)            , O(000F00,86,_,_,_,_,_,_  ), O(000000,76,_,_,_,_,_,_  ), F(Volatile)                           , EF(__R__R__), 0 , 0 , kFamilyNone, 0  , 1176, 112),
+  INST(Jnae            , Enc(X86Jcc)            , O(000F00,82,_,_,_,_,_,_  ), O(000000,72,_,_,_,_,_,_  ), F(Volatile)                           , EF(_____R__), 0 , 0 , kFamilyNone, 0  , 1180, 111),
+  INST(Jnb             , Enc(X86Jcc)            , O(000F00,83,_,_,_,_,_,_  ), O(000000,73,_,_,_,_,_,_  ), F(Volatile)                           , EF(_____R__), 0 , 0 , kFamilyNone, 0  , 1185, 110),
+  INST(Jnbe            , Enc(X86Jcc)            , O(000F00,87,_,_,_,_,_,_  ), O(000000,77,_,_,_,_,_,_  ), F(Volatile)                           , EF(__R__R__), 0 , 0 , kFamilyNone, 0  , 1189, 109),
+  INST(Jnc             , Enc(X86Jcc)            , O(000F00,83,_,_,_,_,_,_  ), O(000000,73,_,_,_,_,_,_  ), F(Volatile)                           , EF(_____R__), 0 , 0 , kFamilyNone, 0  , 1194, 121),
+  INST(Jne             , Enc(X86Jcc)            , O(000F00,85,_,_,_,_,_,_  ), O(000000,75,_,_,_,_,_,_  ), F(Volatile)                           , EF(__R_____), 0 , 0 , kFamilyNone, 0  , 1198, 122),
+  INST(Jng             , Enc(X86Jcc)            , O(000F00,8E,_,_,_,_,_,_  ), O(000000,7E,_,_,_,_,_,_  ), F(Volatile)                           , EF(RRR_____), 0 , 0 , kFamilyNone, 0  , 1202, 119),
+  INST(Jnge            , Enc(X86Jcc)            , O(000F00,8C,_,_,_,_,_,_  ), O(000000,7C,_,_,_,_,_,_  ), F(Volatile)                           , EF(RR______), 0 , 0 , kFamilyNone, 0  , 1206, 118),
+  INST(Jnl             , Enc(X86Jcc)            , O(000F00,8D,_,_,_,_,_,_  ), O(000000,7D,_,_,_,_,_,_  ), F(Volatile)                           , EF(RR______), 0 , 0 , kFamilyNone, 0  , 1211, 117),
+  INST(Jnle            , Enc(X86Jcc)            , O(000F00,8F,_,_,_,_,_,_  ), O(000000,7F,_,_,_,_,_,_  ), F(Volatile)                           , EF(RRR_____), 0 , 0 , kFamilyNone, 0  , 1215, 116),
+  INST(Jno             , Enc(X86Jcc)            , O(000F00,81,_,_,_,_,_,_  ), O(000000,71,_,_,_,_,_,_  ), F(Volatile)                           , EF(R_______), 0 , 0 , kFamilyNone, 0  , 1220, 123),
+  INST(Jnp             , Enc(X86Jcc)            , O(000F00,8B,_,_,_,_,_,_  ), O(000000,7B,_,_,_,_,_,_  ), F(Volatile)                           , EF(____R___), 0 , 0 , kFamilyNone, 0  , 1224, 124),
+  INST(Jns             , Enc(X86Jcc)            , O(000F00,89,_,_,_,_,_,_  ), O(000000,79,_,_,_,_,_,_  ), F(Volatile)                           , EF(_R______), 0 , 0 , kFamilyNone, 0  , 1228, 125),
+  INST(Jnz             , Enc(X86Jcc)            , O(000F00,85,_,_,_,_,_,_  ), O(000000,75,_,_,_,_,_,_  ), F(Volatile)                           , EF(__R_____), 0 , 0 , kFamilyNone, 0  , 1232, 122),
+  INST(Jo              , Enc(X86Jcc)            , O(000F00,80,_,_,_,_,_,_  ), O(000000,70,_,_,_,_,_,_  ), F(Volatile)                           , EF(R_______), 0 , 0 , kFamilyNone, 0  , 1236, 126),
+  INST(Jp              , Enc(X86Jcc)            , O(000F00,8A,_,_,_,_,_,_  ), O(000000,7A,_,_,_,_,_,_  ), F(Volatile)                           , EF(____R___), 0 , 0 , kFamilyNone, 0  , 1239, 127),
+  INST(Jpe             , Enc(X86Jcc)            , O(000F00,8A,_,_,_,_,_,_  ), O(000000,7A,_,_,_,_,_,_  ), F(Volatile)                           , EF(____R___), 0 , 0 , kFamilyNone, 0  , 1242, 127),
+  INST(Jpo             , Enc(X86Jcc)            , O(000F00,8B,_,_,_,_,_,_  ), O(000000,7B,_,_,_,_,_,_  ), F(Volatile)                           , EF(____R___), 0 , 0 , kFamilyNone, 0  , 1246, 124),
+  INST(Js              , Enc(X86Jcc)            , O(000F00,88,_,_,_,_,_,_  ), O(000000,78,_,_,_,_,_,_  ), F(Volatile)                           , EF(_R______), 0 , 0 , kFamilyNone, 0  , 1250, 128),
+  INST(Jz              , Enc(X86Jcc)            , O(000F00,84,_,_,_,_,_,_  ), O(000000,74,_,_,_,_,_,_  ), F(Volatile)                           , EF(__R_____), 0 , 0 , kFamilyNone, 0  , 1253, 114),
   INST(Kaddb           , Enc(VexRvm)            , V(660F00,4A,_,1,0,_,_,_  ), 0                         , F(WO)|F(Vex)                          , EF(________), 0 , 0 , kFamilyNone, 0  , 1256, 129),
   INST(Kaddd           , Enc(VexRvm)            , V(660F00,4A,_,1,1,_,_,_  ), 0                         , F(WO)|F(Vex)                          , EF(________), 0 , 0 , kFamilyNone, 0  , 1262, 129),
   INST(Kaddq           , Enc(VexRvm)            , V(000F00,4A,_,1,1,_,_,_  ), 0                         , F(WO)|F(Vex)                          , EF(________), 0 , 0 , kFamilyNone, 0  , 1268, 129),
@@ -1558,478 +1558,480 @@ const X86Inst X86InstDB::instData[] = {
 
 // ${commonData:Begin}
 // ------------------- Automatically generated, do not edit -------------------
-#define SINGLE_REG(CASE) X86Inst::kSingleReg##CASE
+#define JUMP_TYPE(VAL) AnyInst::kJumpType##VAL
+#define SINGLE_REG(VAL) X86Inst::kSingleReg##VAL
 const X86Inst::CommonData X86InstDB::commonData[] = {
-  { 0                                     , 0  , 0  , 0x00, 0x00, 0  , 0  , 0 , SINGLE_REG(None), 0 }, // #0
-  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 349, 1 , SINGLE_REG(None), 0 }, // #1
-  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 350, 1 , SINGLE_REG(None), 0 }, // #2
-  { F(RW)|F(Lock)                         , 0  , 0  , 0x20, 0x3F, 0  , 14 , 10, SINGLE_REG(None), 0 }, // #3
-  { F(RW)                                 , 0  , 0  , 0x20, 0x20, 0  , 22 , 2 , SINGLE_REG(None), 0 }, // #4
-  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3F, 0  , 14 , 10, SINGLE_REG(None), 0 }, // #5
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 296, 1 , SINGLE_REG(None), 0 }, // #6
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 351, 1 , SINGLE_REG(None), 0 }, // #7
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 352, 1 , SINGLE_REG(None), 0 }, // #8
-  { F(RW)                                 , 0  , 0  , 0x01, 0x01, 0  , 22 , 2 , SINGLE_REG(None), 0 }, // #9
-  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 64 , 1 , SINGLE_REG(None), 0 }, // #10
-  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 71 , 1 , SINGLE_REG(None), 0 }, // #11
-  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3F, 0  , 14 , 10, SINGLE_REG(RO)  , 0 }, // #12
-  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 251, 2 , SINGLE_REG(None), 0 }, // #13
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 296, 1 , SINGLE_REG(RO)  , 0 }, // #14
-  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 253, 2 , SINGLE_REG(None), 0 }, // #15
-  { F(WO)                                 , 0  , 0  , 0x00, 0x3F, 0  , 162, 2 , SINGLE_REG(None), 0 }, // #16
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 298, 1 , SINGLE_REG(None), 0 }, // #17
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 353, 1 , SINGLE_REG(None), 0 }, // #18
-  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 162, 2 , SINGLE_REG(None), 0 }, // #19
-  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 21 , 3 , SINGLE_REG(None), 0 }, // #20
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 354, 1 , SINGLE_REG(None), 0 }, // #21
-  { F(RO)                                 , 0  , 0  , 0x00, 0x3B, 1  , 152, 3 , SINGLE_REG(None), 0 }, // #22
-  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3B, 2  , 155, 3 , SINGLE_REG(None), 0 }, // #23
-  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3B, 3  , 155, 3 , SINGLE_REG(None), 0 }, // #24
-  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3B, 4  , 155, 3 , SINGLE_REG(None), 0 }, // #25
-  { F(RW)|F(Flow)|F(Volatile)             , 0  , 0  , 0x00, 0x00, 0  , 255, 2 , SINGLE_REG(None), 0 }, // #26
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 355, 1 , SINGLE_REG(None), 0 }, // #27
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 356, 1 , SINGLE_REG(None), 0 }, // #28
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 357, 1 , SINGLE_REG(None), 0 }, // #29
-  { F(Volatile)                           , 0  , 0  , 0x00, 0x08, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #30
-  { F(Volatile)                           , 0  , 0  , 0x00, 0x20, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #31
-  { F(Volatile)                           , 0  , 0  , 0x00, 0x40, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #32
-  { F(RO)|F(Volatile)                     , 0  , 0  , 0x00, 0x00, 0  , 358, 1 , SINGLE_REG(None), 0 }, // #33
-  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 359, 1 , SINGLE_REG(None), 0 }, // #34
-  { 0                                     , 0  , 0  , 0x20, 0x20, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #35
-  { F(RW)                                 , 0  , 0  , 0x24, 0x00, 0  , 21 , 3 , SINGLE_REG(None), 0 }, // #36
-  { F(RW)                                 , 0  , 0  , 0x20, 0x00, 0  , 21 , 3 , SINGLE_REG(None), 0 }, // #37
-  { F(RW)                                 , 0  , 0  , 0x04, 0x00, 0  , 21 , 3 , SINGLE_REG(None), 0 }, // #38
-  { F(RW)                                 , 0  , 0  , 0x07, 0x00, 0  , 21 , 3 , SINGLE_REG(None), 0 }, // #39
-  { F(RW)                                 , 0  , 0  , 0x03, 0x00, 0  , 21 , 3 , SINGLE_REG(None), 0 }, // #40
-  { F(RW)                                 , 0  , 0  , 0x01, 0x00, 0  , 21 , 3 , SINGLE_REG(None), 0 }, // #41
-  { F(RW)                                 , 0  , 0  , 0x10, 0x00, 0  , 21 , 3 , SINGLE_REG(None), 0 }, // #42
-  { F(RW)                                 , 0  , 0  , 0x02, 0x00, 0  , 21 , 3 , SINGLE_REG(None), 0 }, // #43
-  { F(RO)                                 , 0  , 0  , 0x00, 0x3F, 0  , 24 , 10, SINGLE_REG(None), 0 }, // #44
-  { F(RW)|F(Special)|F(Rep)|F(Repnz)      , 0  , 0  , 0x40, 0x3F, 0  , 360, 1 , SINGLE_REG(None), 0 }, // #45
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 361, 1 , SINGLE_REG(None), 0 }, // #46
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 362, 1 , SINGLE_REG(None), 0 }, // #47
-  { F(RW)|F(Lock)|F(Special)              , 0  , 0  , 0x00, 0x3F, 0  , 108, 4 , SINGLE_REG(None), 0 }, // #48
-  { F(RW)|F(Lock)|F(Special)              , 0  , 0  , 0x00, 0x04, 0  , 363, 1 , SINGLE_REG(None), 0 }, // #49
-  { F(RW)|F(Lock)|F(Special)              , 0  , 0  , 0x00, 0x04, 0  , 364, 1 , SINGLE_REG(None), 0 }, // #50
-  { F(RO)                                 , 0  , 0  , 0x00, 0x3F, 0  , 365, 1 , SINGLE_REG(None), 0 }, // #51
-  { F(RO)                                 , 0  , 0  , 0x00, 0x3F, 0  , 366, 1 , SINGLE_REG(None), 0 }, // #52
-  { F(RW)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 367, 1 , SINGLE_REG(None), 0 }, // #53
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 368, 1 , SINGLE_REG(None), 0 }, // #54
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 257, 2 , SINGLE_REG(None), 0 }, // #55
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 62 , 1 , SINGLE_REG(None), 0 }, // #56
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 64 , 1 , SINGLE_REG(None), 0 }, // #57
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 369, 1 , SINGLE_REG(None), 0 }, // #58
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 370, 1 , SINGLE_REG(None), 0 }, // #59
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 370, 1 , SINGLE_REG(None), 0 }, // #60
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 371, 1 , SINGLE_REG(None), 0 }, // #61
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 372, 1 , SINGLE_REG(None), 0 }, // #62
-  { F(WO)                                 , 0  , 4  , 0x00, 0x00, 0  , 62 , 1 , SINGLE_REG(None), 0 }, // #63
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 373, 1 , SINGLE_REG(None), 0 }, // #64
-  { F(WO)                                 , 0  , 4  , 0x00, 0x00, 0  , 373, 1 , SINGLE_REG(None), 0 }, // #65
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 233, 1 , SINGLE_REG(None), 0 }, // #66
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 313, 1 , SINGLE_REG(None), 0 }, // #67
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 374, 1 , SINGLE_REG(None), 0 }, // #68
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 375, 1 , SINGLE_REG(None), 0 }, // #69
-  { F(RW)|F(Special)                      , 0  , 0  , 0x28, 0x3F, 0  , 349, 1 , SINGLE_REG(None), 0 }, // #70
-  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x1F, 5  , 259, 2 , SINGLE_REG(None), 0 }, // #71
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x3F, 0  , 112, 4 , SINGLE_REG(None), 0 }, // #72
-  { F(Volatile)                           , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #73
-  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0x00, 0  , 376, 1 , SINGLE_REG(None), 0 }, // #74
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 377, 1 , SINGLE_REG(None), 0 }, // #75
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 6  , 261, 2 , SINGLE_REG(None), 0 }, // #76
-  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #77
-  { F(Fp)|F(FPU_M4)|F(FPU_M8)             , 0  , 0  , 0x00, 0x00, 0  , 158, 3 , SINGLE_REG(None), 0 }, // #78
-  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 263, 2 , SINGLE_REG(None), 0 }, // #79
-  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 378, 1 , SINGLE_REG(None), 0 }, // #80
-  { F(Fp)                                 , 0  , 0  , 0x20, 0x00, 0  , 264, 1 , SINGLE_REG(None), 0 }, // #81
-  { F(Fp)                                 , 0  , 0  , 0x24, 0x00, 0  , 264, 1 , SINGLE_REG(None), 0 }, // #82
-  { F(Fp)                                 , 0  , 0  , 0x04, 0x00, 0  , 264, 1 , SINGLE_REG(None), 0 }, // #83
-  { F(Fp)                                 , 0  , 0  , 0x10, 0x00, 0  , 264, 1 , SINGLE_REG(None), 0 }, // #84
-  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 265, 2 , SINGLE_REG(None), 0 }, // #85
-  { F(Fp)                                 , 0  , 0  , 0x00, 0x3F, 0  , 264, 1 , SINGLE_REG(None), 0 }, // #86
-  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 264, 1 , SINGLE_REG(None), 0 }, // #87
-  { F(Fp)|F(FPU_M2)|F(FPU_M4)             , 0  , 0  , 0x00, 0x00, 0  , 379, 1 , SINGLE_REG(None), 0 }, // #88
-  { F(Fp)|F(FPU_M2)|F(FPU_M4)|F(FPU_M8)   , 0  , 0  , 0x00, 0x00, 7  , 380, 1 , SINGLE_REG(None), 0 }, // #89
-  { F(Fp)|F(FPU_M2)|F(FPU_M4)|F(FPU_M8)   , 0  , 0  , 0x00, 0x00, 8  , 380, 1 , SINGLE_REG(None), 0 }, // #90
-  { F(Fp)|F(FPU_M2)|F(FPU_M4)|F(FPU_M8)   , 0  , 0  , 0x00, 0x00, 9  , 380, 1 , SINGLE_REG(None), 0 }, // #91
-  { F(Fp)|F(FPU_M2)|F(FPU_M4)|F(FPU_M8)   , 0  , 0  , 0x00, 0x00, 10 , 381, 1 , SINGLE_REG(None), 0 }, // #92
-  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 382, 1 , SINGLE_REG(None), 0 }, // #93
-  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 383, 1 , SINGLE_REG(None), 0 }, // #94
-  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 11 , 384, 1 , SINGLE_REG(None), 0 }, // #95
-  { F(Fp)|F(FPU_M4)|F(FPU_M8)             , 0  , 0  , 0x00, 0x00, 0  , 266, 1 , SINGLE_REG(None), 0 }, // #96
-  { F(Fp)|F(FPU_M4)|F(FPU_M8)|F(FPU_M10)  , 0  , 0  , 0x00, 0x00, 12 , 381, 1 , SINGLE_REG(None), 0 }, // #97
-  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 13 , 384, 1 , SINGLE_REG(None), 0 }, // #98
-  { F(Fp)|F(Volatile)                     , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #99
-  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 385, 1 , SINGLE_REG(None), 0 }, // #100
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x3F, 0  , 116, 4 , SINGLE_REG(None), 0 }, // #101
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x3F, 0  , 34 , 10, SINGLE_REG(None), 0 }, // #102
-  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 14 , 386, 1 , SINGLE_REG(None), 0 }, // #103
-  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x1F, 15 , 259, 2 , SINGLE_REG(None), 0 }, // #104
-  { F(WO)|F(Volatile)|F(Special)|F(Rep)   , 0  , 0  , 0x00, 0x00, 0  , 387, 1 , SINGLE_REG(None), 0 }, // #105
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 16 , 267, 2 , SINGLE_REG(None), 0 }, // #106
-  { F(Volatile)                           , 0  , 0  , 0x00, 0x88, 0  , 388, 1 , SINGLE_REG(None), 0 }, // #107
-  { F(Volatile)                           , 0  , 0  , 0x00, 0x88, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #108
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x24, 0x00, 17 , 389, 1 , SINGLE_REG(None), 0 }, // #109
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x20, 0x00, 18 , 389, 1 , SINGLE_REG(None), 0 }, // #110
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x20, 0x00, 19 , 389, 1 , SINGLE_REG(None), 0 }, // #111
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x24, 0x00, 20 , 389, 1 , SINGLE_REG(None), 0 }, // #112
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x20, 0x00, 19 , 390, 1 , SINGLE_REG(None), 0 }, // #113
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x04, 0x00, 21 , 389, 1 , SINGLE_REG(None), 0 }, // #114
-  { F(Flow)|F(Volatile)|F(Special)        , 0  , 0  , 0x00, 0x00, 22 , 269, 2 , SINGLE_REG(None), 0 }, // #115
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x07, 0x00, 23 , 389, 1 , SINGLE_REG(None), 0 }, // #116
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x03, 0x00, 24 , 389, 1 , SINGLE_REG(None), 0 }, // #117
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x03, 0x00, 25 , 389, 1 , SINGLE_REG(None), 0 }, // #118
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x07, 0x00, 26 , 389, 1 , SINGLE_REG(None), 0 }, // #119
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x00, 0x00, 27 , 271, 2 , SINGLE_REG(None), 0 }, // #120
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x20, 0x00, 18 , 390, 1 , SINGLE_REG(None), 0 }, // #121
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x04, 0x00, 28 , 389, 1 , SINGLE_REG(None), 0 }, // #122
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x01, 0x00, 29 , 389, 1 , SINGLE_REG(None), 0 }, // #123
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x10, 0x00, 30 , 389, 1 , SINGLE_REG(None), 0 }, // #124
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x02, 0x00, 31 , 389, 1 , SINGLE_REG(None), 0 }, // #125
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x01, 0x00, 32 , 389, 1 , SINGLE_REG(None), 0 }, // #126
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x10, 0x00, 33 , 389, 1 , SINGLE_REG(None), 0 }, // #127
-  { F(Flow)|F(Volatile)                   , 0  , 0  , 0x02, 0x00, 34 , 389, 1 , SINGLE_REG(None), 0 }, // #128
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 391, 1 , SINGLE_REG(None), 0 }, // #129
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 35 , 273, 2 , SINGLE_REG(None), 0 }, // #130
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 36 , 275, 2 , SINGLE_REG(None), 0 }, // #131
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 37 , 277, 2 , SINGLE_REG(None), 0 }, // #132
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 38 , 279, 2 , SINGLE_REG(None), 0 }, // #133
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 392, 1 , SINGLE_REG(None), 0 }, // #134
-  { F(RO)|F(Vex)                          , 0  , 0  , 0x00, 0x3F, 0  , 393, 1 , SINGLE_REG(None), 0 }, // #135
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 394, 1 , SINGLE_REG(None), 0 }, // #136
-  { F(RW)|F(Volatile)|F(Special)          , 0  , 0  , 0x3E, 0x00, 0  , 395, 1 , SINGLE_REG(None), 0 }, // #137
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 206, 1 , SINGLE_REG(None), 0 }, // #138
-  { F(RO)|F(Volatile)                     , 0  , 0  , 0x00, 0x00, 0  , 396, 1 , SINGLE_REG(None), 0 }, // #139
-  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 397, 1 , SINGLE_REG(None), 0 }, // #140
-  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #141
-  { F(WO)|F(Special)|F(Rep)               , 0  , 1  , 0x40, 0x00, 0  , 398, 1 , SINGLE_REG(None), 0 }, // #142
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 39 , 281, 2 , SINGLE_REG(None), 0 }, // #143
-  { F(RW)                                 , 0  , 0  , 0x04, 0x00, 40 , 281, 2 , SINGLE_REG(None), 0 }, // #144
-  { F(RW)                                 , 0  , 0  , 0x04, 0x00, 41 , 281, 2 , SINGLE_REG(None), 0 }, // #145
-  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 161, 3 , SINGLE_REG(None), 0 }, // #146
-  { F(RO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 399, 1 , SINGLE_REG(None), 0 }, // #147
-  { F(RO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 400, 1 , SINGLE_REG(None), 0 }, // #148
-  { F(RW)|F(Volatile)                     , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #149
-  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 0  , 0 , SINGLE_REG(None), 0 }, // #150
-  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 0  , 14, SINGLE_REG(None), 0 }, // #151
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 42 , 64 , 2 , SINGLE_REG(None), 0 }, // #152
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 43 , 64 , 2 , SINGLE_REG(None), 0 }, // #153
-  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 44 , 52 , 6 , SINGLE_REG(None), 0 }, // #154
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 45 , 283, 2 , SINGLE_REG(None), 0 }, // #155
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 401, 1 , SINGLE_REG(None), 0 }, // #156
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 46 , 64 , 2 , SINGLE_REG(None), 0 }, // #157
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 47 , 64 , 2 , SINGLE_REG(None), 0 }, // #158
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 402, 1 , SINGLE_REG(None), 0 }, // #159
-  { F(RW)                                 , 8  , 8  , 0x00, 0x00, 48 , 212, 2 , SINGLE_REG(None), 0 }, // #160
-  { F(RW)                                 , 8  , 8  , 0x00, 0x00, 49 , 212, 2 , SINGLE_REG(None), 0 }, // #161
-  { F(RW)                                 , 8  , 8  , 0x00, 0x00, 0  , 402, 1 , SINGLE_REG(None), 0 }, // #162
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 50 , 212, 2 , SINGLE_REG(None), 0 }, // #163
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 51 , 212, 2 , SINGLE_REG(None), 0 }, // #164
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 403, 1 , SINGLE_REG(None), 0 }, // #165
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 52 , 203, 1 , SINGLE_REG(None), 0 }, // #166
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 56 , 2 , SINGLE_REG(None), 0 }, // #167
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 53 , 203, 1 , SINGLE_REG(None), 0 }, // #168
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 54 , 203, 1 , SINGLE_REG(None), 0 }, // #169
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 55 , 404, 1 , SINGLE_REG(None), 0 }, // #170
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 56 , 212, 1 , SINGLE_REG(None), 0 }, // #171
-  { F(WO)                                 , 0  , 4  , 0x00, 0x00, 57 , 288, 1 , SINGLE_REG(None), 0 }, // #172
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 58 , 58 , 6 , SINGLE_REG(None), 0 }, // #173
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 405, 1 , SINGLE_REG(None), 0 }, // #174
-  { F(WO)|F(Special)|F(Rep)               , 0  , 0  , 0x00, 0x00, 0  , 406, 1 , SINGLE_REG(None), 0 }, // #175
-  { F(WO)|F(ZeroIfMem)                    , 0  , 8  , 0x00, 0x00, 59 , 285, 2 , SINGLE_REG(None), 0 }, // #176
-  { F(WO)|F(ZeroIfMem)                    , 0  , 4  , 0x00, 0x00, 60 , 287, 2 , SINGLE_REG(None), 0 }, // #177
-  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 289, 2 , SINGLE_REG(None), 0 }, // #178
-  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 407, 1 , SINGLE_REG(None), 0 }, // #179
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 61 , 64 , 2 , SINGLE_REG(None), 0 }, // #180
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 62 , 64 , 2 , SINGLE_REG(None), 0 }, // #181
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x3F, 0  , 34 , 4 , SINGLE_REG(None), 0 }, // #182
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 291, 2 , SINGLE_REG(None), 0 }, // #183
-  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3F, 0  , 260, 1 , SINGLE_REG(None), 0 }, // #184
-  { 0                                     , 0  , 0  , 0x00, 0x00, 0  , 293, 2 , SINGLE_REG(None), 0 }, // #185
-  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x00, 0  , 260, 1 , SINGLE_REG(None), 0 }, // #186
-  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 63 , 408, 1 , SINGLE_REG(None), 0 }, // #187
-  { F(RO)|F(Volatile)|F(Special)|F(Rep)   , 0  , 0  , 0x00, 0x00, 0  , 409, 1 , SINGLE_REG(None), 0 }, // #188
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 295, 2 , SINGLE_REG(None), 0 }, // #189
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 297, 2 , SINGLE_REG(None), 0 }, // #190
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 295, 2 , SINGLE_REG(RO)  , 0 }, // #191
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 295, 2 , SINGLE_REG(WO)  , 0 }, // #192
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #193
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 295, 1 , SINGLE_REG(None), 0 }, // #194
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 296, 1 , SINGLE_REG(WO)  , 0 }, // #195
-  { F(WO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 410, 1 , SINGLE_REG(None), 0 }, // #196
-  { F(WO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 411, 1 , SINGLE_REG(None), 0 }, // #197
-  { F(WO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 412, 1 , SINGLE_REG(None), 0 }, // #198
-  { F(WO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 413, 1 , SINGLE_REG(None), 0 }, // #199
-  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 251, 2 , SINGLE_REG(None), 0 }, // #200
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 414, 1 , SINGLE_REG(None), 0 }, // #201
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 415, 1 , SINGLE_REG(None), 0 }, // #202
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 64 , 299, 2 , SINGLE_REG(None), 0 }, // #203
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 301, 1 , SINGLE_REG(None), 0 }, // #204
-  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 301, 1 , SINGLE_REG(None), 0 }, // #205
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 416, 1 , SINGLE_REG(None), 0 }, // #206
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 417, 1 , SINGLE_REG(None), 0 }, // #207
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 418, 1 , SINGLE_REG(None), 0 }, // #208
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 419, 1 , SINGLE_REG(None), 0 }, // #209
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 420, 1 , SINGLE_REG(None), 0 }, // #210
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 233, 1 , SINGLE_REG(None), 0 }, // #211
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 236, 1 , SINGLE_REG(None), 0 }, // #212
-  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 65 , 120, 4 , SINGLE_REG(None), 0 }, // #213
-  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0x00, 0  , 421, 1 , SINGLE_REG(None), 0 }, // #214
-  { F(WO)                                 , 0  , 0  , 0x00, 0x3F, 0  , 161, 3 , SINGLE_REG(None), 0 }, // #215
-  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0xFF, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #216
-  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0xFF, 0  , 421, 1 , SINGLE_REG(None), 0 }, // #217
-  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0xFF, 0  , 422, 1 , SINGLE_REG(None), 0 }, // #218
-  { F(RO)|F(Volatile)                     , 0  , 0  , 0x00, 0x3F, 0  , 358, 1 , SINGLE_REG(None), 0 }, // #219
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 301, 2 , SINGLE_REG(None), 0 }, // #220
-  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 71 , 1 , SINGLE_REG(None), 0 }, // #221
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 423, 1 , SINGLE_REG(None), 0 }, // #222
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 66 , 303, 2 , SINGLE_REG(None), 0 }, // #223
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 67 , 424, 1 , SINGLE_REG(None), 0 }, // #224
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 68 , 303, 2 , SINGLE_REG(None), 0 }, // #225
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 69 , 303, 2 , SINGLE_REG(None), 0 }, // #226
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 70 , 303, 2 , SINGLE_REG(None), 0 }, // #227
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 71 , 303, 2 , SINGLE_REG(None), 0 }, // #228
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 72 , 303, 2 , SINGLE_REG(None), 0 }, // #229
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 73 , 424, 1 , SINGLE_REG(None), 0 }, // #230
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 74 , 303, 2 , SINGLE_REG(None), 0 }, // #231
-  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 75 , 303, 2 , SINGLE_REG(None), 0 }, // #232
-  { F(RO)                                 , 0  , 0  , 0x00, 0x3F, 0  , 345, 1 , SINGLE_REG(None), 0 }, // #233
-  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 76 , 124, 4 , SINGLE_REG(None), 0 }, // #234
-  { F(Volatile)|F(Special)                , 0  , 0  , 0xFF, 0x00, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #235
-  { F(Volatile)|F(Special)                , 0  , 0  , 0xFF, 0x00, 0  , 421, 1 , SINGLE_REG(None), 0 }, // #236
-  { F(Volatile)|F(Special)                , 0  , 0  , 0xFF, 0x00, 0  , 422, 1 , SINGLE_REG(None), 0 }, // #237
-  { F(RW)|F(Special)                      , 0  , 0  , 0x20, 0x21, 0  , 425, 1 , SINGLE_REG(None), 0 }, // #238
-  { F(WO)                                 , 0  , 4  , 0x00, 0x00, 0  , 233, 1 , SINGLE_REG(None), 0 }, // #239
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 426, 1 , SINGLE_REG(None), 0 }, // #240
-  { F(WO)                                 , 0  , 8  , 0x00, 0x3F, 0  , 427, 1 , SINGLE_REG(None), 0 }, // #241
-  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 428, 1 , SINGLE_REG(None), 0 }, // #242
-  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 429, 1 , SINGLE_REG(None), 0 }, // #243
-  { F(RW)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 305, 2 , SINGLE_REG(None), 0 }, // #244
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x21, 0  , 425, 1 , SINGLE_REG(None), 0 }, // #245
-  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 307, 2 , SINGLE_REG(None), 0 }, // #246
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 430, 1 , SINGLE_REG(None), 0 }, // #247
-  { F(WO)                                 , 0  , 4  , 0x00, 0x00, 0  , 431, 1 , SINGLE_REG(None), 0 }, // #248
-  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x3E, 0  , 432, 1 , SINGLE_REG(None), 0 }, // #249
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x3F, 0  , 425, 1 , SINGLE_REG(None), 0 }, // #250
-  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 253, 2 , SINGLE_REG(None), 0 }, // #251
-  { F(RW)|F(Special)|F(Rep)|F(Repnz)      , 0  , 0  , 0x40, 0x3F, 0  , 433, 1 , SINGLE_REG(None), 0 }, // #252
-  { F(WO)                                 , 0  , 1  , 0x24, 0x00, 0  , 434, 1 , SINGLE_REG(None), 0 }, // #253
-  { F(WO)                                 , 0  , 1  , 0x20, 0x00, 0  , 434, 1 , SINGLE_REG(None), 0 }, // #254
-  { F(WO)                                 , 0  , 1  , 0x04, 0x00, 0  , 434, 1 , SINGLE_REG(None), 0 }, // #255
-  { F(WO)                                 , 0  , 1  , 0x07, 0x00, 0  , 434, 1 , SINGLE_REG(None), 0 }, // #256
-  { F(WO)                                 , 0  , 1  , 0x03, 0x00, 0  , 434, 1 , SINGLE_REG(None), 0 }, // #257
-  { F(WO)                                 , 0  , 1  , 0x01, 0x00, 0  , 434, 1 , SINGLE_REG(None), 0 }, // #258
-  { F(WO)                                 , 0  , 1  , 0x10, 0x00, 0  , 434, 1 , SINGLE_REG(None), 0 }, // #259
-  { F(WO)                                 , 0  , 1  , 0x02, 0x00, 0  , 434, 1 , SINGLE_REG(None), 0 }, // #260
-  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x3F, 0  , 164, 3 , SINGLE_REG(None), 0 }, // #261
-  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 62 , 1 , SINGLE_REG(None), 0 }, // #262
-  { 0                                     , 0  , 0  , 0x00, 0x20, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #263
-  { 0                                     , 0  , 0  , 0x00, 0x40, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #264
-  { 0                                     , 0  , 0  , 0x00, 0x80, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #265
-  { F(Volatile)                           , 0  , 0  , 0x00, 0x00, 0  , 435, 1 , SINGLE_REG(None), 0 }, // #266
-  { F(RW)|F(Special)|F(Rep)               , 0  , 0  , 0x40, 0x00, 0  , 436, 1 , SINGLE_REG(None), 0 }, // #267
-  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3F, 0  , 14 , 10, SINGLE_REG(WO)  , 0 }, // #268
-  { 0                                     , 0  , 0  , 0x00, 0x00, 0  , 422, 1 , SINGLE_REG(None), 0 }, // #269
-  { F(RO)                                 , 0  , 0  , 0x00, 0x3F, 77 , 88 , 5 , SINGLE_REG(None), 0 }, // #270
-  { 0                                     , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #271
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 167, 3 , SINGLE_REG(None), 0 }, // #272
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 437, 1 , SINGLE_REG(None), 0 }, // #273
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 438, 1 , SINGLE_REG(None), 0 }, // #274
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 167, 2 , SINGLE_REG(None), 0 }, // #275
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 70 , 1 , SINGLE_REG(None), 0 }, // #276
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 64 , 1 , SINGLE_REG(None), 0 }, // #277
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 71 , 1 , SINGLE_REG(None), 0 }, // #278
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 170, 3 , SINGLE_REG(None), 0 }, // #279
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 167, 3 , SINGLE_REG(RO)  , 0 }, // #280
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 167, 3 , SINGLE_REG(None), 0 }, // #281
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 170, 2 , SINGLE_REG(None), 0 }, // #282
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 309, 2 , SINGLE_REG(None), 0 }, // #283
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 439, 1 , SINGLE_REG(None), 0 }, // #284
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 440, 1 , SINGLE_REG(None), 0 }, // #285
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 441, 1 , SINGLE_REG(None), 0 }, // #286
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 442, 1 , SINGLE_REG(None), 0 }, // #287
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 443, 1 , SINGLE_REG(None), 0 }, // #288
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 238, 1 , SINGLE_REG(None), 0 }, // #289
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 440, 1 , SINGLE_REG(None), 0 }, // #290
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 329, 1 , SINGLE_REG(None), 0 }, // #291
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 173, 3 , SINGLE_REG(None), 0 }, // #292
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 444, 1 , SINGLE_REG(None), 0 }, // #293
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 445, 1 , SINGLE_REG(None), 0 }, // #294
-  { F(RO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x3F, 0  , 365, 1 , SINGLE_REG(None), 0 }, // #295
-  { F(RO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x3F, 0  , 366, 1 , SINGLE_REG(None), 0 }, // #296
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 176, 3 , SINGLE_REG(None), 0 }, // #297
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 179, 3 , SINGLE_REG(None), 0 }, // #298
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 182, 3 , SINGLE_REG(None), 0 }, // #299
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 311, 2 , SINGLE_REG(None), 0 }, // #300
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 185, 3 , SINGLE_REG(None), 0 }, // #301
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 182, 3 , SINGLE_REG(None), 0 }, // #302
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 311, 2 , SINGLE_REG(None), 0 }, // #303
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 188, 3 , SINGLE_REG(None), 0 }, // #304
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 179, 3 , SINGLE_REG(None), 0 }, // #305
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 372, 1 , SINGLE_REG(None), 0 }, // #306
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 372, 1 , SINGLE_REG(None), 0 }, // #307
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 446, 1 , SINGLE_REG(None), 0 }, // #308
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 313, 2 , SINGLE_REG(None), 0 }, // #309
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 315, 2 , SINGLE_REG(None), 0 }, // #310
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 446, 1 , SINGLE_REG(None), 0 }, // #311
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 68 , 1 , SINGLE_REG(None), 0 }, // #312
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 189, 1 , SINGLE_REG(None), 0 }, // #313
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 447, 1 , SINGLE_REG(None), 0 }, // #314
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 190, 1 , SINGLE_REG(None), 0 }, // #315
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 377, 1 , SINGLE_REG(None), 0 }, // #316
-  { F(RW)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 191, 3 , SINGLE_REG(None), 0 }, // #317
-  { F(RW)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 448, 1 , SINGLE_REG(None), 0 }, // #318
-  { F(RW)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 449, 1 , SINGLE_REG(None), 0 }, // #319
-  { F(RW)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 194, 3 , SINGLE_REG(None), 0 }, // #320
-  { F(RW)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 450, 1 , SINGLE_REG(None), 0 }, // #321
-  { F(RW)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 451, 1 , SINGLE_REG(None), 0 }, // #322
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 128, 4 , SINGLE_REG(None), 0 }, // #323
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 317, 2 , SINGLE_REG(None), 0 }, // #324
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 319, 2 , SINGLE_REG(None), 0 }, // #325
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 452, 1 , SINGLE_REG(None), 0 }, // #326
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 453, 1 , SINGLE_REG(None), 0 }, // #327
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 454, 1 , SINGLE_REG(None), 0 }, // #328
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 182, 2 , SINGLE_REG(None), 0 }, // #329
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 62 , 1 , SINGLE_REG(None), 0 }, // #330
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 233, 1 , SINGLE_REG(None), 0 }, // #331
-  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 78 , 93 , 5 , SINGLE_REG(None), 0 }, // #332
-  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 79 , 98 , 5 , SINGLE_REG(None), 0 }, // #333
-  { F(RO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 455, 1 , SINGLE_REG(None), 0 }, // #334
-  { F(RO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 456, 1 , SINGLE_REG(None), 0 }, // #335
-  { F(RO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 457, 1 , SINGLE_REG(None), 0 }, // #336
-  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 80 , 103, 5 , SINGLE_REG(None), 0 }, // #337
-  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 81 , 132, 4 , SINGLE_REG(None), 0 }, // #338
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 62 , 1 , SINGLE_REG(None), 0 }, // #339
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 233, 1 , SINGLE_REG(None), 0 }, // #340
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 197, 3 , SINGLE_REG(None), 0 }, // #341
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 430, 1 , SINGLE_REG(None), 0 }, // #342
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 431, 1 , SINGLE_REG(None), 0 }, // #343
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 321, 1 , SINGLE_REG(None), 0 }, // #344
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 321, 2 , SINGLE_REG(None), 0 }, // #345
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 458, 1 , SINGLE_REG(None), 0 }, // #346
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 459, 1 , SINGLE_REG(None), 0 }, // #347
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 206, 2 , SINGLE_REG(None), 0 }, // #348
-  { F(RO)|F(Vex)|F(Volatile)              , 0  , 0  , 0x00, 0x00, 0  , 396, 1 , SINGLE_REG(None), 0 }, // #349
-  { F(RO)|F(Vex)|F(Special)               , 0  , 0  , 0x00, 0x00, 0  , 460, 1 , SINGLE_REG(None), 0 }, // #350
-  { F(RW)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 82 , 136, 4 , SINGLE_REG(None), 0 }, // #351
-  { F(RW)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 83 , 136, 4 , SINGLE_REG(None), 0 }, // #352
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 84 , 64 , 6 , SINGLE_REG(None), 0 }, // #353
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 85 , 64 , 6 , SINGLE_REG(None), 0 }, // #354
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 86 , 323, 2 , SINGLE_REG(None), 0 }, // #355
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 200, 3 , SINGLE_REG(None), 0 }, // #356
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 87 , 64 , 4 , SINGLE_REG(None), 0 }, // #357
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 88 , 64 , 6 , SINGLE_REG(None), 0 }, // #358
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 89 , 64 , 6 , SINGLE_REG(None), 0 }, // #359
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 90 , 64 , 4 , SINGLE_REG(None), 0 }, // #360
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 91 , 64 , 6 , SINGLE_REG(None), 0 }, // #361
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 92 , 64 , 6 , SINGLE_REG(None), 0 }, // #362
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 93 , 64 , 6 , SINGLE_REG(None), 0 }, // #363
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 94 , 64 , 6 , SINGLE_REG(None), 0 }, // #364
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 214, 1 , SINGLE_REG(None), 0 }, // #365
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 95 , 325, 2 , SINGLE_REG(None), 0 }, // #366
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 96 , 325, 2 , SINGLE_REG(None), 0 }, // #367
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 97 , 325, 2 , SINGLE_REG(None), 0 }, // #368
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 98 , 325, 2 , SINGLE_REG(None), 0 }, // #369
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 461, 1 , SINGLE_REG(None), 0 }, // #370
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 203, 3 , SINGLE_REG(None), 0 }, // #371
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 206, 3 , SINGLE_REG(None), 0 }, // #372
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 99 , 209, 3 , SINGLE_REG(None), 0 }, // #373
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 100, 212, 3 , SINGLE_REG(None), 0 }, // #374
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 101, 215, 3 , SINGLE_REG(None), 0 }, // #375
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 102, 64 , 6 , SINGLE_REG(None), 0 }, // #376
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 103, 64 , 6 , SINGLE_REG(None), 0 }, // #377
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 170, 3 , SINGLE_REG(None), 0 }, // #378
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 167, 2 , SINGLE_REG(RO)  , 0 }, // #379
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 167, 3 , SINGLE_REG(RO)  , 0 }, // #380
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 167, 2 , SINGLE_REG(WO)  , 0 }, // #381
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 167, 3 , SINGLE_REG(WO)  , 0 }, // #382
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 327, 2 , SINGLE_REG(None), 0 }, // #383
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 329, 2 , SINGLE_REG(None), 0 }, // #384
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 462, 1 , SINGLE_REG(None), 0 }, // #385
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 463, 1 , SINGLE_REG(None), 0 }, // #386
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 331, 2 , SINGLE_REG(None), 0 }, // #387
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 170, 1 , SINGLE_REG(None), 0 }, // #388
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 218, 3 , SINGLE_REG(WO)  , 0 }, // #389
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 221, 3 , SINGLE_REG(WO)  , 0 }, // #390
-  { F(WO)|F(Vex)|F(Special)               , 0  , 0  , 0x00, 0x00, 0  , 410, 1 , SINGLE_REG(None), 0 }, // #391
-  { F(WO)|F(Vex)|F(Special)               , 0  , 0  , 0x00, 0x00, 0  , 411, 1 , SINGLE_REG(None), 0 }, // #392
-  { F(WO)|F(Vex)|F(Special)               , 0  , 0  , 0x00, 0x00, 0  , 412, 1 , SINGLE_REG(None), 0 }, // #393
-  { F(WO)|F(Vex)|F(Special)               , 0  , 0  , 0x00, 0x00, 0  , 413, 1 , SINGLE_REG(None), 0 }, // #394
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 171, 1 , SINGLE_REG(None), 0 }, // #395
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 145, 2 , SINGLE_REG(None), 0 }, // #396
-  { F(RW)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 194, 3 , SINGLE_REG(None), 0 }, // #397
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 140, 4 , SINGLE_REG(None), 0 }, // #398
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 104, 70 , 6 , SINGLE_REG(None), 0 }, // #399
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 105, 70 , 6 , SINGLE_REG(None), 0 }, // #400
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 73 , 1 , SINGLE_REG(None), 0 }, // #401
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 72 , 1 , SINGLE_REG(None), 0 }, // #402
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 106, 144, 4 , SINGLE_REG(None), 0 }, // #403
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 414, 1 , SINGLE_REG(None), 0 }, // #404
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 415, 1 , SINGLE_REG(None), 0 }, // #405
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 300, 1 , SINGLE_REG(None), 0 }, // #406
-  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 107, 98 , 5 , SINGLE_REG(None), 0 }, // #407
-  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 108, 93 , 5 , SINGLE_REG(None), 0 }, // #408
-  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 109, 132, 4 , SINGLE_REG(None), 0 }, // #409
-  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 110, 103, 5 , SINGLE_REG(None), 0 }, // #410
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 333, 2 , SINGLE_REG(None), 0 }, // #411
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 335, 2 , SINGLE_REG(None), 0 }, // #412
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 337, 2 , SINGLE_REG(None), 0 }, // #413
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 464, 1 , SINGLE_REG(None), 0 }, // #414
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 129, 1 , SINGLE_REG(None), 0 }, // #415
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 111, 136, 4 , SINGLE_REG(None), 0 }, // #416
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 112, 136, 4 , SINGLE_REG(None), 0 }, // #417
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 465, 1 , SINGLE_REG(None), 0 }, // #418
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 224, 3 , SINGLE_REG(None), 0 }, // #419
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 227, 3 , SINGLE_REG(None), 0 }, // #420
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 230, 3 , SINGLE_REG(None), 0 }, // #421
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 233, 3 , SINGLE_REG(None), 0 }, // #422
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 236, 3 , SINGLE_REG(None), 0 }, // #423
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 239, 3 , SINGLE_REG(None), 0 }, // #424
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 128, 2 , SINGLE_REG(None), 0 }, // #425
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 113, 339, 2 , SINGLE_REG(None), 0 }, // #426
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 114, 339, 2 , SINGLE_REG(None), 0 }, // #427
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 115, 339, 2 , SINGLE_REG(None), 0 }, // #428
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 116, 339, 2 , SINGLE_REG(None), 0 }, // #429
-  { F(WO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 242, 3 , SINGLE_REG(None), 0 }, // #430
-  { F(WO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 341, 2 , SINGLE_REG(None), 0 }, // #431
-  { F(WO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 245, 3 , SINGLE_REG(None), 0 }, // #432
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 343, 2 , SINGLE_REG(None), 0 }, // #433
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 197, 3 , SINGLE_REG(None), 0 }, // #434
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 117, 76 , 6 , SINGLE_REG(None), 0 }, // #435
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 118, 76 , 6 , SINGLE_REG(None), 0 }, // #436
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 119, 76 , 6 , SINGLE_REG(None), 0 }, // #437
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 120, 76 , 6 , SINGLE_REG(None), 0 }, // #438
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 121, 82 , 6 , SINGLE_REG(None), 0 }, // #439
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 122, 76 , 6 , SINGLE_REG(None), 0 }, // #440
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 123, 76 , 6 , SINGLE_REG(None), 0 }, // #441
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 124, 76 , 6 , SINGLE_REG(None), 0 }, // #442
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 125, 76 , 6 , SINGLE_REG(None), 0 }, // #443
-  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 167, 3 , SINGLE_REG(WO)  , 0 }, // #444
-  { F(RO)|F(Vex)                          , 0  , 0  , 0x00, 0x3F, 0  , 345, 2 , SINGLE_REG(None), 0 }, // #445
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 248, 3 , SINGLE_REG(None), 0 }, // #446
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 466, 1 , SINGLE_REG(None), 0 }, // #447
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 459, 1 , SINGLE_REG(None), 0 }, // #448
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 437, 1 , SINGLE_REG(None), 0 }, // #449
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 438, 1 , SINGLE_REG(None), 0 }, // #450
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 438, 1 , SINGLE_REG(None), 0 }, // #451
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 78 , 2 , SINGLE_REG(None), 0 }, // #452
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 466, 1 , SINGLE_REG(None), 0 }, // #453
-  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 459, 1 , SINGLE_REG(None), 0 }, // #454
-  { F(WO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 347, 2 , SINGLE_REG(None), 0 }, // #455
-  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 171, 2 , SINGLE_REG(None), 0 }, // #456
-  { F(Vex)|F(Volatile)                    , 0  , 0  , 0x00, 0x00, 0  , 435, 1 , SINGLE_REG(None), 0 }, // #457
-  { F(Vex)|F(Volatile)                    , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , SINGLE_REG(None), 0 }, // #458
-  { F(RO)|F(Volatile)                     , 0  , 0  , 0x00, 0x00, 0  , 467, 1 , SINGLE_REG(None), 0 }, // #459
-  { F(RW)|F(Xchg)|F(Lock)                 , 0  , 0  , 0x00, 0x3F, 0  , 148, 4 , SINGLE_REG(None), 0 }, // #460
-  { F(RW)|F(Xchg)|F(Lock)                 , 0  , 0  , 0x00, 0x00, 0  , 44 , 8 , SINGLE_REG(RO)  , 0 }, // #461
-  { F(WO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 468, 1 , SINGLE_REG(None), 0 }, // #462
-  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 469, 1 , SINGLE_REG(None), 0 }, // #463
-  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 470, 1 , SINGLE_REG(None), 0 }, // #464
-  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 469, 1 , SINGLE_REG(None), 0 }, // #465
-  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 470, 1 , SINGLE_REG(None), 0 }, // #466
-  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 471, 1 , SINGLE_REG(None), 0 }  // #467
+  { 0                                     , 0  , 0  , 0x00, 0x00, 0  , 0  , 0 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #0
+  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 349, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #1
+  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 350, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #2
+  { F(RW)|F(Lock)                         , 0  , 0  , 0x20, 0x3F, 0  , 14 , 10, JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #3
+  { F(RW)                                 , 0  , 0  , 0x20, 0x20, 0  , 22 , 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #4
+  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3F, 0  , 14 , 10, JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #5
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 296, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #6
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 351, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #7
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 352, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #8
+  { F(RW)                                 , 0  , 0  , 0x01, 0x01, 0  , 22 , 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #9
+  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 64 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #10
+  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 71 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #11
+  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3F, 0  , 14 , 10, JUMP_TYPE(None)       , SINGLE_REG(RO)  , 0 }, // #12
+  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 251, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #13
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 296, 1 , JUMP_TYPE(None)       , SINGLE_REG(RO)  , 0 }, // #14
+  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 253, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #15
+  { F(WO)                                 , 0  , 0  , 0x00, 0x3F, 0  , 162, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #16
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 298, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #17
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 353, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #18
+  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 162, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #19
+  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 21 , 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #20
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 354, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #21
+  { F(RO)                                 , 0  , 0  , 0x00, 0x3B, 1  , 152, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #22
+  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3B, 2  , 155, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #23
+  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3B, 3  , 155, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #24
+  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3B, 4  , 155, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #25
+  { F(RW)|F(Volatile)                     , 0  , 0  , 0x00, 0x00, 0  , 255, 2 , JUMP_TYPE(Call)       , SINGLE_REG(None), 0 }, // #26
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 355, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #27
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 356, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #28
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 357, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #29
+  { F(Volatile)                           , 0  , 0  , 0x00, 0x08, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #30
+  { F(Volatile)                           , 0  , 0  , 0x00, 0x20, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #31
+  { F(Volatile)                           , 0  , 0  , 0x00, 0x40, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #32
+  { F(RO)|F(Volatile)                     , 0  , 0  , 0x00, 0x00, 0  , 358, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #33
+  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 359, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #34
+  { 0                                     , 0  , 0  , 0x20, 0x20, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #35
+  { F(RW)                                 , 0  , 0  , 0x24, 0x00, 0  , 21 , 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #36
+  { F(RW)                                 , 0  , 0  , 0x20, 0x00, 0  , 21 , 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #37
+  { F(RW)                                 , 0  , 0  , 0x04, 0x00, 0  , 21 , 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #38
+  { F(RW)                                 , 0  , 0  , 0x07, 0x00, 0  , 21 , 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #39
+  { F(RW)                                 , 0  , 0  , 0x03, 0x00, 0  , 21 , 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #40
+  { F(RW)                                 , 0  , 0  , 0x01, 0x00, 0  , 21 , 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #41
+  { F(RW)                                 , 0  , 0  , 0x10, 0x00, 0  , 21 , 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #42
+  { F(RW)                                 , 0  , 0  , 0x02, 0x00, 0  , 21 , 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #43
+  { F(RO)                                 , 0  , 0  , 0x00, 0x3F, 0  , 24 , 10, JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #44
+  { F(RW)|F(Special)|F(Rep)|F(Repnz)      , 0  , 0  , 0x40, 0x3F, 0  , 360, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #45
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 361, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #46
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 362, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #47
+  { F(RW)|F(Lock)|F(Special)              , 0  , 0  , 0x00, 0x3F, 0  , 108, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #48
+  { F(RW)|F(Lock)|F(Special)              , 0  , 0  , 0x00, 0x04, 0  , 363, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #49
+  { F(RW)|F(Lock)|F(Special)              , 0  , 0  , 0x00, 0x04, 0  , 364, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #50
+  { F(RO)                                 , 0  , 0  , 0x00, 0x3F, 0  , 365, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #51
+  { F(RO)                                 , 0  , 0  , 0x00, 0x3F, 0  , 366, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #52
+  { F(RW)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 367, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #53
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 368, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #54
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 257, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #55
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 62 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #56
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 64 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #57
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 369, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #58
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 370, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #59
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 370, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #60
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 371, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #61
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 372, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #62
+  { F(WO)                                 , 0  , 4  , 0x00, 0x00, 0  , 62 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #63
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 373, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #64
+  { F(WO)                                 , 0  , 4  , 0x00, 0x00, 0  , 373, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #65
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 233, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #66
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 313, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #67
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 374, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #68
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 375, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #69
+  { F(RW)|F(Special)                      , 0  , 0  , 0x28, 0x3F, 0  , 349, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #70
+  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x1F, 5  , 259, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #71
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x3F, 0  , 112, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #72
+  { F(Volatile)                           , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #73
+  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0x00, 0  , 376, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #74
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 377, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #75
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 6  , 261, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #76
+  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #77
+  { F(Fp)|F(FPU_M4)|F(FPU_M8)             , 0  , 0  , 0x00, 0x00, 0  , 158, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #78
+  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 263, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #79
+  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 378, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #80
+  { F(Fp)                                 , 0  , 0  , 0x20, 0x00, 0  , 264, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #81
+  { F(Fp)                                 , 0  , 0  , 0x24, 0x00, 0  , 264, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #82
+  { F(Fp)                                 , 0  , 0  , 0x04, 0x00, 0  , 264, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #83
+  { F(Fp)                                 , 0  , 0  , 0x10, 0x00, 0  , 264, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #84
+  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 265, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #85
+  { F(Fp)                                 , 0  , 0  , 0x00, 0x3F, 0  , 264, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #86
+  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 264, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #87
+  { F(Fp)|F(FPU_M2)|F(FPU_M4)             , 0  , 0  , 0x00, 0x00, 0  , 379, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #88
+  { F(Fp)|F(FPU_M2)|F(FPU_M4)|F(FPU_M8)   , 0  , 0  , 0x00, 0x00, 7  , 380, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #89
+  { F(Fp)|F(FPU_M2)|F(FPU_M4)|F(FPU_M8)   , 0  , 0  , 0x00, 0x00, 8  , 380, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #90
+  { F(Fp)|F(FPU_M2)|F(FPU_M4)|F(FPU_M8)   , 0  , 0  , 0x00, 0x00, 9  , 380, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #91
+  { F(Fp)|F(FPU_M2)|F(FPU_M4)|F(FPU_M8)   , 0  , 0  , 0x00, 0x00, 10 , 381, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #92
+  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 382, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #93
+  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 383, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #94
+  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 11 , 384, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #95
+  { F(Fp)|F(FPU_M4)|F(FPU_M8)             , 0  , 0  , 0x00, 0x00, 0  , 266, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #96
+  { F(Fp)|F(FPU_M4)|F(FPU_M8)|F(FPU_M10)  , 0  , 0  , 0x00, 0x00, 12 , 381, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #97
+  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 13 , 384, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #98
+  { F(Fp)|F(Volatile)                     , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #99
+  { F(Fp)                                 , 0  , 0  , 0x00, 0x00, 0  , 385, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #100
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x3F, 0  , 116, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #101
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x3F, 0  , 34 , 10, JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #102
+  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 14 , 386, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #103
+  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x1F, 15 , 259, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #104
+  { F(WO)|F(Volatile)|F(Special)|F(Rep)   , 0  , 0  , 0x00, 0x00, 0  , 387, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #105
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 16 , 267, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #106
+  { F(Volatile)                           , 0  , 0  , 0x00, 0x88, 0  , 388, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #107
+  { F(Volatile)                           , 0  , 0  , 0x00, 0x88, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #108
+  { F(Volatile)                           , 0  , 0  , 0x24, 0x00, 17 , 389, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #109
+  { F(Volatile)                           , 0  , 0  , 0x20, 0x00, 18 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #110
+  { F(Volatile)                           , 0  , 0  , 0x20, 0x00, 19 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #111
+  { F(Volatile)                           , 0  , 0  , 0x24, 0x00, 20 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #112
+  { F(Volatile)                           , 0  , 0  , 0x20, 0x00, 19 , 390, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #113
+  { F(Volatile)                           , 0  , 0  , 0x04, 0x00, 21 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #114
+  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0x00, 22 , 269, 2 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #115
+  { F(Volatile)                           , 0  , 0  , 0x07, 0x00, 23 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #116
+  { F(Volatile)                           , 0  , 0  , 0x03, 0x00, 24 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #117
+  { F(Volatile)                           , 0  , 0  , 0x03, 0x00, 25 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #118
+  { F(Volatile)                           , 0  , 0  , 0x07, 0x00, 26 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #119
+  { F(Volatile)                           , 0  , 0  , 0x00, 0x00, 27 , 271, 2 , JUMP_TYPE(Direct)     , SINGLE_REG(None), 0 }, // #120
+  { F(Volatile)                           , 0  , 0  , 0x20, 0x00, 18 , 390, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #121
+  { F(Volatile)                           , 0  , 0  , 0x04, 0x00, 28 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #122
+  { F(Volatile)                           , 0  , 0  , 0x01, 0x00, 29 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #123
+  { F(Volatile)                           , 0  , 0  , 0x10, 0x00, 30 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #124
+  { F(Volatile)                           , 0  , 0  , 0x02, 0x00, 31 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #125
+  { F(Volatile)                           , 0  , 0  , 0x01, 0x00, 32 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #126
+  { F(Volatile)                           , 0  , 0  , 0x10, 0x00, 33 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #127
+  { F(Volatile)                           , 0  , 0  , 0x02, 0x00, 34 , 389, 1 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #128
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 391, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #129
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 35 , 273, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #130
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 36 , 275, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #131
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 37 , 277, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #132
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 38 , 279, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #133
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 392, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #134
+  { F(RO)|F(Vex)                          , 0  , 0  , 0x00, 0x3F, 0  , 393, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #135
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 394, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #136
+  { F(RW)|F(Volatile)|F(Special)          , 0  , 0  , 0x3E, 0x00, 0  , 395, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #137
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 206, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #138
+  { F(RO)|F(Volatile)                     , 0  , 0  , 0x00, 0x00, 0  , 396, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #139
+  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 397, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #140
+  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #141
+  { F(WO)|F(Special)|F(Rep)               , 0  , 1  , 0x40, 0x00, 0  , 398, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #142
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 39 , 281, 2 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #143
+  { F(RW)                                 , 0  , 0  , 0x04, 0x00, 40 , 281, 2 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #144
+  { F(RW)                                 , 0  , 0  , 0x04, 0x00, 41 , 281, 2 , JUMP_TYPE(Conditional), SINGLE_REG(None), 0 }, // #145
+  { F(RW)                                 , 0  , 0  , 0x00, 0x3F, 0  , 161, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #146
+  { F(RO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 399, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #147
+  { F(RO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 400, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #148
+  { F(RW)|F(Volatile)                     , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #149
+  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 0  , 0 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #150
+  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 0  , 14, JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #151
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 42 , 64 , 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #152
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 43 , 64 , 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #153
+  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 44 , 52 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #154
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 45 , 283, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #155
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 401, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #156
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 46 , 64 , 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #157
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 47 , 64 , 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #158
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 402, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #159
+  { F(RW)                                 , 8  , 8  , 0x00, 0x00, 48 , 212, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #160
+  { F(RW)                                 , 8  , 8  , 0x00, 0x00, 49 , 212, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #161
+  { F(RW)                                 , 8  , 8  , 0x00, 0x00, 0  , 402, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #162
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 50 , 212, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #163
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 51 , 212, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #164
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 403, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #165
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 52 , 203, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #166
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 56 , 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #167
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 53 , 203, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #168
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 54 , 203, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #169
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 55 , 404, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #170
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 56 , 212, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #171
+  { F(WO)                                 , 0  , 4  , 0x00, 0x00, 57 , 288, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #172
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 58 , 58 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #173
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 405, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #174
+  { F(WO)|F(Special)|F(Rep)               , 0  , 0  , 0x00, 0x00, 0  , 406, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #175
+  { F(WO)|F(ZeroIfMem)                    , 0  , 8  , 0x00, 0x00, 59 , 285, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #176
+  { F(WO)|F(ZeroIfMem)                    , 0  , 4  , 0x00, 0x00, 60 , 287, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #177
+  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 289, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #178
+  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 407, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #179
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 61 , 64 , 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #180
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 62 , 64 , 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #181
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x3F, 0  , 34 , 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #182
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 291, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #183
+  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3F, 0  , 260, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #184
+  { 0                                     , 0  , 0  , 0x00, 0x00, 0  , 293, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #185
+  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x00, 0  , 260, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #186
+  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 63 , 408, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #187
+  { F(RO)|F(Volatile)|F(Special)|F(Rep)   , 0  , 0  , 0x00, 0x00, 0  , 409, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #188
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 295, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #189
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 297, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #190
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 295, 2 , JUMP_TYPE(None)       , SINGLE_REG(RO)  , 0 }, // #191
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 295, 2 , JUMP_TYPE(None)       , SINGLE_REG(WO)  , 0 }, // #192
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #193
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 295, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #194
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 296, 1 , JUMP_TYPE(None)       , SINGLE_REG(WO)  , 0 }, // #195
+  { F(WO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 410, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #196
+  { F(WO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 411, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #197
+  { F(WO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 412, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #198
+  { F(WO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 413, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #199
+  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 251, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #200
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 414, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #201
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 415, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #202
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 64 , 299, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #203
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 301, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #204
+  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 301, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #205
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 416, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #206
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 417, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #207
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 418, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #208
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 419, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #209
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 420, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #210
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 233, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #211
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 236, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #212
+  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 65 , 120, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #213
+  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0x00, 0  , 421, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #214
+  { F(WO)                                 , 0  , 0  , 0x00, 0x3F, 0  , 161, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #215
+  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0xFF, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #216
+  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0xFF, 0  , 421, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #217
+  { F(Volatile)|F(Special)                , 0  , 0  , 0x00, 0xFF, 0  , 422, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #218
+  { F(RO)|F(Volatile)                     , 0  , 0  , 0x00, 0x3F, 0  , 358, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #219
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 0  , 301, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #220
+  { F(WO)                                 , 0  , 16 , 0x00, 0x00, 0  , 71 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #221
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 423, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #222
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 66 , 303, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #223
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 67 , 424, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #224
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 68 , 303, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #225
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 69 , 303, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #226
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 70 , 303, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #227
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 71 , 303, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #228
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 72 , 303, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #229
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 73 , 424, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #230
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 74 , 303, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #231
+  { F(RW)                                 , 0  , 0  , 0x00, 0x00, 75 , 303, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #232
+  { F(RO)                                 , 0  , 0  , 0x00, 0x3F, 0  , 345, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #233
+  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 76 , 124, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #234
+  { F(Volatile)|F(Special)                , 0  , 0  , 0xFF, 0x00, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #235
+  { F(Volatile)|F(Special)                , 0  , 0  , 0xFF, 0x00, 0  , 421, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #236
+  { F(Volatile)|F(Special)                , 0  , 0  , 0xFF, 0x00, 0  , 422, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #237
+  { F(RW)|F(Special)                      , 0  , 0  , 0x20, 0x21, 0  , 425, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #238
+  { F(WO)                                 , 0  , 4  , 0x00, 0x00, 0  , 233, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #239
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 426, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #240
+  { F(WO)                                 , 0  , 8  , 0x00, 0x3F, 0  , 427, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #241
+  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 428, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #242
+  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 429, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #243
+  { F(RW)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 305, 2 , JUMP_TYPE(Return)     , SINGLE_REG(None), 0 }, // #244
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x21, 0  , 425, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #245
+  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 307, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #246
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 430, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #247
+  { F(WO)                                 , 0  , 4  , 0x00, 0x00, 0  , 431, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #248
+  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x3E, 0  , 432, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #249
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x3F, 0  , 425, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #250
+  { F(WO)                                 , 0  , 0  , 0x00, 0x00, 0  , 253, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #251
+  { F(RW)|F(Special)|F(Rep)|F(Repnz)      , 0  , 0  , 0x40, 0x3F, 0  , 433, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #252
+  { F(WO)                                 , 0  , 1  , 0x24, 0x00, 0  , 434, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #253
+  { F(WO)                                 , 0  , 1  , 0x20, 0x00, 0  , 434, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #254
+  { F(WO)                                 , 0  , 1  , 0x04, 0x00, 0  , 434, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #255
+  { F(WO)                                 , 0  , 1  , 0x07, 0x00, 0  , 434, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #256
+  { F(WO)                                 , 0  , 1  , 0x03, 0x00, 0  , 434, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #257
+  { F(WO)                                 , 0  , 1  , 0x01, 0x00, 0  , 434, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #258
+  { F(WO)                                 , 0  , 1  , 0x10, 0x00, 0  , 434, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #259
+  { F(WO)                                 , 0  , 1  , 0x02, 0x00, 0  , 434, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #260
+  { F(RW)|F(Special)                      , 0  , 0  , 0x00, 0x3F, 0  , 164, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #261
+  { F(WO)                                 , 0  , 8  , 0x00, 0x00, 0  , 62 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #262
+  { 0                                     , 0  , 0  , 0x00, 0x20, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #263
+  { 0                                     , 0  , 0  , 0x00, 0x40, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #264
+  { 0                                     , 0  , 0  , 0x00, 0x80, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #265
+  { F(Volatile)                           , 0  , 0  , 0x00, 0x00, 0  , 435, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #266
+  { F(RW)|F(Special)|F(Rep)               , 0  , 0  , 0x40, 0x00, 0  , 436, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #267
+  { F(RW)|F(Lock)                         , 0  , 0  , 0x00, 0x3F, 0  , 14 , 10, JUMP_TYPE(None)       , SINGLE_REG(WO)  , 0 }, // #268
+  { 0                                     , 0  , 0  , 0x00, 0x00, 0  , 422, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #269
+  { F(RO)                                 , 0  , 0  , 0x00, 0x3F, 77 , 88 , 5 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #270
+  { 0                                     , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #271
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 167, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #272
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 437, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #273
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 438, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #274
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 167, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #275
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 70 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #276
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 64 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #277
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 71 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #278
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 170, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #279
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 167, 3 , JUMP_TYPE(None)       , SINGLE_REG(RO)  , 0 }, // #280
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 167, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #281
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 170, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #282
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 309, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #283
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 439, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #284
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 440, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #285
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 441, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #286
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 442, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #287
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 443, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #288
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 238, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #289
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 440, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #290
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 329, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #291
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 173, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #292
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 444, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #293
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 445, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #294
+  { F(RO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x3F, 0  , 365, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #295
+  { F(RO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x3F, 0  , 366, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #296
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 176, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #297
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 179, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #298
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 182, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #299
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 311, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #300
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 185, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #301
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 182, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #302
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 311, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #303
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 188, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #304
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 179, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #305
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 372, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #306
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 372, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #307
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 446, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #308
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 313, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #309
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 315, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #310
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 446, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #311
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 68 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #312
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 189, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #313
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 447, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #314
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 190, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #315
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 377, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #316
+  { F(RW)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 191, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #317
+  { F(RW)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 448, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #318
+  { F(RW)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 449, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #319
+  { F(RW)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 194, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #320
+  { F(RW)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 450, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #321
+  { F(RW)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 451, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #322
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 128, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #323
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 317, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #324
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 319, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #325
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 452, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #326
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 453, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #327
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 454, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #328
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 182, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #329
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 62 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #330
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 233, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #331
+  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 78 , 93 , 5 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #332
+  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 79 , 98 , 5 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #333
+  { F(RO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 455, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #334
+  { F(RO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 456, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #335
+  { F(RO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 457, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #336
+  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 80 , 103, 5 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #337
+  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 81 , 132, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #338
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 62 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #339
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 233, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #340
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 197, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #341
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 430, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #342
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 431, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #343
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 321, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #344
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 321, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #345
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 458, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #346
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 459, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #347
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 206, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #348
+  { F(RO)|F(Vex)|F(Volatile)              , 0  , 0  , 0x00, 0x00, 0  , 396, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #349
+  { F(RO)|F(Vex)|F(Special)               , 0  , 0  , 0x00, 0x00, 0  , 460, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #350
+  { F(RW)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 82 , 136, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #351
+  { F(RW)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 83 , 136, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #352
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 84 , 64 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #353
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 85 , 64 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #354
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 86 , 323, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #355
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 200, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #356
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 87 , 64 , 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #357
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 88 , 64 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #358
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 89 , 64 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #359
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 90 , 64 , 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #360
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 91 , 64 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #361
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 92 , 64 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #362
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 93 , 64 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #363
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 94 , 64 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #364
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 214, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #365
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 95 , 325, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #366
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 96 , 325, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #367
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 97 , 325, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #368
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 98 , 325, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #369
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 461, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #370
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 203, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #371
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 206, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #372
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 99 , 209, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #373
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 100, 212, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #374
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 101, 215, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #375
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 102, 64 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #376
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 103, 64 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #377
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 170, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #378
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 167, 2 , JUMP_TYPE(None)       , SINGLE_REG(RO)  , 0 }, // #379
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 167, 3 , JUMP_TYPE(None)       , SINGLE_REG(RO)  , 0 }, // #380
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 167, 2 , JUMP_TYPE(None)       , SINGLE_REG(WO)  , 0 }, // #381
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 167, 3 , JUMP_TYPE(None)       , SINGLE_REG(WO)  , 0 }, // #382
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 327, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #383
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 329, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #384
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 462, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #385
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 463, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #386
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 331, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #387
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 170, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #388
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 218, 3 , JUMP_TYPE(None)       , SINGLE_REG(WO)  , 0 }, // #389
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 221, 3 , JUMP_TYPE(None)       , SINGLE_REG(WO)  , 0 }, // #390
+  { F(WO)|F(Vex)|F(Special)               , 0  , 0  , 0x00, 0x00, 0  , 410, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #391
+  { F(WO)|F(Vex)|F(Special)               , 0  , 0  , 0x00, 0x00, 0  , 411, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #392
+  { F(WO)|F(Vex)|F(Special)               , 0  , 0  , 0x00, 0x00, 0  , 412, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #393
+  { F(WO)|F(Vex)|F(Special)               , 0  , 0  , 0x00, 0x00, 0  , 413, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #394
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 171, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #395
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 145, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #396
+  { F(RW)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 194, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #397
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 140, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #398
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 104, 70 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #399
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 105, 70 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #400
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 73 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #401
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 72 , 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #402
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 106, 144, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #403
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 414, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #404
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 415, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #405
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 300, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #406
+  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 107, 98 , 5 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #407
+  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 108, 93 , 5 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #408
+  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 109, 132, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #409
+  { F(RW)|F(Vex_VM)|F(Evex)               , 0  , 0  , 0x00, 0x00, 110, 103, 5 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #410
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 333, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #411
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 335, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #412
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 337, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #413
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 464, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #414
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 129, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #415
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 111, 136, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #416
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 112, 136, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #417
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 465, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #418
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 224, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #419
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 227, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #420
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 230, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #421
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 233, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #422
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 236, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #423
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 239, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #424
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 128, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #425
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 113, 339, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #426
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 114, 339, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #427
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 115, 339, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #428
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 116, 339, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #429
+  { F(WO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 242, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #430
+  { F(WO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 341, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #431
+  { F(WO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 245, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #432
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 343, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #433
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 197, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #434
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 117, 76 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #435
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 118, 76 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #436
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 119, 76 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #437
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 120, 76 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #438
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 121, 82 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #439
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 122, 76 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #440
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 123, 76 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #441
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 124, 76 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #442
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 125, 76 , 6 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #443
+  { F(WO)|F(Vex)|F(Evex)                  , 0  , 0  , 0x00, 0x00, 0  , 167, 3 , JUMP_TYPE(None)       , SINGLE_REG(WO)  , 0 }, // #444
+  { F(RO)|F(Vex)                          , 0  , 0  , 0x00, 0x3F, 0  , 345, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #445
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 248, 3 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #446
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 466, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #447
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 459, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #448
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 437, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #449
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 438, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #450
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 438, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #451
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 78 , 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #452
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 466, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #453
+  { F(WO)|F(Vex)                          , 0  , 0  , 0x00, 0x00, 0  , 459, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #454
+  { F(WO)|F(VM)|F(Evex)                   , 0  , 0  , 0x00, 0x00, 0  , 347, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #455
+  { F(WO)|F(Evex)                         , 0  , 0  , 0x00, 0x00, 0  , 171, 2 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #456
+  { F(Vex)|F(Volatile)                    , 0  , 0  , 0x00, 0x00, 0  , 435, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #457
+  { F(Vex)|F(Volatile)                    , 0  , 0  , 0x00, 0x00, 0  , 263, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #458
+  { F(RO)|F(Volatile)                     , 0  , 0  , 0x00, 0x00, 0  , 467, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #459
+  { F(RW)|F(Xchg)|F(Lock)                 , 0  , 0  , 0x00, 0x3F, 0  , 148, 4 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #460
+  { F(RW)|F(Xchg)|F(Lock)                 , 0  , 0  , 0x00, 0x00, 0  , 44 , 8 , JUMP_TYPE(None)       , SINGLE_REG(RO)  , 0 }, // #461
+  { F(WO)|F(Special)                      , 0  , 0  , 0x00, 0x00, 0  , 468, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #462
+  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 469, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #463
+  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 470, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #464
+  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 469, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #465
+  { F(WO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 470, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }, // #466
+  { F(RO)|F(Volatile)|F(Special)          , 0  , 0  , 0x00, 0x00, 0  , 471, 1 , JUMP_TYPE(None)       , SINGLE_REG(None), 0 }  // #467
 };
 #undef SINGLE_REG
+#undef JUMP_TYPE
 // ----------------------------------------------------------------------------
 // ${commonData:End}
 
@@ -2366,216 +2368,216 @@ const X86Inst::SseData X86InstDB::sseData[] = {
 #define FLAG(F) X86Inst::AvxData::kFlag##F
 const X86Inst::AvxData X86InstDB::avxData[] = {
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #0
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #0
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #1
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #1
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   , FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #2
+    FEATURE(AVX512_F)  , FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #2
   { FEATURE(AVX)       , 0 }, // #3
   { FEATURE(AES)       |
     FEATURE(AVX)       , 0 }, // #4
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #5
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #6
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #5
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #6
   { FEATURE(AVX)       |
-    FEATURE(AVX512DQ)  |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #7
+    FEATURE(AVX512_DQ) |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #7
   { FEATURE(AVX)       |
-    FEATURE(AVX512DQ)  |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #8
-  { FEATURE(AVX512BW)  |
-    FEATURE(AVX512VL)  , FLAG(Masking) | FLAG(Zeroing) }, // #9
-  { FEATURE(AVX512DQ)  |
-    FEATURE(AVX512VL)  , FLAG(Masking) | FLAG(Zeroing) }, // #10
-  { FEATURE(AVX512F)   , FLAG(Masking) | FLAG(Zeroing) }, // #11
-  { FEATURE(AVX512DQ)  , FLAG(Masking) | FLAG(Zeroing) }, // #12
+    FEATURE(AVX512_DQ) |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #8
+  { FEATURE(AVX512_BW) |
+    FEATURE(AVX512_VL) , FLAG(Masking) | FLAG(Zeroing) }, // #9
+  { FEATURE(AVX512_DQ) |
+    FEATURE(AVX512_VL) , FLAG(Masking) | FLAG(Zeroing) }, // #10
+  { FEATURE(AVX512_F)  , FLAG(Masking) | FLAG(Zeroing) }, // #11
+  { FEATURE(AVX512_DQ) , FLAG(Masking) | FLAG(Zeroing) }, // #12
   { FEATURE(AVX2)      , 0 }, // #13
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Masking) | FLAG(Zeroing) }, // #14
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Masking) | FLAG(Zeroing) }, // #14
   { FEATURE(AVX)       |
     FEATURE(AVX2)      |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Masking) | FLAG(Zeroing) }, // #15
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Masking) | FLAG(Zeroing) }, // #15
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #16
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #16
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #17
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #17
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   , FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #18
+    FEATURE(AVX512_F)  , FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #18
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   , FLAG(SAE) }, // #19
+    FEATURE(AVX512_F)  , FLAG(SAE) }, // #19
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #20
-  { FEATURE(AVX512DQ)  |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #21
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #22
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  |
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #20
+  { FEATURE(AVX512_DQ) |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #21
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #22
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) |
     FEATURE(F16C)      , FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #23
-  { FEATURE(AVX512DQ)  |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #24
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #25
+  { FEATURE(AVX512_DQ) |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #24
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #25
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   , FLAG(ER) | FLAG(SAE) }, // #26
-  { FEATURE(AVX512F)   , FLAG(ER) | FLAG(SAE) }, // #27
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #28
-  { FEATURE(AVX512DQ)  |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #29
-  { FEATURE(AVX512DQ)  |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #30
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #31
-  { FEATURE(AVX512F)   , FLAG(SAE) }, // #32
-  { FEATURE(AVX512ERI) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #33
-  { FEATURE(AVX512ERI) , FLAG(Broadcast32) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #34
+    FEATURE(AVX512_F)  , FLAG(ER) | FLAG(SAE) }, // #26
+  { FEATURE(AVX512_F)  , FLAG(ER) | FLAG(SAE) }, // #27
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #28
+  { FEATURE(AVX512_DQ) |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #29
+  { FEATURE(AVX512_DQ) |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #30
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #31
+  { FEATURE(AVX512_F)  , FLAG(SAE) }, // #32
+  { FEATURE(AVX512_ERI), FLAG(Broadcast64) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #33
+  { FEATURE(AVX512_ERI), FLAG(Broadcast32) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #34
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   , 0 }, // #35
-  { FEATURE(AVX512F)   , FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #36
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  |
+    FEATURE(AVX512_F)  , 0 }, // #35
+  { FEATURE(AVX512_F)  , FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #36
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) |
     FEATURE(FMA)       , FLAG(Broadcast64) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #37
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  |
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) |
     FEATURE(FMA)       , FLAG(Broadcast32) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #38
-  { FEATURE(AVX512F)   |
+  { FEATURE(AVX512_F)  |
     FEATURE(FMA)       , FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #39
   { FEATURE(FMA4)      , 0 }, // #40
-  { FEATURE(AVX512DQ)  |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) }, // #41
-  { FEATURE(AVX512DQ)  |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) }, // #42
-  { FEATURE(AVX512DQ)  , FLAG(Masking) }, // #43
+  { FEATURE(AVX512_DQ) |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) }, // #41
+  { FEATURE(AVX512_DQ) |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) }, // #42
+  { FEATURE(AVX512_DQ) , FLAG(Masking) }, // #43
   { FEATURE(XOP)       , 0 }, // #44
   { FEATURE(AVX2)      |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Masking) }, // #45
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Masking) }, // #45
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #46
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #46
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Masking) | FLAG(Zeroing) }, // #47
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Masking) | FLAG(Zeroing) }, // #47
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , 0 }, // #48
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , 0 }, // #48
   { FEATURE(AVX)       |
     FEATURE(AVX2)      |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , 0 }, // #49
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , 0 }, // #49
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   , FLAG(Masking) | FLAG(Zeroing) }, // #50
+    FEATURE(AVX512_F)  , FLAG(Masking) | FLAG(Zeroing) }, // #50
   { FEATURE(AVX)       |
     FEATURE(AVX2)      , 0 }, // #51
   { FEATURE(AVX)       |
     FEATURE(AVX2)      |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #52
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #52
   { FEATURE(AVX)       |
     FEATURE(AVX2)      |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #53
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #53
   { FEATURE(AVX)       |
     FEATURE(AVX2)      |
-    FEATURE(AVX512BW)  |
-    FEATURE(AVX512VL)  , FLAG(Masking) | FLAG(Zeroing) }, // #54
+    FEATURE(AVX512_BW) |
+    FEATURE(AVX512_VL) , FLAG(Masking) | FLAG(Zeroing) }, // #54
   { FEATURE(AVX)       |
     FEATURE(AVX2)      |
-    FEATURE(AVX512BW)  |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #55
+    FEATURE(AVX512_BW) |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #55
   { FEATURE(AVX)       |
     FEATURE(AVX2)      |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #56
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #56
   { FEATURE(AVX)       |
     FEATURE(AVX2)      |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #57
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #57
   { FEATURE(AVX)       |
-    FEATURE(AVX512BW)  |
-    FEATURE(AVX512VL)  , FLAG(Masking) | FLAG(Zeroing) }, // #58
+    FEATURE(AVX512_BW) |
+    FEATURE(AVX512_VL) , FLAG(Masking) | FLAG(Zeroing) }, // #58
   { FEATURE(AVX2)      |
-    FEATURE(AVX512BW)  |
-    FEATURE(AVX512VL)  , FLAG(Masking) | FLAG(Zeroing) }, // #59
+    FEATURE(AVX512_BW) |
+    FEATURE(AVX512_VL) , FLAG(Masking) | FLAG(Zeroing) }, // #59
   { FEATURE(AVX2)      |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Masking) | FLAG(Zeroing) }, // #60
-  { FEATURE(AVX512CDI) |
-    FEATURE(AVX512VL)  , 0 }, // #61
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Masking) | FLAG(Zeroing) }, // #60
+  { FEATURE(AVX512_CDI)|
+    FEATURE(AVX512_VL) , 0 }, // #61
   { FEATURE(AVX)       |
     FEATURE(PCLMULQDQ) , 0 }, // #62
-  { FEATURE(AVX512BW)  |
-    FEATURE(AVX512VL)  , FLAG(Masking) }, // #63
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) }, // #64
+  { FEATURE(AVX512_BW) |
+    FEATURE(AVX512_VL) , FLAG(Masking) }, // #63
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) }, // #64
   { FEATURE(AVX)       |
     FEATURE(AVX2)      |
-    FEATURE(AVX512BW)  |
-    FEATURE(AVX512VL)  , FLAG(Masking) }, // #65
+    FEATURE(AVX512_BW) |
+    FEATURE(AVX512_VL) , FLAG(Masking) }, // #65
   { FEATURE(AVX)       |
     FEATURE(AVX2)      |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) }, // #66
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) }, // #66
   { FEATURE(AVX)       |
     FEATURE(AVX2)      |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) }, // #67
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) }, // #68
-  { FEATURE(AVX512BW)  |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) }, // #69
-  { FEATURE(AVX512CDI) |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #70
-  { FEATURE(AVX512VBMI)|
-    FEATURE(AVX512VL)  , FLAG(Masking) | FLAG(Zeroing) }, // #71
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) }, // #67
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) }, // #68
+  { FEATURE(AVX512_BW) |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) }, // #69
+  { FEATURE(AVX512_CDI)|
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #70
+  { FEATURE(AVX512_VBMI)|
+    FEATURE(AVX512_VL) , FLAG(Masking) | FLAG(Zeroing) }, // #71
   { FEATURE(AVX2)      |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #72
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #72
   { FEATURE(AVX)       |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #73
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #73
   { FEATURE(AVX2)      |
-    FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #74
+    FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #74
   { FEATURE(AVX)       |
-    FEATURE(AVX512BW)  , 0 }, // #75
+    FEATURE(AVX512_BW) , 0 }, // #75
   { FEATURE(AVX)       |
-    FEATURE(AVX512DQ)  , 0 }, // #76
+    FEATURE(AVX512_DQ) , 0 }, // #76
   { FEATURE(AVX)       |
-    FEATURE(AVX512BW)  , FLAG(Masking) | FLAG(Zeroing) }, // #77
+    FEATURE(AVX512_BW) , FLAG(Masking) | FLAG(Zeroing) }, // #77
   { FEATURE(AVX)       |
-    FEATURE(AVX512DQ)  , FLAG(Masking) | FLAG(Zeroing) }, // #78
-  { FEATURE(AVX512CDI) |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #79
-  { FEATURE(AVX512IFMA)|
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #80
-  { FEATURE(AVX512BW)  |
-    FEATURE(AVX512VL)  , 0 }, // #81
-  { FEATURE(AVX512DQ)  |
-    FEATURE(AVX512VL)  , 0 }, // #82
-  { FEATURE(AVX512DQ)  |
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #83
-  { FEATURE(AVX512VBMI)|
-    FEATURE(AVX512VL)  , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #84
+    FEATURE(AVX512_DQ) , FLAG(Masking) | FLAG(Zeroing) }, // #78
+  { FEATURE(AVX512_CDI)|
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #79
+  { FEATURE(AVX512_IFMA)|
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #80
+  { FEATURE(AVX512_BW) |
+    FEATURE(AVX512_VL) , 0 }, // #81
+  { FEATURE(AVX512_DQ) |
+    FEATURE(AVX512_VL) , 0 }, // #82
+  { FEATURE(AVX512_DQ) |
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #83
+  { FEATURE(AVX512_VBMI)|
+    FEATURE(AVX512_VL) , FLAG(Broadcast64) | FLAG(Masking) | FLAG(Zeroing) }, // #84
   { FEATURE(AVX)       |
     FEATURE(AVX2)      |
-    FEATURE(AVX512BW)  |
-    FEATURE(AVX512VL)  , 0 }, // #85
-  { FEATURE(AVX512F)   |
-    FEATURE(AVX512VL)  , FLAG(Masking) }, // #86
-  { FEATURE(AVX512DQ)  , FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #87
-  { FEATURE(AVX512ERI) , FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #88
-  { FEATURE(AVX512DQ)  |
-    FEATURE(AVX512VL)  , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #89
-  { FEATURE(AVX512F)   , FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }  // #90
+    FEATURE(AVX512_BW) |
+    FEATURE(AVX512_VL) , 0 }, // #85
+  { FEATURE(AVX512_F)  |
+    FEATURE(AVX512_VL) , FLAG(Masking) }, // #86
+  { FEATURE(AVX512_DQ) , FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #87
+  { FEATURE(AVX512_ERI), FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }, // #88
+  { FEATURE(AVX512_DQ) |
+    FEATURE(AVX512_VL) , FLAG(Broadcast32) | FLAG(Masking) | FLAG(Zeroing) }, // #89
+  { FEATURE(AVX512_F)  , FLAG(ER) | FLAG(Masking) | FLAG(SAE) | FLAG(Zeroing) }  // #90
 };
 #undef FLAG
 #undef FEATURE
@@ -4067,11 +4069,7 @@ Next:
   inst##o, inst##no, inst##b , inst##ae, \
   inst##e, inst##ne, inst##be, inst##a , \
   inst##s, inst##ns, inst##pe, inst##po, \
-  inst##l, inst##ge, inst##le, inst##g , \
-  Globals::kInvalidInstId,               \
-  Globals::kInvalidInstId,               \
-  Globals::kInvalidInstId,               \
-  Globals::kInvalidInstId                \
+  inst##l, inst##ge, inst##le, inst##g   \
 }
 
 const X86Inst::MiscData X86InstDB::miscData = {
@@ -4081,14 +4079,10 @@ const X86Inst::MiscData X86InstDB::miscData = {
 
   // ReversedCond[]:
   {
-    X86Inst::kCondO, X86Inst::kCondNO, X86Inst::kCondA , X86Inst::kCondBE, // O|NO|B |AE
-    X86Inst::kCondE, X86Inst::kCondNE, X86Inst::kCondAE, X86Inst::kCondB , // E|NE|BE|A
-    X86Inst::kCondS, X86Inst::kCondNS, X86Inst::kCondPE, X86Inst::kCondPO, // S|NS|PE|PO
-    X86Inst::kCondG, X86Inst::kCondLE, X86Inst::kCondGE, X86Inst::kCondL , // L|GE|LE|G
-    0x10,
-    0x11,
-    0x12,
-    0x13
+    x86::kCondO, x86::kCondNO, x86::kCondA , x86::kCondBE, // O|NO|B |AE
+    x86::kCondE, x86::kCondNE, x86::kCondAE, x86::kCondB , // E|NE|BE|A
+    x86::kCondS, x86::kCondNS, x86::kCondPE, x86::kCondPO, // S|NS|PE|PO
+    x86::kCondG, x86::kCondLE, x86::kCondGE, x86::kCondL   // L|GE|LE|G
   }
 };
 

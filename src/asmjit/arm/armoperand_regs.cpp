@@ -13,8 +13,8 @@
 #if defined(ASMJIT_BUILD_ARM)
 
 // [Dependencies]
-#include "../base/misc_p.h"
 #include "../arm/armoperand.h"
+#include "../base/misc_p.h"
 
 // [Api-Begin]
 #include "../asmjit_apibegin.h"
@@ -26,22 +26,17 @@ namespace asmjit {
 // ============================================================================
 
 // Register Operand {
-//   uint8_t opType;
-//   uint8_t regType;
-//   uint8_t kind;
-//   uint8_t size;
+//   uint32_t signature;
 //   uint32_t id;
 //   uint32_t reserved8_4;
 //   uint32_t reserved12_4;
 // }
-#define ASMJIT_ARM_REG_01(TYPE, ID) {{{    \
-  uint8_t(Operand::kOpReg),                \
-  uint8_t(TYPE),                           \
-  uint8_t(ArmRegTraits<TYPE>::kKind),      \
-  uint8_t(ArmRegTraits<TYPE>::kSize),      \
-  uint32_t(ID),                            \
-  uint32_t(0),                             \
-  uint32_t(0)                              \
+#define ASMJIT_ARM_REG_01(TYPE, ID)         \
+{{{                                         \
+  uint32_t(ArmRegTraits<TYPE>::kSignature), \
+  uint32_t(ID),                             \
+  uint32_t(0),                              \
+  uint32_t(0)                               \
 }}}
 
 #define ASMJIT_ARM_REG_04(TYPE, ID) \

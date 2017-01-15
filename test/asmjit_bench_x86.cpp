@@ -101,7 +101,7 @@ static void benchX86(uint32_t archType) {
     "X86Assembler", archName, perf.best, mbps(perf.best, asmOutputSize));
 
   // --------------------------------------------------------------------------
-  // [Bench - CodeBuilder]
+  // [Bench - CodeBuilder (with finalize)]
   // --------------------------------------------------------------------------
 
   perf.reset();
@@ -125,10 +125,28 @@ static void benchX86(uint32_t archType) {
     "X86Builder", archName, perf.best, mbps(perf.best, cbOutputSize));
 
   // --------------------------------------------------------------------------
-  // [Bench - CodeCompiler]
+  // [Bench - CodeBuilder (no finalize)]
   // --------------------------------------------------------------------------
 
-  return;
+  perf.reset();
+  for (r = 0; r < kNumRepeats; r++) {
+    perf.start();
+    for (i = 0; i < kNumIterations; i++) {
+      code.init(CodeInfo(archType));
+      code.attach(&cb);
+
+      asmtest::generateOpcodes(cb.asEmitter());
+      code.reset(false); // Detaches `cb`.
+    }
+    perf.end();
+  }
+
+  printf("%-12s (%s) | Time: %-6u [ms] | Speed: N/A (doesn't finalize)\n",
+    "X86Builder*", archName, perf.best);
+
+  // --------------------------------------------------------------------------
+  // [Bench - CodeCompiler]
+  // --------------------------------------------------------------------------
 
   perf.reset();
   for (r = 0; r < kNumRepeats; r++) {
